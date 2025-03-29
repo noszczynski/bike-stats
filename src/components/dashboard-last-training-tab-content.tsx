@@ -9,7 +9,8 @@ import {
     formatTrend,
     getTrendIcon,
     getTrendMessage,
-    getTrendProgress
+    getTrendProgress,
+    isImprovement
 } from '@/features/training/trend-utils';
 
 import dayjs from 'dayjs';
@@ -96,38 +97,17 @@ export function DashboardLastTrainingTabContent() {
     const timePerKmDiff = calcPercentageDiff(lastTimePerKm, avgTimePerKmPast);
 
     return (
-        <div className='space-y-6'>
+        <div className='mt-8 space-y-6'>
             <div>
-                <h2 className='mb-4 text-xl font-semibold'>Ostatni trening: {dayjs(lastTraining.date).format('LL')}</h2>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Data</TableHead>
-                            <TableHead>Dystans (km)</TableHead>
-                            <TableHead>Przewyższenie (m)</TableHead>
-                            <TableHead>Czas ruchu</TableHead>
-                            <TableHead>Średnia prędkość (km/h)</TableHead>
-                            <TableHead>Max prędkość (km/h)</TableHead>
-                            <TableHead>Średnie tętno (bpm)</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        <TableRow>
-                            <TableCell>{dayjs(lastTraining.date).format('LL')}</TableCell>
-                            <TableCell>{lastTraining.distance_km.toFixed(2)}</TableCell>
-                            <TableCell>{lastTraining.elevation_gain_m}</TableCell>
-                            <TableCell>{lastTraining.moving_time}</TableCell>
-                            <TableCell>{lastTraining.avg_speed_kmh.toFixed(1)}</TableCell>
-                            <TableCell>{lastTraining.max_speed_kmh.toFixed(1)}</TableCell>
-                            <TableCell>{lastTraining.avg_heart_rate_bpm || '-'}</TableCell>
-                        </TableRow>
-                    </TableBody>
-                </Table>
-            </div>
+                <h2 className='text-xl font-semibold'>Ostatni trening</h2>
+                <p className='text-muted-foreground mt-4'>W porównaniu do poprzednich treningów</p>
+                <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
+                    <StatsCard
+                        title='Data'
+                        value={dayjs(lastTraining.date).format('LL')}
+                        infoText='Data ostatniego treningu'
+                    />
 
-            <div>
-                <h2 className='mb-4 text-xl font-semibold'>Porównanie do poprzednich treningów</h2>
-                <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
                     <StatsCard
                         title='Dystans'
                         value={lastTraining.distance_km}
@@ -215,22 +195,6 @@ export function DashboardLastTrainingTabContent() {
                     />
                 </div>
             </div>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Podsumowanie porównania</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className='text-muted-foreground'>
-                        Powyższe metryki porównują Twój ostatni trening z {pastTrainings.length} poprzednimi treningami.
-                        Zielone wskaźniki oznaczają postęp, czerwone - regres w danej metryce.
-                    </p>
-                    <p className='mt-2'>
-                        Pamiętaj, że pojedynczy trening nie zawsze odzwierciedla długoterminowe trendy - różne czynniki
-                        jak teren, pogoda czy samopoczucie wpływają na wyniki.
-                    </p>
-                </CardContent>
-            </Card>
         </div>
     );
 }

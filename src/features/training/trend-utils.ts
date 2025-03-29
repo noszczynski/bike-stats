@@ -105,7 +105,8 @@ export const getTrendIcon = (trend: number, metricTypeOrPositiveIsBetter: Metric
 
     // For metrics that involve direction (up/down), we need to consider the visual representation
     const isUpIcon =
-        typeof metricTypeOrPositiveIsBetter !== 'boolean' && metricTypeOrPositiveIsBetter === 'timePerKm'
+        typeof metricTypeOrPositiveIsBetter !== 'boolean' &&
+        (metricTypeOrPositiveIsBetter === 'timePerKm' || metricTypeOrPositiveIsBetter === 'heartRate')
             ? !improved
             : improved;
 
