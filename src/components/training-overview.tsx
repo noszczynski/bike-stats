@@ -26,8 +26,8 @@ export function TrainingOverview({ training, compareTo }: TrainingOverviewProps)
     let compareTrainings: Training[] = [];
 
     if (compareTo === 'all') {
-        // Compare to all trainings except the current one
-        compareTrainings = sortedTrainings.filter((t) => t.date !== training.date);
+        // Compare to all trainings
+        compareTrainings = sortedTrainings;
     } else if (compareTo === 'earlier') {
         // Compare to trainings that happened before this one
         compareTrainings = sortedTrainings.filter((t) => date(t.date).isBefore(date(training.date)));
@@ -130,7 +130,7 @@ export function TrainingOverview({ training, compareTo }: TrainingOverviewProps)
                         trendIcon={getTrendIcon(distanceDiff, 'distance')}
                         trendMessage={getTrendMessage(distanceDiff, 'distance')}
                         trendProgress={getTrendProgress(distanceDiff, 'distance')}
-                        infoText='Większy dystans zwykle oznacza lepszą kondycję i wytrzymałość'
+                        infoText='Więcej = lepiej. Większy dystans zwykle oznacza lepszą kondycję i wytrzymałość'
                         formatValue={(val) => val.toFixed(1)}
                     />
 
@@ -186,14 +186,13 @@ export function TrainingOverview({ training, compareTo }: TrainingOverviewProps)
 
                     <StatsCard
                         title='Czas jazdy'
-                        value={lastTotalHours}
-                        unit='h'
+                        value={`${lastHours > 0 ? `${lastHours} h ` : ''}${lastHours > 0 ? lastMinutes.toString().padStart(2, '0') : lastMinutes.toString()} min`}
+                        unit=''
                         trend={formatTrend(timeDiff)}
                         trendIcon={getTrendIcon(timeDiff, 'time')}
                         trendMessage={getTrendMessage(timeDiff, 'time')}
                         trendProgress={getTrendProgress(timeDiff, 'time')}
                         infoText='Dłuższy czas jazdy buduje podstawową wytrzymałość'
-                        formatValue={(val) => val.toFixed(1)}
                     />
 
                     <StatsCard
