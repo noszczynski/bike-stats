@@ -170,15 +170,39 @@ export function DashboardLastTrainingTabContent() {
             }
         }
 
+        if (metricTypeOrPositiveIsBetter === 'heartRate') {
+            if (absValue <= 10) {
+                return isImprovement ? 'Niewielki spadek' : 'Niewielki wzrost';
+            } else if (absValue <= 25) {
+                return isImprovement ? 'Umiarkowany spadek' : 'Umiarkowany wzrost';
+            } else if (absValue <= 75) {
+                return isImprovement ? 'Znaczny spadek' : 'Znaczny wzrost';
+            } else {
+                return isImprovement ? 'Spektakularny spadek' : 'Nipokojący wzrost';
+            }
+        }
+
+        if (metricTypeOrPositiveIsBetter === 'timePerKm') {
+            if (absValue <= 10) {
+                return isImprovement ? 'Niewielki spadek' : 'Niewielki wzrost';
+            } else if (absValue <= 25) {
+                return isImprovement ? 'Umiarkowany spadek' : 'Umiarkowany wzrost';
+            } else if (absValue <= 75) {
+                return isImprovement ? 'Znaczny spadek' : 'Znaczny wzrost';
+            } else {
+                return isImprovement ? 'Spektakularny spadek' : 'Nipokojący wzrost';
+            }
+        }
+
         // Generate message based on the magnitude and whether it's an improvement
-        if (absValue < 2) {
+        if (absValue <= 10) {
             return isImprovement ? 'Niewielka poprawa' : 'Niewielki spadek';
-        } else if (absValue < 5) {
+        } else if (absValue <= 25) {
             return isImprovement ? 'Umiarkowana poprawa' : 'Umiarkowany spadek';
-        } else if (absValue < 10) {
+        } else if (absValue <= 75) {
             return isImprovement ? 'Znaczna poprawa' : 'Znaczny spadek';
         } else {
-            return isImprovement ? 'Wyraźny postęp' : 'Wyraźny regres';
+            return isImprovement ? 'Spektakularna poprawa' : 'Spektakularny spadek';
         }
     };
 
@@ -197,7 +221,6 @@ export function DashboardLastTrainingTabContent() {
             // Use the metric type to determine whether this is an improvement
             const isPositive = trend > 0;
             switch (metricTypeOrPositiveIsBetter) {
-                case 'heartRate':
                 case 'timePerKm':
                     // For these metrics, lower is better
                     isImprovement = !isPositive;
@@ -207,6 +230,10 @@ export function DashboardLastTrainingTabContent() {
                     isImprovement = isPositive;
                     break;
             }
+        }
+
+        if (metricTypeOrPositiveIsBetter === 'timePerKm') {
+            return isImprovement ? TrendingDownIcon : TrendingUpIcon;
         }
 
         return isImprovement ? TrendingUpIcon : TrendingDownIcon;
