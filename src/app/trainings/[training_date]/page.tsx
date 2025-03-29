@@ -32,12 +32,13 @@ export default function TrainingPage({ params, searchParams }: TrainingPageProps
         ? (searchParams.compareTo as CompareToType)
         : 'other';
 
+    if (!validCompareToValues.includes(compareTo)) {
+        return null;
+    }
+
     return (
         <div className='container py-8'>
             <h1 className='mb-6 text-3xl font-bold'>Szczegóły treningu</h1>
-            <div className='mb-4'>
-                <CompareToSelect trainingDate={params.training_date} />
-            </div>
             <TrainingOverview training={training} compareTo={compareTo} />
         </div>
     );

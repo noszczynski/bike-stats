@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -14,6 +14,7 @@ interface CompareToSelectProps {
 
 export function CompareToSelect({ trainingDate }: CompareToSelectProps) {
     const router = useRouter();
+    const pathname = usePathname();
     const searchParams = useSearchParams();
 
     // Get initial value from URL or default to 'other'
@@ -25,15 +26,15 @@ export function CompareToSelect({ trainingDate }: CompareToSelectProps) {
         const timeoutId = setTimeout(() => {
             const params = new URLSearchParams(searchParams.toString());
             params.set('compareTo', compareTo);
-            router.push(`/trainings/${trainingDate}?${params.toString()}`);
+            router.push(`${pathname}?${params.toString()}`);
         }, 200);
 
         return () => clearTimeout(timeoutId);
-    }, [compareTo, router, searchParams, trainingDate]);
+    }, [compareTo, router, searchParams, pathname]);
 
     return (
-        <div>
-            <label htmlFor='compare-to' className='mb-2 block text-sm font-medium'>
+        <div className='flex items-center gap-2'>
+            <label htmlFor='compare-to' className='block text-sm font-medium'>
                 Porównaj z:
             </label>
             <Select value={compareTo} onValueChange={(value: CompareToType) => setCompareTo(value)}>

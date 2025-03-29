@@ -1,9 +1,9 @@
 import React from 'react';
 
+import Link from 'next/link';
+
 import { HeartRateZonesChart } from '@/components/heart-rate-zones-chart';
 import { StatsCard } from '@/components/stats-card';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
 import trainings from '@/data/trainings.json';
 import { calculateTrainingLoad } from '@/features/training/calculate-training-load';
 import {
@@ -15,6 +15,10 @@ import {
 } from '@/features/training/trend-utils';
 import date from '@/lib/date';
 import { Training } from '@/types/training';
+
+import { CompareToSelect } from './compare-to-select';
+import isNil from 'lodash/isNil';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Helper function to convert time string (hh:mm:ss) to minutes
 function timeToMinutes(time: string): number {
@@ -36,30 +40,16 @@ type TrainingOverviewProps = {
     compareTo: 'all' | 'earlier' | 'other';
 };
 
-type HeartRateZoneData = {
-    name: string;
-    value: number;
-    payload: {
-        fill: string;
-    };
-};
-
-type TooltipProps = {
-    active?: boolean;
-    payload?: Array<{
-        name?: string;
-        value?: number;
-        payload?: {
-            fill?: string;
-        };
-    }>;
-};
-
 export function TrainingOverview({ training, compareTo }: TrainingOverviewProps) {
     // Make sure trainings are sorted by date (newest first)
     const sortedTrainings = [...trainings].sort(
         (a, b) => date(b.date).valueOf() - date(a.date).valueOf()
     ) as Training[];
+
+    // Find current training index
+    const currentIndex = sortedTrainings.findIndex((t) => t.date === training.date);
+    const prevTraining = currentIndex < sortedTrainings.length - 1 ? sortedTrainings[currentIndex + 1] : null;
+    const nextTraining = currentIndex > 0 ? sortedTrainings[currentIndex - 1] : null;
 
     // Get all trainings to compare against
     let compareTrainings: Training[] = [];
@@ -96,7 +86,7 @@ export function TrainingOverview({ training, compareTo }: TrainingOverviewProps)
     // Calculate average heart rate for past trainings (ignoring zeroes)
     const validHeartRateTrainings = compareTrainings
         .filter((t) => t.avg_heart_rate_bpm !== null)
-        .filter((t) => t.avg_heart_rate_bpm > 0);
+        .filter((t) => t.avg_heart_rate_bpm! > 0);
 
     const avgHeartRatePast =
         validHeartRateTrainings.length > 0
@@ -133,7 +123,7 @@ export function TrainingOverview({ training, compareTo }: TrainingOverviewProps)
     const speedDiff = calcPercentageDiff(training.avg_speed_kmh, avgSpeedPast);
     const maxSpeedDiff = calcPercentageDiff(training.max_speed_kmh, avgMaxSpeedPast);
     const heartRateDiff =
-        training.avg_heart_rate_bpm !== null && training.avg_heart_rate_bpm > 0 && avgHeartRatePast > 0
+        !isNil(training.avg_heart_rate_bpm) && training.avg_heart_rate_bpm > 0 && avgHeartRatePast > 0
             ? calcPercentageDiff(training.avg_heart_rate_bpm, avgHeartRatePast)
             : 0;
 
@@ -176,9 +166,44 @@ export function TrainingOverview({ training, compareTo }: TrainingOverviewProps)
               : 'innych treningów';
 
     return (
-        <div className='mt-8 space-y-6'>
+        <div className='space-y-6'>
             <div>
-                <h2 className='text-xl font-semibold'>Trening {date(training.date).format('LL')}</h2>
+                <div className='flex items-center justify-between gap-2'>
+                    <div className='flex items-center gap-2'>
+                        {prevTraining ? (
+                            <Link
+                                href={`/trainings/${prevTraining.date}?compareTo=${compareTo}`}
+                                className='ring-offset-background focus-visible:ring-ring border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex h-10 w-10 items-center justify-center rounded-md border text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50'>
+                                <ChevronLeft className='h-4 w-4' />
+                            </Link>
+                        ) : (
+                            <button
+                                disabled
+                                className='ring-offset-background focus-visible:ring-ring border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex h-10 w-10 items-center justify-center rounded-md border text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50'>
+                                <ChevronLeft className='h-4 w-4' />
+                            </button>
+                        )}
+                        {nextTraining ? (
+                            <Link
+                                href={`/trainings/${nextTraining.date}?compareTo=${compareTo}`}
+                                className='ring-offset-background focus-visible:ring-ring border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex h-10 w-10 items-center justify-center rounded-md border text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50'>
+                                <ChevronRight className='h-4 w-4' />
+                            </Link>
+                        ) : (
+                            <button
+                                disabled
+                                className='ring-offset-background focus-visible:ring-ring border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex h-10 w-10 items-center justify-center rounded-md border text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50'>
+                                <ChevronRight className='h-4 w-4' />
+                            </button>
+                        )}
+                    </div>
+                    <CompareToSelect trainingDate={training.date} />
+                </div>
+            </div>
+            <div>
+                <div className='flex items-center justify-between'>
+                    <h2 className='text-xl font-semibold'>Trening {date(training.date).format('LL')}</h2>
+                </div>
                 <p className='text-muted-foreground mt-4'>W porównaniu do {compareToLabel}</p>
                 <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
                     <StatsCard title='Data' value={date(training.date).format('LL')} infoText='Data treningu' />
@@ -243,7 +268,7 @@ export function TrainingOverview({ training, compareTo }: TrainingOverviewProps)
                         formatValue={(val) => val.toFixed(1)}
                     />
 
-                    {training.avg_heart_rate_bpm !== null && training.avg_heart_rate_bpm > 0 && (
+                    {!isNil(training.avg_heart_rate_bpm) && training.avg_heart_rate_bpm > 0 && (
                         <StatsCard
                             title='Średnie tętno'
                             value={training.avg_heart_rate_bpm}

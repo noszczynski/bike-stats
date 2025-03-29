@@ -128,6 +128,9 @@ dependencies:
   input-otp:
     specifier: ^1.4.2
     version: 1.4.2(react-dom@19.1.0)(react@19.1.0)
+  lodash:
+    specifier: ^4.17.21
+    version: 4.17.21
   lucide-react:
     specifier: 0.485.0
     version: 0.485.0(react@19.1.0)
@@ -199,6 +202,9 @@ devDependencies:
   '@trivago/prettier-plugin-sort-imports':
     specifier: ^5.2.2
     version: 5.2.2(prettier@3.5.3)
+  '@types/lodash':
+    specifier: ^4.17.16
+    version: 4.17.16
   '@types/node':
     specifier: ^22.13.14
     version: 22.13.14
@@ -2868,6 +2874,10 @@ packages:
 
   /@types/json5@0.0.29:
     resolution: {integrity: sha512-dRLjCWHYg4oaA77cxO64oO+7JwCwnIzkZPdrrC71jQmQtlhM556pwKo5bUzqvZndkVbeFLIIi+9TC40JNF5hNQ==}
+    dev: true
+
+  /@types/lodash@4.17.16:
+    resolution: {integrity: sha512-HX7Em5NYQAXKW+1T+FiuG27NGwzJfCX3s1GjOa7ujxZa52kjJLOr4FUxT+giF6Tgxv1e+/czV/iTtBw27WTU9g==}
     dev: true
 
   /@types/node@22.13.14:
