@@ -2,10 +2,13 @@ import type { ReactNode } from 'react';
 
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
+import Link from 'next/link';
 
 import { ThemeProvider } from 'next-themes';
 
 import '@/app/globals.css';
+import { Button } from '@/components/ui/button';
+import { ThemeSwitch } from '@/components/ui/theme-switch';
 
 const geistSans = localFont({
     src: './fonts/GeistVF.woff',
@@ -25,13 +28,22 @@ export const metadata: Metadata = {
 
 const Layout = ({ children }: Readonly<{ children: ReactNode }>) => {
     return (
-        // ? https://github.com/pacocoursey/next-themes?tab=readme-ov-file#with-app
-        // ? https://react.dev/reference/react-dom/client/hydrateRoot#suppressing-unavoidable-hydration-mismatch-errors
         <html suppressHydrationWarning lang='en'>
             <body
                 className={`${geistSans.variable} ${geistMono.variable} bg-background text-foreground overscroll-none antialiased`}>
                 <ThemeProvider attribute='class' defaultTheme='system' enableSystem disableTransitionOnChange>
-                    {children}
+                    <div className='flex flex-col'>
+                        <div className='flex items-center justify-between gap-8 border-b px-8'>
+                            <div className='flex h-16 items-center'>
+                                <ThemeSwitch />
+                            </div>
+                            <nav className='flex items-center gap-4'>
+                                <Link href='/'>Panel</Link>
+                                <Link href='/trainings'>Treningi</Link>
+                            </nav>
+                        </div>
+                        <div className='flex-1 space-y-4 p-8 pt-6'>{children}</div>
+                    </div>
                 </ThemeProvider>
             </body>
         </html>

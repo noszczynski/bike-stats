@@ -1,8 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import trainings from '@/data/trainings.json';
-
-import dayjs from 'dayjs';
+import date from '@/lib/date';
 
 export const TrainingHistoryTable = () => {
     return (
@@ -26,10 +25,10 @@ export const TrainingHistoryTable = () => {
                     </TableHeader>
                     <TableBody>
                         {[...trainings]
-                            .sort((a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf())
+                            .sort((a, b) => date(b.date).valueOf() - date(a.date).valueOf())
                             .map((training, index) => (
                                 <TableRow key={index}>
-                                    <TableCell>{dayjs(training.date).format('LL')}</TableCell>
+                                    <TableCell>{date(training.date).format('LL')}</TableCell>
                                     <TableCell>{training.distance_km.toFixed(2)}</TableCell>
                                     <TableCell>{training.elevation_gain_m}</TableCell>
                                     <TableCell>{training.moving_time}</TableCell>

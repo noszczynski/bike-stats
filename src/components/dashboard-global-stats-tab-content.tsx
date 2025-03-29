@@ -4,9 +4,9 @@ import { calculateAverageHeartRate } from '@/features/training/calculate-average
 import { calculateAverageSpeed } from '@/features/training/calculate-average-speed';
 import { calculateHighestAverageSpeed } from '@/features/training/calculate-highest-average-speed';
 import { calculateTrend, getTrendMessage } from '@/features/training/calculate-trend';
+import date from '@/lib/date';
 import { Training } from '@/types/training';
 
-import dayjs from 'dayjs';
 import { TrendingDownIcon, TrendingUpIcon } from 'lucide-react';
 
 export function DashboardGlobalStatsTabContent() {
@@ -106,9 +106,9 @@ export function DashboardGlobalStatsTabContent() {
                     <StatsCard
                         title='Łączny dystans w 2025 roku'
                         value={trainings.reduce((acc, training) => {
-                            const trainingDate = dayjs(training.date);
+                            const trainingDate = date(training.date);
 
-                            return trainingDate.isAfter(dayjs('2025-01-01')) ? acc + training.distance_km : acc;
+                            return trainingDate.isAfter(date('2025-01-01')) ? acc + training.distance_km : acc;
                         }, 0)}
                         unit='km'
                         infoText={`Na podstawie ${trainings.length} treningów`}

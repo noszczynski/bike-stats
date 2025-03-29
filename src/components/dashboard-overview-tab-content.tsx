@@ -5,9 +5,8 @@ import { calculateAverageHeartRate } from '@/features/training/calculate-average
 import { calculateAverageSpeed } from '@/features/training/calculate-average-speed';
 import { calculateHighestAverageSpeed } from '@/features/training/calculate-highest-average-speed';
 import { calculateMaxSpeed } from '@/features/training/calculate-max-speed';
+import date from '@/lib/date';
 import { Training } from '@/types/training';
-
-import dayjs from 'dayjs';
 
 export const DashboardOverviewTabContent = () => {
     const avgSpeed = calculateAverageSpeed(trainings);

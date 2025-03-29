@@ -15,8 +15,8 @@ import { getDistanceMetricsOverTime } from '@/features/training/get-distance-met
 import { getElevationMetricsOverTime } from '@/features/training/get-elevation-metrics-over-time';
 import { getIntensityMetricsOverTime } from '@/features/training/get-intensity-metrics-over-time';
 import { getSpeedMetricsOverTime } from '@/features/training/get-speed-metrics-over-time';
+import date from '@/lib/date';
 
-import dayjs from 'dayjs';
 import {
     Area,
     AreaChart,
@@ -41,7 +41,7 @@ export function DashboardMetricsTabContent() {
     const formatData = (data: any[]) => {
         return data.map((item) => ({
             ...item,
-            formattedDate: dayjs(item.date).format('MMM YYYY')
+            formattedDate: date(item.date).format('MMM YYYY')
         }));
     };
 

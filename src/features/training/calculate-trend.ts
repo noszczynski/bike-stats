@@ -1,5 +1,6 @@
+import date from '@/lib/date';
+
 import { Training } from '../../types/training';
-import dayjs from 'dayjs';
 
 /**
  * Calculates the trend percentage between recent and older period values
@@ -21,21 +22,21 @@ export const calculateTrend = (
     if (trainings.length === 0) return 0;
 
     // Sort trainings by date
-    const sortedTrainings = [...trainings].sort((a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf());
+    const sortedTrainings = [...trainings].sort((a, b) => date(b.date).valueOf() - date(a.date).valueOf());
 
-    const now = dayjs();
+    const now = date();
     const recentPeriodStart = now.subtract(recentPeriodMonths, 'month');
     const olderPeriodStart = recentPeriodStart.subtract(olderPeriodMonths, 'month');
 
     // Filter trainings for recent and older periods
     const recentTrainings = sortedTrainings.filter(
-        (t) => dayjs(t.date).isAfter(recentPeriodStart) || dayjs(t.date).isSame(recentPeriodStart)
+        (t) => date(t.date).isAfter(recentPeriodStart) || date(t.date).isSame(recentPeriodStart)
     );
 
     const olderTrainings = sortedTrainings.filter(
         (t) =>
-            (dayjs(t.date).isAfter(olderPeriodStart) || dayjs(t.date).isSame(olderPeriodStart)) &&
-            dayjs(t.date).isBefore(recentPeriodStart)
+            (date(t.date).isAfter(olderPeriodStart) || date(t.date).isSame(olderPeriodStart)) &&
+            date(t.date).isBefore(recentPeriodStart)
     );
 
     // If a custom calculator was provided, use it
