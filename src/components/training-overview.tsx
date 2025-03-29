@@ -1,6 +1,9 @@
 import React from 'react';
 
+import { HeartRateZonesChart } from '@/components/heart-rate-zones-chart';
 import { StatsCard } from '@/components/stats-card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
 import trainings from '@/data/trainings.json';
 import {
     MetricType,
@@ -11,11 +14,45 @@ import {
 } from '@/features/training/trend-utils';
 import date from '@/lib/date';
 
+// Helper function to convert time string (hh:mm:ss) to minutes
+function timeToMinutes(time: string): number {
+    const [hours, minutes] = time.split(':').map(Number);
+
+    return hours * 60 + minutes;
+}
+
+// Helper function to format minutes back to time string
+function formatMinutes(minutes: number): string {
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+
+    return hours > 0 ? `${hours}h ${remainingMinutes}m` : `${remainingMinutes}m`;
+}
+
 type Training = (typeof trainings)[0];
 
 type TrainingOverviewProps = {
     training: Training;
     compareTo: 'all' | 'earlier' | 'other';
+};
+
+type HeartRateZoneData = {
+    name: string;
+    value: number;
+    payload: {
+        fill: string;
+    };
+};
+
+type TooltipProps = {
+    active?: boolean;
+    payload?: Array<{
+        name?: string;
+        value?: number;
+        payload?: {
+            fill?: string;
+        };
+    }>;
 };
 
 export function TrainingOverview({ training, compareTo }: TrainingOverviewProps) {
@@ -206,7 +243,14 @@ export function TrainingOverview({ training, compareTo }: TrainingOverviewProps)
                         infoText='Niższy czas na kilometr oznacza większą efektywność'
                         formatValue={(val) => val.toFixed(1)}
                     />
+
+                    {training.heart_rate_zones && <HeartRateZonesChart heartRateZones={training.heart_rate_zones} />}
                 </div>
+            </div>
+
+            <div className='space-y-4'>
+                <h2 className='text-xl font-semibold'>Podsumowanie</h2>
+                <p className='text-muted-foreground whitespace-pre-wrap'>{training.summary}</p>
             </div>
         </div>
     );
