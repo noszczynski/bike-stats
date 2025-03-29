@@ -5,9 +5,7 @@ import localFont from 'next/font/local';
 
 import { ThemeProvider } from 'next-themes';
 
-import NavigationBar from '@/app/(delete-this-and-modify-page.tsx)/NavigationBar';
 import '@/app/globals.css';
-import { Toaster } from '@/registry/new-york-v4/ui/sonner';
 
 const geistSans = localFont({
     src: './fonts/GeistVF.woff',
@@ -32,10 +30,8 @@ const Layout = ({ children }: Readonly<{ children: ReactNode }>) => {
         <html suppressHydrationWarning lang='en'>
             <body
                 className={`${geistSans.variable} ${geistMono.variable} bg-background text-foreground overscroll-none antialiased`}>
-                <ThemeProvider attribute='class'>
-                    <NavigationBar />
+                <ThemeProvider attribute='class' defaultTheme='system' enableSystem disableTransitionOnChange>
                     {children}
-                    <Toaster />
                 </ThemeProvider>
             </body>
         </html>
