@@ -24,7 +24,7 @@ function timeToMinutes(time: string): number {
 // Helper function to format minutes back to time string
 function formatMinutes(minutes: number): string {
     const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
+    const remainingMinutes = (minutes % 60).toFixed(0);
 
     return hours > 0 ? `${hours}h ${remainingMinutes}m` : `${remainingMinutes}m`;
 }
@@ -167,7 +167,7 @@ export function TrainingOverview({ training, compareTo }: TrainingOverviewProps)
                         trendIcon={getTrendIcon(distanceDiff, 'distance')}
                         trendMessage={getTrendMessage(distanceDiff, 'distance')}
                         trendProgress={getTrendProgress(distanceDiff, 'distance')}
-                        infoText='Więcej = lepiej. Większy dystans zwykle oznacza lepszą kondycję i wytrzymałość'
+                        infoText={`Więcej = lepiej. Większy dystans zwykle oznacza lepszą kondycję i wytrzymałość. Twój średni dystans wynosi: ${avgDistancePast.toFixed(1)} km`}
                         formatValue={(val) => val.toFixed(1)}
                     />
 
@@ -179,7 +179,7 @@ export function TrainingOverview({ training, compareTo }: TrainingOverviewProps)
                         trendIcon={getTrendIcon(elevationDiff, 'elevation')}
                         trendMessage={getTrendMessage(elevationDiff, 'elevation')}
                         trendProgress={getTrendProgress(elevationDiff, 'elevation')}
-                        infoText='Większe przewyższenie to wyższy poziom trudności'
+                        infoText={`Większe przewyższenie to wyższy poziom trudności. Twoje średnie przewyższenie wynosi: ${avgElevationPast.toFixed(0)} m`}
                         formatValue={(val) => val.toFixed(0)}
                     />
 
@@ -191,7 +191,7 @@ export function TrainingOverview({ training, compareTo }: TrainingOverviewProps)
                         trendIcon={getTrendIcon(speedDiff, 'speed')}
                         trendMessage={getTrendMessage(speedDiff, 'speed')}
                         trendProgress={getTrendProgress(speedDiff, 'speed')}
-                        infoText='Wyższa średnia prędkość wskazuje na poprawę wydolności'
+                        infoText={`Wyższa średnia prędkość wskazuje na poprawę wydolności. Twoja średnia prędkość wynosi: ${avgSpeedPast.toFixed(1)} km/h`}
                         formatValue={(val) => val.toFixed(1)}
                     />
 
@@ -203,7 +203,7 @@ export function TrainingOverview({ training, compareTo }: TrainingOverviewProps)
                         trendIcon={getTrendIcon(maxSpeedDiff, 'maxSpeed')}
                         trendMessage={getTrendMessage(maxSpeedDiff, 'maxSpeed')}
                         trendProgress={getTrendProgress(maxSpeedDiff, 'maxSpeed')}
-                        infoText='Wzrost maksymalnej prędkości może świadczyć o lepszej mocy'
+                        infoText={`Wzrost maksymalnej prędkości może świadczyć o lepszej mocy. Twoja średnia maksymalna prędkość wynosi: ${avgMaxSpeedPast.toFixed(1)} km/h`}
                         formatValue={(val) => val.toFixed(1)}
                     />
 
@@ -216,7 +216,7 @@ export function TrainingOverview({ training, compareTo }: TrainingOverviewProps)
                             trendIcon={getTrendIcon(heartRateDiff, 'heartRate')}
                             trendMessage={getTrendMessage(heartRateDiff, 'heartRate')}
                             trendProgress={getTrendProgress(heartRateDiff, 'heartRate')}
-                            infoText='Niższe tętno przy podobnym wysiłku oznacza lepszą wydolność sercowo-naczyniową'
+                            infoText={`Niższe tętno przy podobnym wysiłku oznacza lepszą wydolność sercowo-naczyniową. Twoje średnie tętno wynosi: ${avgHeartRatePast.toFixed(0)} bpm`}
                             formatValue={(val) => val.toFixed(0)}
                         />
                     )}
@@ -229,7 +229,7 @@ export function TrainingOverview({ training, compareTo }: TrainingOverviewProps)
                         trendIcon={getTrendIcon(timeDiff, 'time')}
                         trendMessage={getTrendMessage(timeDiff, 'time')}
                         trendProgress={getTrendProgress(timeDiff, 'time')}
-                        infoText='Dłuższy czas jazdy buduje podstawową wytrzymałość'
+                        infoText={`Dłuższy czas jazdy buduje podstawową wytrzymałość. Twój średni czas jazdy wynosi: ${formatMinutes(avgTimePast * 60)}`}
                     />
 
                     <StatsCard
@@ -240,7 +240,7 @@ export function TrainingOverview({ training, compareTo }: TrainingOverviewProps)
                         trendIcon={getTrendIcon(timePerKmDiff, 'timePerKm')}
                         trendMessage={getTrendMessage(timePerKmDiff, 'timePerKm')}
                         trendProgress={getTrendProgress(timePerKmDiff, 'timePerKm')}
-                        infoText='Niższy czas na kilometr oznacza większą efektywność'
+                        infoText={`Niższy czas na kilometr oznacza większą efektywność. Twój średni czas na kilometr wynosi: ${(avgTimePerKmPast * 60).toFixed(1)} min/km`}
                         formatValue={(val) => val.toFixed(1)}
                     />
 

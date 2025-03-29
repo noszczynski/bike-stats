@@ -41,7 +41,7 @@ export function StatsCard({
             case 'regress':
                 return 'text-red-700';
             default:
-                return 'text-black';
+                return 'text-black dark:text-white';
         }
     };
 
