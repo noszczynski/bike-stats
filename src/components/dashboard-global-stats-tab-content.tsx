@@ -122,6 +122,18 @@ export function DashboardGlobalStatsTabContent() {
                         infoText='Najdłuższy pojedynczy trening'
                         formatValue={(val) => val.toFixed(1)}
                     />
+
+                    <StatsCard
+                        title='Średni dystans treningu'
+                        value={
+                            trainings.length > 0
+                                ? trainings.reduce((acc, training) => acc + training.distance_km, 0) / trainings.length
+                                : 0
+                        }
+                        unit='km'
+                        infoText='Przeciętny dystans na trening'
+                        formatValue={(val) => val.toFixed(1)}
+                    />
                 </div>
             </section>
 

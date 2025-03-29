@@ -49,7 +49,7 @@ const Page = () => {
                 </div>
                 <Tabs defaultValue='overview' className='space-y-4'>
                     <TabsList>
-                        <TabsTrigger value='overview'>Overview</TabsTrigger>
+                        <TabsTrigger value='overview'>Przegląd</TabsTrigger>
                         <TabsTrigger value='metrics'>Metryki</TabsTrigger>
                         <TabsTrigger value='last-training'>Ostatni trening</TabsTrigger>
                         <TabsTrigger value='global-stats'>Statystyki globalne</TabsTrigger>

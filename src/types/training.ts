@@ -7,7 +7,7 @@ export const TrainingSchema = z.object({
     moving_time: z.string(),
     avg_speed_kmh: z.number(),
     max_speed_kmh: z.number(),
-    avg_heart_rate_bpm: z.number()
+    avg_heart_rate_bpm: z.number().nullable()
 });
 
 export type Training = z.infer<typeof TrainingSchema>;
