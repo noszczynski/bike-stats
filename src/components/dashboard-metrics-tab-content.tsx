@@ -11,11 +11,11 @@ import { SpeedChart } from '@/components/charts/speed-chart';
 export function DashboardMetricsTabContent() {
     return (
         <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-2'>
+            <HeartRateChart />
             <SpeedChart />
             <DistanceChart />
             <ElevationChart />
             <IntensityChart />
-            <HeartRateChart />
         </div>
     );
 }

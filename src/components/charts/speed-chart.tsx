@@ -30,7 +30,7 @@ export function SpeedChart() {
     const data = getSpeedMetricsOverTime(trainings as Training[]);
     const formattedData = data.map((item) => ({
         ...item,
-        formattedDate: date(item.date).format('MMM YYYY')
+        formattedDate: date(item.date).format('LL')
     }));
 
     return (
@@ -43,7 +43,7 @@ export function SpeedChart() {
                 <ChartContainer config={chartConfig} className='aspect-auto h-80'>
                     <LineChart data={formattedData}>
                         <CartesianGrid strokeDasharray='3 3' />
-                        <XAxis dataKey='formattedDate' tickLine={false} axisLine={false} />
+                        <XAxis dataKey='formattedDate' tickLine={true} axisLine={false} />
                         <YAxis
                             label={{ value: 'km/h', angle: -90, position: 'insideLeft' }}
                             tickLine={false}

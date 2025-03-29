@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -8,8 +8,10 @@ import {
     ChartTooltip,
     ChartTooltipContent
 } from '@/components/ui/chart';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { trainings } from '@/data/trainings';
 import { getElevationMetricsOverTime } from '@/features/training/get-elevation-metrics-over-time';
+import { getElevationPerKmMetricsOverTime } from '@/features/training/get-elevation-per-km-metrics-over-time';
 import date from '@/lib/date';
 import { Training } from '@/types/training';
 
@@ -26,17 +28,45 @@ const chartConfig = {
     }
 };
 
+type ChartVariant = 'elevation' | 'elevationPerKm';
+
+interface ChartPayload {
+    name: string;
+    value: number;
+    color: string;
+}
+
 export function ElevationChart() {
-    const data = getElevationMetricsOverTime(trainings as Training[]);
+    const [variant, setVariant] = useState<ChartVariant>('elevation');
+
+    const data = useMemo(() => {
+        if (variant === 'elevationPerKm') {
+            return getElevationPerKmMetricsOverTime(trainings as Training[]);
+        } else {
+            return getElevationMetricsOverTime(trainings as Training[]);
+        }
+    }, [variant]);
+
     const formattedData = data.map((item) => ({
         ...item,
-        formattedDate: date(item.date).format('MMM YYYY')
+        formattedDate: date(item.date).format('LL')
     }));
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Przewyższenie w czasie</CardTitle>
+                <div className='flex items-center justify-between'>
+                    <CardTitle>Przewyższenie w czasie</CardTitle>
+                    <Select value={variant} onValueChange={(value) => setVariant(value as ChartVariant)}>
+                        <SelectTrigger>
+                            <SelectValue placeholder='Wybierz wariant' />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value='elevation'>Przewyższenie</SelectItem>
+                            <SelectItem value='elevationPerKm'>Przewyższenie na km</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
                 <CardDescription>Całkowite przewyższenie i przewyższenie na kilometr</CardDescription>
             </CardHeader>
             <CardContent>
@@ -51,20 +81,13 @@ export function ElevationChart() {
                             tickLine={false}
                             axisLine={false}
                         />
-                        <YAxis
-                            yAxisId='right'
-                            orientation='right'
-                            label={{ value: 'm/km', angle: 90, position: 'insideRight' }}
-                            tickLine={false}
-                            axisLine={false}
-                        />
                         <ChartTooltip
                             content={({ active, payload, label }) => {
                                 if (active && payload && payload.length) {
                                     return (
                                         <ChartTooltipContent
                                             className='w-[250px]'
-                                            payload={payload}
+                                            payload={payload as ChartPayload[]}
                                             active={active}
                                             label={label}
                                         />
@@ -77,25 +100,16 @@ export function ElevationChart() {
                         <Area
                             name='elevation'
                             type='monotone'
-                            dataKey='elevationGain'
+                            dataKey='elevation'
                             yAxisId='left'
                             fill={chartConfig.elevation.color}
                             stroke={chartConfig.elevation.color}
                             fillOpacity={0.3}
                         />
-                        <Line
-                            name='elevationPerKm'
-                            type='monotone'
-                            dataKey='elevationPerKm'
-                            yAxisId='right'
-                            stroke={chartConfig.elevationPerKm.color}
-                            strokeWidth={2}
-                            dot={false}
-                        />
                         <ChartLegend
                             content={({ payload }) => {
                                 if (payload && payload.length) {
-                                    return <ChartLegendContent payload={payload} />;
+                                    return <ChartLegendContent payload={payload as ChartPayload[]} />;
                                 }
 
                                 return null;

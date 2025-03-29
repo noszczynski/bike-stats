@@ -75,7 +75,7 @@ export function HeartRateChart() {
                         margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                         stackOffset='expand'>
                         <CartesianGrid strokeDasharray='3 3' vertical={false} />
-                        <XAxis dataKey='formattedDate' tickLine={false} axisLine={false} />
+                        <XAxis dataKey='formattedDate' tickLine={true} axisLine={false} />
                         <YAxis
                             tickLine={false}
                             axisLine={false}
