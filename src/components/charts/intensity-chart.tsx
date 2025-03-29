@@ -9,6 +9,10 @@ import {
     ChartTooltipContent
 } from '@/components/ui/chart';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import trainings from '@/data/trainings.json';
+import { getIntensityMetricsOverTime } from '@/features/training/get-intensity-metrics-over-time';
+import date from '@/lib/date';
+import { Training } from '@/types/training';
 
 import { InfoIcon } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
@@ -20,11 +24,13 @@ const chartConfig = {
     }
 };
 
-interface IntensityChartProps {
-    data: any[];
-}
+export function IntensityChart() {
+    const data = getIntensityMetricsOverTime(trainings as Training[]);
+    const formattedData = data.map((item) => ({
+        ...item,
+        formattedDate: date(item.date).format('MMM YYYY')
+    }));
 
-export function IntensityChart({ data }: IntensityChartProps) {
     return (
         <Card>
             <CardHeader>
@@ -55,7 +61,7 @@ export function IntensityChart({ data }: IntensityChartProps) {
             </CardHeader>
             <CardContent>
                 <ChartContainer config={chartConfig} className='aspect-auto h-80'>
-                    <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <BarChart data={formattedData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                         <CartesianGrid strokeDasharray='3 3' />
                         <XAxis dataKey='formattedDate' tickLine={false} axisLine={false} />
                         <YAxis tickLine={false} axisLine={false} domain={[0, 100]} />

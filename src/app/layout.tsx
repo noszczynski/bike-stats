@@ -33,7 +33,7 @@ const Layout = ({ children }: Readonly<{ children: ReactNode }>) => {
                 className={`${geistSans.variable} ${geistMono.variable} bg-background text-foreground overscroll-none antialiased`}>
                 <ThemeProvider attribute='class' defaultTheme='system' enableSystem disableTransitionOnChange>
                     <div className='flex flex-col'>
-                        <div className='flex items-center justify-between gap-8 border-b px-8'>
+                        <div className='flex items-center justify-start gap-8 border-b px-8'>
                             <div className='flex h-16 items-center'>
                                 <ThemeSwitch />
                             </div>

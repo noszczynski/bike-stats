@@ -8,6 +8,10 @@ import {
     ChartTooltip,
     ChartTooltipContent
 } from '@/components/ui/chart';
+import trainings from '@/data/trainings.json';
+import { getDistanceMetricsOverTime } from '@/features/training/get-distance-metrics-over-time';
+import date from '@/lib/date';
+import { Training } from '@/types/training';
 
 import { Bar, BarChart, CartesianGrid, Line, XAxis, YAxis } from 'recharts';
 
@@ -22,11 +26,13 @@ const chartConfig = {
     }
 };
 
-interface DistanceChartProps {
-    data: any[];
-}
+export function DistanceChart() {
+    const data = getDistanceMetricsOverTime(trainings as Training[]);
+    const formattedData = data.map((item) => ({
+        ...item,
+        formattedDate: date(item.date).format('MMM YYYY')
+    }));
 
-export function DistanceChart({ data }: DistanceChartProps) {
     return (
         <Card>
             <CardHeader>
@@ -35,7 +41,7 @@ export function DistanceChart({ data }: DistanceChartProps) {
             </CardHeader>
             <CardContent>
                 <ChartContainer config={chartConfig} className='aspect-auto h-80'>
-                    <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <BarChart data={formattedData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                         <CartesianGrid strokeDasharray='3 3' />
                         <XAxis dataKey='formattedDate' tickLine={false} axisLine={false} />
                         <YAxis
@@ -48,6 +54,7 @@ export function DistanceChart({ data }: DistanceChartProps) {
                         <YAxis
                             yAxisId='right'
                             orientation='right'
+                            name='cumulative'
                             label={{ value: 'km (łącznie)', angle: 90, position: 'insideRight' }}
                             tickLine={false}
                             axisLine={false}

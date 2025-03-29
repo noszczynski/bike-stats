@@ -53,7 +53,7 @@ export function StatsCard({
                 <CardDescription>{title}</CardDescription>
                 <CardTitle
                     className={cn('text-2xl font-semibold tabular-nums @[250px]/card:text-3xl', trendColorClass)}>
-                    {formattedValue} {unit}
+                    {formattedValue} <span className='text-sm text-gray-500 dark:text-gray-600'>{unit}</span>
                 </CardTitle>
                 {trend && (
                     <div className='absolute top-4 right-4'>

@@ -8,6 +8,10 @@ import {
     ChartTooltip,
     ChartTooltipContent
 } from '@/components/ui/chart';
+import trainings from '@/data/trainings.json';
+import { getElevationMetricsOverTime } from '@/features/training/get-elevation-metrics-over-time';
+import date from '@/lib/date';
+import { Training } from '@/types/training';
 
 import { Area, AreaChart, CartesianGrid, Line, XAxis, YAxis } from 'recharts';
 
@@ -22,11 +26,13 @@ const chartConfig = {
     }
 };
 
-interface ElevationChartProps {
-    data: any[];
-}
+export function ElevationChart() {
+    const data = getElevationMetricsOverTime(trainings as Training[]);
+    const formattedData = data.map((item) => ({
+        ...item,
+        formattedDate: date(item.date).format('MMM YYYY')
+    }));
 
-export function ElevationChart({ data }: ElevationChartProps) {
     return (
         <Card>
             <CardHeader>
@@ -35,7 +41,7 @@ export function ElevationChart({ data }: ElevationChartProps) {
             </CardHeader>
             <CardContent>
                 <ChartContainer config={chartConfig} className='aspect-auto h-80'>
-                    <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <AreaChart data={formattedData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                         <CartesianGrid strokeDasharray='3 3' />
                         <XAxis dataKey='formattedDate' tickLine={false} axisLine={false} />
                         <YAxis

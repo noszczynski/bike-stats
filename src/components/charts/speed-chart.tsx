@@ -8,6 +8,10 @@ import {
     ChartTooltip,
     ChartTooltipContent
 } from '@/components/ui/chart';
+import trainings from '@/data/trainings.json';
+import { getSpeedMetricsOverTime } from '@/features/training/get-speed-metrics-over-time';
+import date from '@/lib/date';
+import { Training } from '@/types/training';
 
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
 
@@ -22,11 +26,13 @@ const chartConfig = {
     }
 };
 
-interface SpeedChartProps {
-    data: any[];
-}
+export function SpeedChart() {
+    const data = getSpeedMetricsOverTime(trainings as Training[]);
+    const formattedData = data.map((item) => ({
+        ...item,
+        formattedDate: date(item.date).format('MMM YYYY')
+    }));
 
-export function SpeedChart({ data }: SpeedChartProps) {
     return (
         <Card>
             <CardHeader>
@@ -35,7 +41,7 @@ export function SpeedChart({ data }: SpeedChartProps) {
             </CardHeader>
             <CardContent>
                 <ChartContainer config={chartConfig} className='aspect-auto h-80'>
-                    <LineChart data={data}>
+                    <LineChart data={formattedData}>
                         <CartesianGrid strokeDasharray='3 3' />
                         <XAxis dataKey='formattedDate' tickLine={false} axisLine={false} />
                         <YAxis

@@ -5,6 +5,7 @@ import { StatsCard } from '@/components/stats-card';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
 import trainings from '@/data/trainings.json';
+import { calculateTrainingLoad } from '@/features/training/calculate-training-load';
 import {
     MetricType,
     formatTrend,
@@ -13,6 +14,7 @@ import {
     getTrendProgress
 } from '@/features/training/trend-utils';
 import date from '@/lib/date';
+import { Training } from '@/types/training';
 
 // Helper function to convert time string (hh:mm:ss) to minutes
 function timeToMinutes(time: string): number {
@@ -28,8 +30,6 @@ function formatMinutes(minutes: number): string {
 
     return hours > 0 ? `${hours}h ${remainingMinutes}m` : `${remainingMinutes}m`;
 }
-
-type Training = (typeof trainings)[0];
 
 type TrainingOverviewProps = {
     training: Training;
@@ -57,7 +57,9 @@ type TooltipProps = {
 
 export function TrainingOverview({ training, compareTo }: TrainingOverviewProps) {
     // Make sure trainings are sorted by date (newest first)
-    const sortedTrainings = [...trainings].sort((a, b) => date(b.date).valueOf() - date(a.date).valueOf());
+    const sortedTrainings = [...trainings].sort(
+        (a, b) => date(b.date).valueOf() - date(a.date).valueOf()
+    ) as Training[];
 
     // Get all trainings to compare against
     let compareTrainings: Training[] = [];
@@ -144,6 +146,28 @@ export function TrainingOverview({ training, compareTo }: TrainingOverviewProps)
     const lastTimePerKm = lastTotalHours / training.distance_km;
     const timePerKmDiff = calcPercentageDiff(lastTimePerKm, avgTimePerKmPast);
 
+    // Calculate max values for training load
+    const maxValues = {
+        maxDistance: Math.max(...compareTrainings.map((t) => t.distance_km)),
+        maxSpeed: Math.max(...compareTrainings.map((t) => t.avg_speed_kmh)),
+        maxHR: Math.max(...compareTrainings.map((t) => t.avg_heart_rate_bpm ?? 0)),
+        maxElevation: Math.max(...compareTrainings.map((t) => t.elevation_gain_m))
+    };
+
+    // Calculate current training load
+    const currentTrainingLoad = calculateTrainingLoad(training, maxValues);
+
+    // Calculate average training load for comparison
+    const avgTrainingLoad =
+        compareTrainings.reduce((acc, t) => {
+            const load = calculateTrainingLoad(t, maxValues);
+
+            return acc + load.intensity;
+        }, 0) / compareTrainings.length;
+
+    // Calculate percentage difference for training load
+    const trainingLoadDiff = calcPercentageDiff(currentTrainingLoad.intensity, avgTrainingLoad);
+
     const compareToLabel =
         compareTo === 'earlier'
             ? 'poprzednich treningów'
@@ -158,6 +182,18 @@ export function TrainingOverview({ training, compareTo }: TrainingOverviewProps)
                 <p className='text-muted-foreground mt-4'>W porównaniu do {compareToLabel}</p>
                 <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
                     <StatsCard title='Data' value={date(training.date).format('LL')} infoText='Data treningu' />
+
+                    <StatsCard
+                        title='Obciążenie treningowe'
+                        value={currentTrainingLoad.intensity}
+                        unit=''
+                        trend={formatTrend(trainingLoadDiff)}
+                        trendIcon={getTrendIcon(trainingLoadDiff, 'intensity')}
+                        trendMessage={getTrendMessage(trainingLoadDiff, 'intensity')}
+                        trendProgress={getTrendProgress(trainingLoadDiff, 'intensity')}
+                        infoText={`Wskaźnik obciążenia treningowego (0-100) uwzględnia dystans, prędkość, tętno i przewyższenie. Twoje średnie obciążenie wynosi: ${avgTrainingLoad.toFixed(0)}`}
+                        formatValue={(val) => val.toFixed(0)}
+                    />
 
                     <StatsCard
                         title='Dystans'

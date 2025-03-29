@@ -3,7 +3,15 @@ import { TrendingDownIcon, TrendingUpIcon } from 'lucide-react';
 /**
  * The different types of metrics that can be tracked
  */
-export type MetricType = 'distance' | 'elevation' | 'speed' | 'maxSpeed' | 'heartRate' | 'time' | 'timePerKm';
+export type MetricType =
+    | 'distance'
+    | 'elevation'
+    | 'speed'
+    | 'maxSpeed'
+    | 'heartRate'
+    | 'time'
+    | 'timePerKm'
+    | 'intensity';
 
 /**
  * Format a trend percentage with a sign
@@ -21,6 +29,7 @@ export const isPositiveImprovement = (metricType: MetricType): boolean => {
         case 'timePerKm':
             // For these metrics, lower is better
             return false;
+        case 'intensity':
         default:
             // For all other metrics, higher is better
             return true;
