@@ -17,25 +17,27 @@ export const TrainingHistoryTable = () => {
                         <TableRow>
                             <TableHead>Data</TableHead>
                             <TableHead>Dystans (km)</TableHead>
-                            <TableHead>Wysokość (m)</TableHead>
-                            <TableHead>Czas podróży (h)</TableHead>
+                            <TableHead>Przyrost wysokości (m)</TableHead>
+                            <TableHead>Czas ruchu (h)</TableHead>
                             <TableHead>Średnia prędkość (km/h)</TableHead>
                             <TableHead>Maksymalna prędkość (km/h)</TableHead>
                             <TableHead>Średnie tętno (bpm)</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {trainings.map((training, index) => (
-                            <TableRow key={index}>
-                                <TableCell>{dayjs(training.date).format('LL')}</TableCell>
-                                <TableCell>{training.distance_km.toFixed(2)}</TableCell>
-                                <TableCell>{training.elevation_gain_m}</TableCell>
-                                <TableCell>{training.moving_time}</TableCell>
-                                <TableCell>{training.avg_speed_kmh.toFixed(1)}</TableCell>
-                                <TableCell>{training.max_speed_kmh.toFixed(1)}</TableCell>
-                                <TableCell>{training.avg_heart_rate_bpm || '-'}</TableCell>
-                            </TableRow>
-                        ))}
+                        {[...trainings]
+                            .sort((a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf())
+                            .map((training, index) => (
+                                <TableRow key={index}>
+                                    <TableCell>{dayjs(training.date).format('LL')}</TableCell>
+                                    <TableCell>{training.distance_km.toFixed(2)}</TableCell>
+                                    <TableCell>{training.elevation_gain_m}</TableCell>
+                                    <TableCell>{training.moving_time}</TableCell>
+                                    <TableCell>{training.avg_speed_kmh.toFixed(1)}</TableCell>
+                                    <TableCell>{training.max_speed_kmh.toFixed(1)}</TableCell>
+                                    <TableCell>{training.avg_heart_rate_bpm || '-'}</TableCell>
+                                </TableRow>
+                            ))}
                     </TableBody>
                 </Table>
             </CardContent>

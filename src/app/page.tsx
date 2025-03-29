@@ -1,18 +1,10 @@
-import Image from 'next/image';
-
+import { DashboardGlobalStatsTabContent } from '@/components/dashboard-global-stats-tab-content';
+import { DashboardLastTrainingTabContent } from '@/components/dashboard-last-training-tab-content';
+import { DashboardMetricsTabContent } from '@/components/dashboard-metrics-tab-content';
 import { DashboardOverviewTabContent } from '@/components/dashboard-overview-tab-content';
-import { StatsCard } from '@/components/stats-card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ThemeSwitch } from '@/components/ui/theme-switch';
-import trainings from '@/data/trainings.json';
-import { calculateAverageHeartRate } from '@/features/training/calculate-average-heart-rate';
-import { calculateAverageSpeed } from '@/features/training/calculate-average-speed';
-import { calculateHighestAverageSpeed } from '@/features/training/calculate-highest-average-speed';
-import { calculateMaxSpeed } from '@/features/training/calculate-max-speed';
 
 import dayjs from 'dayjs';
 import pl from 'dayjs/locale/pl';
@@ -20,7 +12,6 @@ import localizedFormat from 'dayjs/plugin/localizedFormat';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-import { TrendingUpIcon } from 'lucide-react';
 
 declare module 'dayjs' {
     interface Dayjs {
@@ -59,18 +50,21 @@ const Page = () => {
                 <Tabs defaultValue='overview' className='space-y-4'>
                     <TabsList>
                         <TabsTrigger value='overview'>Overview</TabsTrigger>
-                        <TabsTrigger value='analytics' disabled>
-                            Analytics
-                        </TabsTrigger>
-                        <TabsTrigger value='reports' disabled>
-                            Reports
-                        </TabsTrigger>
-                        <TabsTrigger value='notifications' disabled>
-                            Notifications
-                        </TabsTrigger>
+                        <TabsTrigger value='metrics'>Metryki</TabsTrigger>
+                        <TabsTrigger value='last-training'>Ostatni trening</TabsTrigger>
+                        <TabsTrigger value='global-stats'>Statystyki globalne</TabsTrigger>
                     </TabsList>
                     <TabsContent value='overview'>
                         <DashboardOverviewTabContent />
+                    </TabsContent>
+                    <TabsContent value='metrics'>
+                        <DashboardMetricsTabContent />
+                    </TabsContent>
+                    <TabsContent value='last-training'>
+                        <DashboardLastTrainingTabContent />
+                    </TabsContent>
+                    <TabsContent value='global-stats'>
+                        <DashboardGlobalStatsTabContent />
                     </TabsContent>
                 </Tabs>
             </div>
