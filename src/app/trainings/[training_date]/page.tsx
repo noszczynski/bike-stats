@@ -1,8 +1,7 @@
 import { notFound } from 'next/navigation';
 
-import { CompareToSelect } from '@/components/compare-to-select';
 import { TrainingOverview } from '@/components/training-overview';
-import trainings from '@/data/trainings.json';
+import { trainings } from '@/data/trainings';
 
 type CompareToType = 'all' | 'earlier' | 'other';
 

@@ -1,71 +1,12 @@
 import { StatsCard } from '@/components/stats-card';
-import trainings from '@/data/trainings.json';
-import { calculateAverageHeartRate } from '@/features/training/calculate-average-heart-rate';
-import { calculateAverageSpeed } from '@/features/training/calculate-average-speed';
+import { trainings } from '@/data/trainings';
 import { calculateHighestAverageSpeed } from '@/features/training/calculate-highest-average-speed';
-import { calculateTrend, getTrendMessage } from '@/features/training/calculate-trend';
 import date from '@/lib/date';
-import { Training } from '@/types/training';
 
 import { TrendingDownIcon, TrendingUpIcon } from 'lucide-react';
 
 export function DashboardGlobalStatsTabContent() {
     const highestAvgSpeed = calculateHighestAverageSpeed(trainings);
-
-    const totalDistanceTrend = calculateTrend(trainings, (t: Training) => t.distance_km);
-    const totalElevationTrend = calculateTrend(trainings, (t: Training) => t.elevation_gain_m);
-    const highestAvgSpeedTrend = calculateTrend(trainings, (t: Training) => t.avg_speed_kmh, 3, 3);
-
-    const maxDistanceTrend = calculateTrend(
-        trainings,
-        (t: Training) => t.distance_km,
-        3,
-        3,
-        (recentTrainings: Training[], olderTrainings: Training[]) => {
-            if (recentTrainings.length === 0 || olderTrainings.length === 0) return 0;
-
-            const recentMax = Math.max(...recentTrainings.map((t) => t.distance_km));
-            const olderMax = Math.max(...olderTrainings.map((t) => t.distance_km));
-
-            if (olderMax === 0) return recentMax > 0 ? 100 : 0;
-
-            return ((recentMax - olderMax) / olderMax) * 100;
-        }
-    );
-
-    const maxHeartRateTrend = calculateTrend(
-        trainings,
-        (t: Training) => t.avg_heart_rate_bpm,
-        3,
-        3,
-        (recentTrainings: Training[], olderTrainings: Training[]) => {
-            if (recentTrainings.length === 0 || olderTrainings.length === 0) return 0;
-
-            const validRecentHR = recentTrainings.filter((t) => t.avg_heart_rate_bpm > 0);
-            const validOlderHR = olderTrainings.filter((t) => t.avg_heart_rate_bpm > 0);
-
-            if (validRecentHR.length === 0 || validOlderHR.length === 0) return 0;
-
-            const recentMax = Math.max(...validRecentHR.map((t) => t.avg_heart_rate_bpm));
-            const olderMax = Math.max(...validOlderHR.map((t) => t.avg_heart_rate_bpm));
-
-            if (olderMax === 0) return recentMax > 0 ? 100 : 0;
-
-            return ((recentMax - olderMax) / olderMax) * 100;
-        }
-    );
-
-    const timePerKmTrend = calculateTrend(
-        trainings,
-        (t: Training) => {
-            const [hours, minutes] = t.moving_time.split(':').map(Number);
-            const totalHours = hours + minutes / 60;
-
-            return totalHours / t.distance_km;
-        },
-        3,
-        3
-    );
 
     // Helper function to get the appropriate icon based on trend
     const getTrendIcon = (trend: number, positiveIsBetter = true) => {
@@ -182,7 +123,7 @@ export function DashboardGlobalStatsTabContent() {
                 <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
                     <StatsCard
                         title='Najwyższy średni HR'
-                        value={Math.max(...trainings.map((training) => training.avg_heart_rate_bpm))}
+                        value={Math.max(...trainings.map((training) => training.avg_heart_rate_bpm).filter(Boolean))}
                         unit='bpm'
                         infoText='Najwyższe średnie tętno na treningu'
                         formatValue={(val) => val.toFixed(0)}

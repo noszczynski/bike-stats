@@ -8,7 +8,7 @@ import {
     ChartTooltip,
     ChartTooltipContent
 } from '@/components/ui/chart';
-import trainings from '@/data/trainings.json';
+import { trainings } from '@/data/trainings';
 import { getDistanceMetricsOverTime } from '@/features/training/get-distance-metrics-over-time';
 import date from '@/lib/date';
 import { Training } from '@/types/training';

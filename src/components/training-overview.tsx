@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 import { HeartRateZonesChart } from '@/components/heart-rate-zones-chart';
 import { StatsCard } from '@/components/stats-card';
-import trainings from '@/data/trainings.json';
+import { trainings } from '@/data/trainings';
 import { calculateTrainingLoad } from '@/features/training/calculate-training-load';
 import {
     MetricType,

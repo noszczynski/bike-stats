@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { TrainingOverview } from '@/components/training-overview';
-import trainings from '@/data/trainings.json';
+import { trainings } from '@/data/trainings';
 import date from '@/lib/date';
 
 export function DashboardLastTrainingTabContent() {

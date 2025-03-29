@@ -9,7 +9,7 @@ import {
     ChartTooltipContent
 } from '@/components/ui/chart';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import trainings from '@/data/trainings.json';
+import { trainings } from '@/data/trainings';
 import { getIntensityMetricsOverTime } from '@/features/training/get-intensity-metrics-over-time';
 import date from '@/lib/date';
 import { Training } from '@/types/training';

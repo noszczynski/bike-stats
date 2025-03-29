@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import trainings from '@/data/trainings.json';
+import { trainings } from '@/data/trainings';
 import date from '@/lib/date';
 
 export const TrainingHistoryTable = () => {

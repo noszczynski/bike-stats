@@ -1,6 +1,6 @@
 import { StatsCard } from '@/components/stats-card';
 import { TrainingHistoryTable } from '@/components/training-history-table';
-import trainings from '@/data/trainings.json';
+import { trainings } from '@/data/trainings';
 import { calculateAverageHeartRate } from '@/features/training/calculate-average-heart-rate';
 import { calculateAverageSpeed } from '@/features/training/calculate-average-speed';
 import { calculateHighestAverageSpeed } from '@/features/training/calculate-highest-average-speed';
