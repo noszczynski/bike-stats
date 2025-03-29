@@ -24,11 +24,10 @@ export function StatsCard({
     title,
     value,
     unit = '',
-    trend = '+0.0%',
+    trend,
     trendIcon: TrendIcon = TrendingUpIcon,
-    trendMessage = 'Stabilny przyrost',
+    trendMessage,
     trendProgress = 'neutral',
-    description,
     infoText,
     formatValue = (val: number) => val.toFixed(1),
     className = ''
@@ -49,7 +48,7 @@ export function StatsCard({
     const trendColorClass = getTrendColorClass();
 
     return (
-        <Card className={`@container/card ${className}`}>
+        <Card className={cn(trend ? 'gap-6' : 'gap-2')}>
             <CardHeader className='relative'>
                 <CardDescription>{title}</CardDescription>
                 <CardTitle

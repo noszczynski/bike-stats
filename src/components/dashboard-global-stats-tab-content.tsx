@@ -91,122 +91,92 @@ export function DashboardGlobalStatsTabContent() {
     };
 
     return (
-        <div className='space-y-4'>
-            <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5'>
-                <StatsCard
-                    title='Łączny dystans'
-                    value={trainings.reduce((acc, training) => acc + training.distance_km, 0)}
-                    unit='km'
-                    trend={formatTrend(totalDistanceTrend)}
-                    trendIcon={getTrendIcon(totalDistanceTrend)}
-                    trendMessage={getTrendMessage(totalDistanceTrend)}
-                    trendProgress={getTrendProgress(totalDistanceTrend)}
-                    infoText={`Na podstawie ${trainings.length} treningów`}
-                    formatValue={(val) => val.toFixed(0)}
-                />
+        <div className='space-y-8'>
+            <section>
+                <h2 className='mb-4 text-xl font-semibold'>Odległość</h2>
+                <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
+                    <StatsCard
+                        title='Łączny dystans'
+                        value={trainings.reduce((acc, training) => acc + training.distance_km, 0)}
+                        unit='km'
+                        infoText={`Na podstawie ${trainings.length} treningów`}
+                        formatValue={(val) => val.toFixed(0)}
+                    />
 
-                <StatsCard
-                    title='Łączny dystans w 2025 roku'
-                    value={trainings.reduce((acc, training) => {
-                        const trainingDate = dayjs(training.date);
+                    <StatsCard
+                        title='Łączny dystans w 2025 roku'
+                        value={trainings.reduce((acc, training) => {
+                            const trainingDate = dayjs(training.date);
 
-                        return trainingDate.isAfter(dayjs('2025-01-01')) ? acc + training.distance_km : acc;
-                    }, 0)}
-                    unit='km'
-                    trend={formatTrend(
-                        calculateTrend(
-                            trainings.filter((t) => dayjs(t.date).isAfter(dayjs('2025-01-01'))),
-                            (t: Training) => t.distance_km
-                        )
-                    )}
-                    trendIcon={getTrendIcon(
-                        calculateTrend(
-                            trainings.filter((t) => dayjs(t.date).isAfter(dayjs('2025-01-01'))),
-                            (t: Training) => t.distance_km
-                        )
-                    )}
-                    trendMessage={getTrendMessage(
-                        calculateTrend(
-                            trainings.filter((t) => dayjs(t.date).isAfter(dayjs('2025-01-01'))),
-                            (t: Training) => t.distance_km
-                        )
-                    )}
-                    trendProgress={getTrendProgress(
-                        calculateTrend(
-                            trainings.filter((t) => dayjs(t.date).isAfter(dayjs('2025-01-01'))),
-                            (t: Training) => t.distance_km
-                        )
-                    )}
-                    infoText={`Na podstawie ${trainings.filter((t) => dayjs(t.date).isAfter(dayjs('2025-01-01'))).length} treningów`}
-                    formatValue={(val) => val.toFixed(0)}
-                />
+                            return trainingDate.isAfter(dayjs('2025-01-01')) ? acc + training.distance_km : acc;
+                        }, 0)}
+                        unit='km'
+                        infoText={`Na podstawie ${trainings.length} treningów`}
+                        formatValue={(val) => val.toFixed(0)}
+                    />
 
-                <StatsCard
-                    title='Łączne przewyższenie'
-                    value={trainings.reduce((acc, training) => acc + training.elevation_gain_m, 0)}
-                    unit='m'
-                    trend={formatTrend(totalElevationTrend)}
-                    trendIcon={getTrendIcon(totalElevationTrend)}
-                    trendMessage={getTrendMessage(totalElevationTrend)}
-                    trendProgress={getTrendProgress(totalElevationTrend)}
-                    infoText={`Na podstawie ${trainings.length} treningów`}
-                    formatValue={(val) => val.toFixed(0)}
-                />
+                    <StatsCard
+                        title='Najwyższy dystans'
+                        value={Math.max(...trainings.map((training) => training.distance_km))}
+                        unit='km'
+                        infoText='Najdłuższy pojedynczy trening'
+                        formatValue={(val) => val.toFixed(1)}
+                    />
+                </div>
+            </section>
 
-                <StatsCard
-                    title='Najwyższa średnia prędkość'
-                    value={highestAvgSpeed}
-                    unit='km/h'
-                    trend={formatTrend(highestAvgSpeedTrend)}
-                    trendIcon={getTrendIcon(highestAvgSpeedTrend)}
-                    trendMessage={getTrendMessage(highestAvgSpeedTrend)}
-                    trendProgress={getTrendProgress(highestAvgSpeedTrend)}
-                    infoText={`Na podstawie ${trainings.length} treningów`}
-                />
+            <section>
+                <h2 className='mb-4 text-xl font-semibold'>Wysokość</h2>
+                <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
+                    <StatsCard
+                        title='Łączne przewyższenie'
+                        value={trainings.reduce((acc, training) => acc + training.elevation_gain_m, 0)}
+                        unit='m'
+                        infoText={`Na podstawie ${trainings.length} treningów`}
+                        formatValue={(val) => val.toFixed(0)}
+                    />
+                </div>
+            </section>
 
-                <StatsCard
-                    title='Najwyższy dystans'
-                    value={Math.max(...trainings.map((training) => training.distance_km))}
-                    unit='km'
-                    trend={formatTrend(maxDistanceTrend)}
-                    trendIcon={getTrendIcon(maxDistanceTrend)}
-                    trendMessage={getTrendMessage(maxDistanceTrend)}
-                    trendProgress={getTrendProgress(maxDistanceTrend)}
-                    infoText='Najdłuższy pojedynczy trening'
-                    formatValue={(val) => val.toFixed(1)}
-                />
+            <section>
+                <h2 className='mb-4 text-xl font-semibold'>Prędkość</h2>
+                <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
+                    <StatsCard
+                        title='Najwyższa średnia prędkość'
+                        value={highestAvgSpeed}
+                        unit='km/h'
+                        infoText={`Na podstawie ${trainings.length} treningów`}
+                    />
 
-                <StatsCard
-                    title='Najwyższy średni HR'
-                    value={Math.max(...trainings.map((training) => training.avg_heart_rate_bpm))}
-                    unit='bpm'
-                    trend={formatTrend(maxHeartRateTrend)}
-                    trendIcon={getTrendIcon(maxHeartRateTrend)}
-                    trendMessage={getTrendMessage(maxHeartRateTrend)}
-                    trendProgress={getTrendProgress(maxHeartRateTrend)}
-                    infoText='Najwyższe średnie tętno na treningu'
-                    formatValue={(val) => val.toFixed(0)}
-                />
+                    <StatsCard
+                        title='Najszybszy kilometr'
+                        value={Math.min(
+                            ...trainings.map((training) => {
+                                const [hours, minutes] = training.moving_time.split(':').map(Number);
+                                const totalHours = hours + minutes / 60;
 
-                <StatsCard
-                    title='Najszybszy kilometr'
-                    value={Math.min(
-                        ...trainings.map((training) => {
-                            const [hours, minutes] = training.moving_time.split(':').map(Number);
-                            const totalHours = hours + minutes / 60;
+                                return totalHours / training.distance_km;
+                            })
+                        )}
+                        unit='min/km'
+                        infoText='Najszybszy średni czas na kilometr'
+                        formatValue={(val) => (val * 60).toFixed(1)}
+                    />
+                </div>
+            </section>
 
-                            return totalHours / training.distance_km;
-                        })
-                    )}
-                    unit='min/km'
-                    trend={formatTrend(timePerKmTrend * -1)} // Negate because lower times are better
-                    trendIcon={getTrendIcon(timePerKmTrend * -1, false)} // Lower is better for time
-                    trendMessage={getTrendMessage(timePerKmTrend * -1, false)} // Lower is better for time
-                    trendProgress={getTrendProgress(timePerKmTrend * -1, false)} // Lower is better for time
-                    infoText='Najszybszy średni czas na kilometr'
-                    formatValue={(val) => (val * 60).toFixed(1)}
-                />
-            </div>
+            <section>
+                <h2 className='mb-4 text-xl font-semibold'>Tętno</h2>
+                <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
+                    <StatsCard
+                        title='Najwyższy średni HR'
+                        value={Math.max(...trainings.map((training) => training.avg_heart_rate_bpm))}
+                        unit='bpm'
+                        infoText='Najwyższe średnie tętno na treningu'
+                        formatValue={(val) => val.toFixed(0)}
+                    />
+                </div>
+            </section>
         </div>
     );
 }
