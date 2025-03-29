@@ -4,9 +4,15 @@ import { StatsCard } from '@/components/stats-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import trainings from '@/data/trainings.json';
+import {
+    MetricType,
+    formatTrend,
+    getTrendIcon,
+    getTrendMessage,
+    getTrendProgress
+} from '@/features/training/trend-utils';
 
 import dayjs from 'dayjs';
-import { TrendingDownIcon, TrendingUpIcon } from 'lucide-react';
 
 export function DashboardLastTrainingTabContent() {
     // Make sure trainings are sorted by date (newest first)
@@ -88,156 +94,6 @@ export function DashboardLastTrainingTabContent() {
     // Calculate time per km difference (lower is better, so we negate the difference)
     const lastTimePerKm = lastTotalHours / lastTraining.distance_km;
     const timePerKmDiff = calcPercentageDiff(lastTimePerKm, avgTimePerKmPast);
-
-    // Helper functions
-    const formatTrend = (trend: number) => {
-        return `${trend >= 0 ? '+' : ''}${trend.toFixed(1)}%`;
-    };
-
-    type MetricType = 'distance' | 'elevation' | 'speed' | 'maxSpeed' | 'heartRate' | 'time' | 'timePerKm';
-
-    const getTrendProgress = (
-        trend: number,
-        metricType: MetricType | boolean = true
-    ): 'progress' | 'regress' | 'neutral' => {
-        if (trend === 0) return 'neutral';
-
-        // If a boolean was passed (for backward compatibility), treat it as positiveIsBetter
-        if (typeof metricType === 'boolean') {
-            const positiveIsBetter = metricType;
-            const isPositive = trend > 0;
-            const isImprovement = (positiveIsBetter && isPositive) || (!positiveIsBetter && !isPositive);
-
-            return isImprovement ? 'progress' : 'regress';
-        }
-
-        // Handle specific metrics
-        const isPositive = trend > 0;
-
-        switch (metricType) {
-            case 'distance':
-                // Higher distance is generally better
-                return isPositive ? 'progress' : 'regress';
-            case 'elevation':
-                // Higher elevation is generally better for training effect
-                return isPositive ? 'progress' : 'regress';
-            case 'speed':
-                // Higher average speed is better
-                return isPositive ? 'progress' : 'regress';
-            case 'maxSpeed':
-                // Higher max speed is better
-                return isPositive ? 'progress' : 'regress';
-            case 'heartRate':
-                // Lower heart rate for the same effort is better (indicates better fitness)
-                return isPositive ? 'regress' : 'progress';
-            case 'time':
-                // Longer training time is generally better for endurance
-                return isPositive ? 'progress' : 'regress';
-            case 'timePerKm':
-                // Lower time per km is better (faster pace)
-                return isPositive ? 'regress' : 'progress';
-            default:
-                // Fall back to positive is better
-                return isPositive ? 'progress' : 'regress';
-        }
-    };
-
-    const getTrendMessage = (trend: number, metricTypeOrPositiveIsBetter: MetricType | boolean = true): string => {
-        const absValue = Math.abs(trend);
-        if (absValue === 0) return 'Bez zmian';
-
-        // Determine if this trend is an improvement based on the metric type
-        let isImprovement: boolean;
-
-        if (typeof metricTypeOrPositiveIsBetter === 'boolean') {
-            // Backward compatibility with boolean parameter
-            const positiveIsBetter = metricTypeOrPositiveIsBetter;
-            const isPositive = trend > 0;
-            isImprovement = (positiveIsBetter && isPositive) || (!positiveIsBetter && !isPositive);
-        } else {
-            // Use the metric type to determine whether this is an improvement
-            const isPositive = trend > 0;
-            switch (metricTypeOrPositiveIsBetter) {
-                case 'heartRate':
-                case 'timePerKm':
-                    // For these metrics, lower is better
-                    isImprovement = !isPositive;
-                    break;
-                default:
-                    // For all other metrics, higher is better
-                    isImprovement = isPositive;
-                    break;
-            }
-        }
-
-        if (metricTypeOrPositiveIsBetter === 'heartRate') {
-            if (absValue <= 10) {
-                return isImprovement ? 'Niewielki spadek' : 'Niewielki wzrost';
-            } else if (absValue <= 25) {
-                return isImprovement ? 'Umiarkowany spadek' : 'Umiarkowany wzrost';
-            } else if (absValue <= 75) {
-                return isImprovement ? 'Znaczny spadek' : 'Znaczny wzrost';
-            } else {
-                return isImprovement ? 'Spektakularny spadek' : 'Nipokojący wzrost';
-            }
-        }
-
-        if (metricTypeOrPositiveIsBetter === 'timePerKm') {
-            if (absValue <= 10) {
-                return isImprovement ? 'Niewielki spadek' : 'Niewielki wzrost';
-            } else if (absValue <= 25) {
-                return isImprovement ? 'Umiarkowany spadek' : 'Umiarkowany wzrost';
-            } else if (absValue <= 75) {
-                return isImprovement ? 'Znaczny spadek' : 'Znaczny wzrost';
-            } else {
-                return isImprovement ? 'Spektakularny spadek' : 'Nipokojący wzrost';
-            }
-        }
-
-        // Generate message based on the magnitude and whether it's an improvement
-        if (absValue <= 10) {
-            return isImprovement ? 'Niewielka poprawa' : 'Niewielki spadek';
-        } else if (absValue <= 25) {
-            return isImprovement ? 'Umiarkowana poprawa' : 'Umiarkowany spadek';
-        } else if (absValue <= 75) {
-            return isImprovement ? 'Znaczna poprawa' : 'Znaczny spadek';
-        } else {
-            return isImprovement ? 'Spektakularna poprawa' : 'Spektakularny spadek';
-        }
-    };
-
-    const getTrendIcon = (trend: number, metricTypeOrPositiveIsBetter: MetricType | boolean = true) => {
-        if (trend === 0) return undefined;
-
-        // Determine if this trend is an improvement based on the metric type
-        let isImprovement: boolean;
-
-        if (typeof metricTypeOrPositiveIsBetter === 'boolean') {
-            // Backward compatibility with boolean parameter
-            const positiveIsBetter = metricTypeOrPositiveIsBetter;
-            const isPositive = trend > 0;
-            isImprovement = (positiveIsBetter && isPositive) || (!positiveIsBetter && !isPositive);
-        } else {
-            // Use the metric type to determine whether this is an improvement
-            const isPositive = trend > 0;
-            switch (metricTypeOrPositiveIsBetter) {
-                case 'timePerKm':
-                    // For these metrics, lower is better
-                    isImprovement = !isPositive;
-                    break;
-                default:
-                    // For all other metrics, higher is better
-                    isImprovement = isPositive;
-                    break;
-            }
-        }
-
-        if (metricTypeOrPositiveIsBetter === 'timePerKm') {
-            return isImprovement ? TrendingDownIcon : TrendingUpIcon;
-        }
-
-        return isImprovement ? TrendingUpIcon : TrendingDownIcon;
-    };
 
     return (
         <div className='space-y-6'>
