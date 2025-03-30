@@ -12,7 +12,18 @@ import {
     ChartTooltipContent
 } from '@/components/ui/chart';
 
-import { Bar, BarChart, CartesianGrid, LabelList, Pie, PieChart, Rectangle, XAxis } from 'recharts';
+import {
+    Bar,
+    BarChart,
+    CartesianGrid,
+    LabelList,
+    Pie,
+    PieChart,
+    Rectangle,
+    ResponsiveContainer,
+    XAxis,
+    YAxis
+} from 'recharts';
 
 type HeartRateZones = {
     zone_1: string;
@@ -48,18 +59,31 @@ type TooltipProps = {
         value?: number;
         payload?: {
             fill?: string;
+            percentage?: number;
+            displayTime?: string;
         };
     }>;
 };
 
 export function HeartRateZonesChart({ heartRateZones }: HeartRateZonesChartProps) {
-    const chartData = [
+    // Convert time strings to minutes
+    const minutesData = [
         { zone: 'zone_1', value: timeToMinutes(heartRateZones.zone_1), fill: '#4CAF50' },
         { zone: 'zone_2', value: timeToMinutes(heartRateZones.zone_2), fill: '#8BC34A' },
         { zone: 'zone_3', value: timeToMinutes(heartRateZones.zone_3), fill: '#FFC107' },
         { zone: 'zone_4', value: timeToMinutes(heartRateZones.zone_4), fill: '#FF9800' },
         { zone: 'zone_5', value: timeToMinutes(heartRateZones.zone_5), fill: '#F44336' }
     ];
+
+    // Calculate total time for percentage calculation
+    const totalMinutes = minutesData.reduce((sum, item) => sum + item.value, 0);
+
+    // Create chart data with percentages
+    const chartData = minutesData.map((item) => ({
+        ...item,
+        percentage: totalMinutes > 0 ? Math.round((item.value / totalMinutes) * 100) : 0,
+        displayTime: formatMinutes(item.value)
+    }));
 
     const chartConfig = {
         value: {
@@ -87,15 +111,32 @@ export function HeartRateZonesChart({ heartRateZones }: HeartRateZonesChartProps
         }
     } satisfies ChartConfig;
 
+    // Custom tooltip to show both percentage and time
+    const CustomTooltip = ({ active, payload }: TooltipProps) => {
+        if (active && payload && payload.length) {
+            const data = payload[0];
+            const zoneName = chartConfig[data.name as keyof typeof chartConfig]?.label || '';
+
+            return (
+                <ChartTooltipContent>
+                    <p className='font-medium'>{zoneName}</p>
+                    <p>{`${data.payload?.percentage}% (${data.payload?.displayTime})`}</p>
+                </ChartTooltipContent>
+            );
+        }
+
+        return null;
+    };
+
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Strefy tętna</CardTitle>
                 <CardDescription>Rozkład czasu w strefach tętna</CardDescription>
             </CardHeader>
-            <CardContent>
-                <ChartContainer config={chartConfig} className='max-h-[192px]'>
-                    <BarChart accessibilityLayer data={chartData}>
+            <CardContent className='px-0'>
+                <ChartContainer config={chartConfig}>
+                    <BarChart accessibilityLayer data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 10 }}>
                         <CartesianGrid vertical={false} />
                         <XAxis
                             dataKey='zone'
@@ -103,9 +144,13 @@ export function HeartRateZonesChart({ heartRateZones }: HeartRateZonesChartProps
                             tickMargin={10}
                             axisLine={false}
                             tickFormatter={(value) => chartConfig[value as keyof typeof chartConfig]?.label}
+                            label={{ value: 'Strefy tętna', position: 'insideBottom', offset: 0, dy: 10 }}
                         />
-                        <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                        <Bar dataKey='value' strokeWidth={2} radius={6} />
+                        <YAxis tickFormatter={(value) => `${value}%`} />
+                        <ChartTooltip cursor={false} content={<CustomTooltip />} />
+                        <Bar dataKey='percentage' strokeWidth={2} radius={6}>
+                            <LabelList dataKey='percentage' position='top' formatter={(value: number) => `${value}%`} />
+                        </Bar>
                     </BarChart>
                 </ChartContainer>
             </CardContent>

@@ -16,7 +16,9 @@ import {
 import date from '@/lib/date';
 import { Training } from '@/types/training';
 
+import { BatteryUsageChart } from './battery-usage-chart';
 import { CompareToSelect } from './compare-to-select';
+import { EffortLevelChart } from './effort-level-chart';
 import isNil from 'lodash/isNil';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -304,6 +306,10 @@ export function TrainingOverview({ training, compareTo }: TrainingOverviewProps)
                         infoText={`Niższy czas na kilometr oznacza większą efektywność. Twój średni czas na kilometr wynosi: ${(avgTimePerKmPast * 60).toFixed(1)} min/km`}
                         formatValue={(val) => val.toFixed(1)}
                     />
+
+                    <BatteryUsageChart batteryUsage={training.battery_percent_usage ?? null} />
+
+                    <EffortLevelChart effort={training.effort ?? 0} />
 
                     {training.heart_rate_zones && <HeartRateZonesChart heartRateZones={training.heart_rate_zones} />}
                 </div>
