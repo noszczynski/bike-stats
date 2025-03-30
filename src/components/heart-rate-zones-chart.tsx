@@ -146,7 +146,11 @@ export function HeartRateZonesChart({ heartRateZones }: HeartRateZonesChartProps
                             tickFormatter={(value) => chartConfig[value as keyof typeof chartConfig]?.label}
                             label={{ value: 'Strefy tętna', position: 'insideBottom', offset: 0, dy: 10 }}
                         />
-                        <YAxis tickFormatter={(value) => `${value}%`} />
+                        <YAxis
+                            tickFormatter={(value) => `${value}%`}
+                            domain={[0, 100]}
+                            ticks={[0, 20, 40, 60, 80, 100]}
+                        />
                         <ChartTooltip cursor={false} content={<CustomTooltip />} />
                         <Bar dataKey='percentage' strokeWidth={2} radius={6}>
                             <LabelList dataKey='percentage' position='top' formatter={(value: number) => `${value}%`} />

@@ -10,10 +10,11 @@ import { Battery, InfoIcon } from 'lucide-react';
 import { Label, PolarGrid, PolarRadiusAxis, RadialBar, RadialBarChart } from 'recharts';
 
 type BatteryUsageChartProps = {
+    device: string | null;
     batteryUsage: number | null;
 };
 
-export function BatteryUsageChart({ batteryUsage }: BatteryUsageChartProps) {
+export function BatteryUsageChart({ device, batteryUsage }: BatteryUsageChartProps) {
     // Function to determine color based on battery usage
     const getBatteryColor = (usage: number | null): string => {
         if (usage === null) return '#e0e0e0'; // Gray - No data
@@ -53,7 +54,7 @@ export function BatteryUsageChart({ batteryUsage }: BatteryUsageChartProps) {
                                 <InfoIcon className='text-muted-foreground h-4 w-4' />
                             </TooltipTrigger>
                             <TooltipContent className='w-[300px]'>
-                                <p>Zużycie baterii podczas treningu zmierzone przez Apple Watch Ultra 1st gen.</p>
+                                <p>Zużycie baterii podczas treningu{device ? ` zmierzone przez ${device}.` : '.'}</p>
                             </TooltipContent>
                         </Tooltip>
                     </TooltipProvider>

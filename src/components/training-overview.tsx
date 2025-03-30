@@ -307,7 +307,10 @@ export function TrainingOverview({ training, compareTo }: TrainingOverviewProps)
                         formatValue={(val) => val.toFixed(1)}
                     />
 
-                    <BatteryUsageChart batteryUsage={training.battery_percent_usage ?? null} />
+                    <BatteryUsageChart
+                        device={training.device ?? null}
+                        batteryUsage={training.battery_percent_usage ?? null}
+                    />
 
                     <EffortLevelChart effort={training.effort ?? 0} />
 
