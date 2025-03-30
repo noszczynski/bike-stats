@@ -168,7 +168,7 @@ export function TrainingOverview({ training, compareTo }: TrainingOverviewProps)
               : 'innych treningów';
 
     return (
-        <div className='space-y-6'>
+        <div className='space-y-12'>
             <div>
                 <div className='flex items-center justify-between gap-2'>
                     <div className='flex items-center gap-2'>
@@ -207,114 +207,132 @@ export function TrainingOverview({ training, compareTo }: TrainingOverviewProps)
                     <h2 className='text-xl font-semibold'>Trening {date(training.date).format('LL')}</h2>
                 </div>
                 <p className='text-muted-foreground mt-4'>W porównaniu do {compareToLabel}</p>
-                <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
-                    <StatsCard title='Data' value={date(training.date).format('LL')} infoText='Data treningu' />
+                <div className='mt-4 space-y-24'>
+                    {/* Basic Training Info */}
+                    <div>
+                        <h3 className='mb-4 text-lg font-medium'>Podstawowe informacje</h3>
+                        <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
+                            <StatsCard title='Data' value={date(training.date).format('LL')} infoText='Data treningu' />
+                            <StatsCard
+                                title='Obciążenie treningowe'
+                                value={currentTrainingLoad.intensity}
+                                unit=''
+                                trend={formatTrend(trainingLoadDiff)}
+                                trendIcon={getTrendIcon(trainingLoadDiff, 'intensity')}
+                                trendMessage={getTrendMessage(trainingLoadDiff, 'intensity')}
+                                trendProgress={getTrendProgress(trainingLoadDiff, 'intensity')}
+                                infoText={`Wskaźnik obciążenia treningowego (0-100) uwzględnia dystans, prędkość, tętno i przewyższenie. Twoje średnie obciążenie wynosi: ${avgTrainingLoad.toFixed(0)}`}
+                                formatValue={(val) => val.toFixed(0)}
+                            />
+                            <StatsCard
+                                title='Dystans'
+                                value={training.distance_km}
+                                unit='km'
+                                trend={formatTrend(distanceDiff)}
+                                trendIcon={getTrendIcon(distanceDiff, 'distance')}
+                                trendMessage={getTrendMessage(distanceDiff, 'distance')}
+                                trendProgress={getTrendProgress(distanceDiff, 'distance')}
+                                infoText={`Więcej = lepiej. Większy dystans zwykle oznacza lepszą kondycję i wytrzymałość. Twój średni dystans wynosi: ${avgDistancePast.toFixed(1)} km`}
+                                formatValue={(val) => val.toFixed(1)}
+                            />
+                        </div>
+                    </div>
 
-                    <StatsCard
-                        title='Obciążenie treningowe'
-                        value={currentTrainingLoad.intensity}
-                        unit=''
-                        trend={formatTrend(trainingLoadDiff)}
-                        trendIcon={getTrendIcon(trainingLoadDiff, 'intensity')}
-                        trendMessage={getTrendMessage(trainingLoadDiff, 'intensity')}
-                        trendProgress={getTrendProgress(trainingLoadDiff, 'intensity')}
-                        infoText={`Wskaźnik obciążenia treningowego (0-100) uwzględnia dystans, prędkość, tętno i przewyższenie. Twoje średnie obciążenie wynosi: ${avgTrainingLoad.toFixed(0)}`}
-                        formatValue={(val) => val.toFixed(0)}
-                    />
+                    {/* Performance Metrics */}
+                    <div>
+                        <h3 className='mb-4 text-lg font-medium'>Wydajność</h3>
+                        <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
+                            <StatsCard
+                                title='Średnia prędkość'
+                                value={training.avg_speed_kmh}
+                                unit='km/h'
+                                trend={formatTrend(speedDiff)}
+                                trendIcon={getTrendIcon(speedDiff, 'speed')}
+                                trendMessage={getTrendMessage(speedDiff, 'speed')}
+                                trendProgress={getTrendProgress(speedDiff, 'speed')}
+                                infoText={`Wyższa średnia prędkość wskazuje na poprawę wydolności. Twoja średnia prędkość wynosi: ${avgSpeedPast.toFixed(1)} km/h`}
+                                formatValue={(val) => val.toFixed(1)}
+                            />
+                            <StatsCard
+                                title='Maksymalna prędkość'
+                                value={training.max_speed_kmh}
+                                unit='km/h'
+                                trend={formatTrend(maxSpeedDiff)}
+                                trendIcon={getTrendIcon(maxSpeedDiff, 'maxSpeed')}
+                                trendMessage={getTrendMessage(maxSpeedDiff, 'maxSpeed')}
+                                trendProgress={getTrendProgress(maxSpeedDiff, 'maxSpeed')}
+                                infoText={`Wzrost maksymalnej prędkości może świadczyć o lepszej mocy. Twoja średnia maksymalna prędkość wynosi: ${avgMaxSpeedPast.toFixed(1)} km/h`}
+                                formatValue={(val) => val.toFixed(1)}
+                            />
+                            <StatsCard
+                                title='Czas jazdy'
+                                value={`${lastHours > 0 ? `${lastHours} h ` : ''}${lastHours > 0 ? lastMinutes.toString().padStart(2, '0') : lastMinutes.toString()} min`}
+                                unit=''
+                                trend={formatTrend(timeDiff)}
+                                trendIcon={getTrendIcon(timeDiff, 'time')}
+                                trendMessage={getTrendMessage(timeDiff, 'time')}
+                                trendProgress={getTrendProgress(timeDiff, 'time')}
+                                infoText={`Dłuższy czas jazdy buduje podstawową wytrzymałość. Twój średni czas jazdy wynosi: ${formatMinutes(avgTimePast * 60)}`}
+                            />
+                            <StatsCard
+                                title='Czas na kilometr'
+                                value={lastTimePerKm * 60} // Convert to minutes
+                                unit='min/km'
+                                trend={formatTrend(timePerKmDiff)}
+                                trendIcon={getTrendIcon(timePerKmDiff, 'timePerKm')}
+                                trendMessage={getTrendMessage(timePerKmDiff, 'timePerKm')}
+                                trendProgress={getTrendProgress(timePerKmDiff, 'timePerKm')}
+                                infoText={`Niższy czas na kilometr oznacza większą efektywność. Twój średni czas na kilometr wynosi: ${(avgTimePerKmPast * 60).toFixed(1)} min/km`}
+                                formatValue={(val) => val.toFixed(1)}
+                            />
+                        </div>
+                    </div>
 
-                    <StatsCard
-                        title='Dystans'
-                        value={training.distance_km}
-                        unit='km'
-                        trend={formatTrend(distanceDiff)}
-                        trendIcon={getTrendIcon(distanceDiff, 'distance')}
-                        trendMessage={getTrendMessage(distanceDiff, 'distance')}
-                        trendProgress={getTrendProgress(distanceDiff, 'distance')}
-                        infoText={`Więcej = lepiej. Większy dystans zwykle oznacza lepszą kondycję i wytrzymałość. Twój średni dystans wynosi: ${avgDistancePast.toFixed(1)} km`}
-                        formatValue={(val) => val.toFixed(1)}
-                    />
+                    {/* Physical Metrics */}
+                    <div>
+                        <h3 className='mb-4 text-lg font-medium'>Parametry fizyczne</h3>
+                        <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
+                            {!isNil(training.avg_heart_rate_bpm) && training.avg_heart_rate_bpm > 0 && (
+                                <StatsCard
+                                    title='Średnie tętno'
+                                    value={training.avg_heart_rate_bpm}
+                                    unit='bpm'
+                                    trend={formatTrend(heartRateDiff)}
+                                    trendIcon={getTrendIcon(heartRateDiff, 'heartRate')}
+                                    trendMessage={getTrendMessage(heartRateDiff, 'heartRate')}
+                                    trendProgress={getTrendProgress(heartRateDiff, 'heartRate')}
+                                    infoText={`Niższe tętno przy podobnym wysiłku oznacza lepszą wydolność sercowo-naczyniową. Twoje średnie tętno wynosi: ${avgHeartRatePast.toFixed(0)} bpm`}
+                                    formatValue={(val) => val.toFixed(0)}
+                                />
+                            )}
+                            <StatsCard
+                                title='Przewyższenie'
+                                value={training.elevation_gain_m}
+                                unit='m'
+                                trend={formatTrend(elevationDiff)}
+                                trendIcon={getTrendIcon(elevationDiff, 'elevation')}
+                                trendMessage={getTrendMessage(elevationDiff, 'elevation')}
+                                trendProgress={getTrendProgress(elevationDiff, 'elevation')}
+                                infoText={`Większe przewyższenie to wyższy poziom trudności. Twoje średnie przewyższenie wynosi: ${avgElevationPast.toFixed(0)} m`}
+                                formatValue={(val) => val.toFixed(0)}
+                            />
+                            {training.heart_rate_zones && (
+                                <HeartRateZonesChart heartRateZones={training.heart_rate_zones} />
+                            )}
+                        </div>
+                    </div>
 
-                    <StatsCard
-                        title='Przewyższenie'
-                        value={training.elevation_gain_m}
-                        unit='m'
-                        trend={formatTrend(elevationDiff)}
-                        trendIcon={getTrendIcon(elevationDiff, 'elevation')}
-                        trendMessage={getTrendMessage(elevationDiff, 'elevation')}
-                        trendProgress={getTrendProgress(elevationDiff, 'elevation')}
-                        infoText={`Większe przewyższenie to wyższy poziom trudności. Twoje średnie przewyższenie wynosi: ${avgElevationPast.toFixed(0)} m`}
-                        formatValue={(val) => val.toFixed(0)}
-                    />
-
-                    <StatsCard
-                        title='Średnia prędkość'
-                        value={training.avg_speed_kmh}
-                        unit='km/h'
-                        trend={formatTrend(speedDiff)}
-                        trendIcon={getTrendIcon(speedDiff, 'speed')}
-                        trendMessage={getTrendMessage(speedDiff, 'speed')}
-                        trendProgress={getTrendProgress(speedDiff, 'speed')}
-                        infoText={`Wyższa średnia prędkość wskazuje na poprawę wydolności. Twoja średnia prędkość wynosi: ${avgSpeedPast.toFixed(1)} km/h`}
-                        formatValue={(val) => val.toFixed(1)}
-                    />
-
-                    <StatsCard
-                        title='Maksymalna prędkość'
-                        value={training.max_speed_kmh}
-                        unit='km/h'
-                        trend={formatTrend(maxSpeedDiff)}
-                        trendIcon={getTrendIcon(maxSpeedDiff, 'maxSpeed')}
-                        trendMessage={getTrendMessage(maxSpeedDiff, 'maxSpeed')}
-                        trendProgress={getTrendProgress(maxSpeedDiff, 'maxSpeed')}
-                        infoText={`Wzrost maksymalnej prędkości może świadczyć o lepszej mocy. Twoja średnia maksymalna prędkość wynosi: ${avgMaxSpeedPast.toFixed(1)} km/h`}
-                        formatValue={(val) => val.toFixed(1)}
-                    />
-
-                    {!isNil(training.avg_heart_rate_bpm) && training.avg_heart_rate_bpm > 0 && (
-                        <StatsCard
-                            title='Średnie tętno'
-                            value={training.avg_heart_rate_bpm}
-                            unit='bpm'
-                            trend={formatTrend(heartRateDiff)}
-                            trendIcon={getTrendIcon(heartRateDiff, 'heartRate')}
-                            trendMessage={getTrendMessage(heartRateDiff, 'heartRate')}
-                            trendProgress={getTrendProgress(heartRateDiff, 'heartRate')}
-                            infoText={`Niższe tętno przy podobnym wysiłku oznacza lepszą wydolność sercowo-naczyniową. Twoje średnie tętno wynosi: ${avgHeartRatePast.toFixed(0)} bpm`}
-                            formatValue={(val) => val.toFixed(0)}
-                        />
-                    )}
-
-                    <StatsCard
-                        title='Czas jazdy'
-                        value={`${lastHours > 0 ? `${lastHours} h ` : ''}${lastHours > 0 ? lastMinutes.toString().padStart(2, '0') : lastMinutes.toString()} min`}
-                        unit=''
-                        trend={formatTrend(timeDiff)}
-                        trendIcon={getTrendIcon(timeDiff, 'time')}
-                        trendMessage={getTrendMessage(timeDiff, 'time')}
-                        trendProgress={getTrendProgress(timeDiff, 'time')}
-                        infoText={`Dłuższy czas jazdy buduje podstawową wytrzymałość. Twój średni czas jazdy wynosi: ${formatMinutes(avgTimePast * 60)}`}
-                    />
-
-                    <StatsCard
-                        title='Czas na kilometr'
-                        value={lastTimePerKm * 60} // Convert to minutes
-                        unit='min/km'
-                        trend={formatTrend(timePerKmDiff)}
-                        trendIcon={getTrendIcon(timePerKmDiff, 'timePerKm')}
-                        trendMessage={getTrendMessage(timePerKmDiff, 'timePerKm')}
-                        trendProgress={getTrendProgress(timePerKmDiff, 'timePerKm')}
-                        infoText={`Niższy czas na kilometr oznacza większą efektywność. Twój średni czas na kilometr wynosi: ${(avgTimePerKmPast * 60).toFixed(1)} min/km`}
-                        formatValue={(val) => val.toFixed(1)}
-                    />
-
-                    <BatteryUsageChart
-                        device={training.device ?? null}
-                        batteryUsage={training.battery_percent_usage ?? null}
-                    />
-
-                    <EffortLevelChart effort={training.effort ?? 0} />
-
-                    {training.heart_rate_zones && <HeartRateZonesChart heartRateZones={training.heart_rate_zones} />}
+                    {/* Technical Data */}
+                    <div>
+                        <h3 className='mb-4 text-lg font-medium'>Dane techniczne</h3>
+                        <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
+                            <BatteryUsageChart
+                                device={training.device ?? null}
+                                batteryUsage={training.battery_percent_usage ?? null}
+                            />
+                            <EffortLevelChart effort={training.effort ?? 0} />
+                        </div>
+                    </div>
                 </div>
             </div>
 
