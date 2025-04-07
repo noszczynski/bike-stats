@@ -120,6 +120,15 @@ export function HeartRateChart() {
     const heartRateTrend = firstHeartRate > 0 ? ((lastHeartRate - firstHeartRate) / firstHeartRate) * 100 : 0;
     const TrendIcon = heartRateTrend > 0 ? TrendingUpIcon : TrendingDownIcon;
 
+    const formatToPercentage = (value: any) => {
+        if (value === undefined || value === null) return '0%';
+        if (Array.isArray(value)) {
+            value = value[0];
+        }
+
+        return `${(Number(value) * 100).toFixed(1)}%`;
+    };
+
     return (
         <Card>
             <CardHeader>
@@ -137,9 +146,12 @@ export function HeartRateChart() {
                             tickFormatter={(value) => `${(value * 100).toFixed(0)}%`}
                             domain={[0, 1]}
                         />
-                        <ChartTooltip cursor={false} content={<ChartTooltipContent indicator='line' />} />
+                        <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent indicator='line' formatter={formatToPercentage} />}
+                        />
                         <Area
-                            name='zone_1'
+                            name={chartConfig.zone_1.label}
                             type='monotone'
                             dataKey='zone_1'
                             stackId='zones'
@@ -148,7 +160,7 @@ export function HeartRateChart() {
                             fillOpacity={0.3}
                         />
                         <Area
-                            name='zone_2'
+                            name={chartConfig.zone_2.label}
                             type='monotone'
                             dataKey='zone_2'
                             stackId='zones'
@@ -157,7 +169,7 @@ export function HeartRateChart() {
                             fillOpacity={0.3}
                         />
                         <Area
-                            name='zone_3'
+                            name={chartConfig.zone_3.label}
                             type='monotone'
                             dataKey='zone_3'
                             stackId='zones'
@@ -166,7 +178,7 @@ export function HeartRateChart() {
                             fillOpacity={0.3}
                         />
                         <Area
-                            name='zone_4'
+                            name={chartConfig.zone_4.label}
                             type='monotone'
                             dataKey='zone_4'
                             stackId='zones'
@@ -175,7 +187,7 @@ export function HeartRateChart() {
                             fillOpacity={0.3}
                         />
                         <Area
-                            name='zone_5'
+                            name={chartConfig.zone_5.label}
                             type='monotone'
                             dataKey='zone_5'
                             stackId='zones'
@@ -188,6 +200,7 @@ export function HeartRateChart() {
                                 if (payload && payload.length) {
                                     const legendPayload = payload.map((entry) => ({
                                         ...entry,
+                                        value: formatToPercentage(entry.value),
                                         name: chartConfig[entry.dataKey as keyof typeof chartConfig].label,
                                         color: chartConfig[entry.dataKey as keyof typeof chartConfig].color
                                     }));
