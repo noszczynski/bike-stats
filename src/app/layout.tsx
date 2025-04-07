@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { ThemeProvider } from 'next-themes';
 
 import '@/app/globals.css';
+import { StravaLoginButton } from '@/components/StravaLoginButton';
 import { Button } from '@/components/ui/button';
 import { ThemeSwitch } from '@/components/ui/theme-switch';
 
@@ -36,6 +37,7 @@ const Layout = ({ children }: Readonly<{ children: ReactNode }>) => {
                         <div className='flex items-center justify-start gap-8 border-b px-8'>
                             <div className='flex h-16 items-center'>
                                 <ThemeSwitch />
+                                <StravaLoginButton />
                             </div>
                             <nav className='flex items-center gap-4'>
                                 <Link href='/'>Panel</Link>
