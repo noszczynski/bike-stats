@@ -7,15 +7,12 @@ import date from '@/lib/date';
 import { Training } from '@/types/training';
 
 import { TrendingDownIcon, TrendingUpIcon } from 'lucide-react';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
 const chartConfig = {
     speed: {
         label: 'Średnia prędkość',
-        theme: {
-            light: '#F44336',
-            dark: '#F44336'
-        }
+        color: '#F44336'
     }
 };
 
@@ -53,11 +50,18 @@ export function AverageSpeedPerKilometrChart() {
             </CardHeader>
             <CardContent>
                 <ChartContainer config={chartConfig} className='aspect-auto h-80'>
-                    <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                         <CartesianGrid strokeDasharray='3 3' vertical={false} />
                         <XAxis dataKey='formattedDate' tickLine={true} axisLine={false} />
                         <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => `${value} km/h`} />
-                        <Bar dataKey='speed' fill='#F44336' radius={[4, 4, 0, 0]} className='fill-[#F44336]' />
+                        <Area
+                            name='speed'
+                            type='monotone'
+                            dataKey='speed'
+                            fill={chartConfig.speed.color}
+                            stroke={chartConfig.speed.color}
+                            fillOpacity={0.3}
+                        />
                         <ChartTooltip
                             content={({ active, payload }) => {
                                 if (!active || !payload?.length) return null;
@@ -75,7 +79,7 @@ export function AverageSpeedPerKilometrChart() {
                                 );
                             }}
                         />
-                    </BarChart>
+                    </AreaChart>
                 </ChartContainer>
             </CardContent>
             <CardFooter className='flex-col items-start gap-2 text-sm'>

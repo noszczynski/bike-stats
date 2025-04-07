@@ -16,7 +16,7 @@ import date from '@/lib/date';
 import { Training } from '@/types/training';
 
 import { InfoIcon } from 'lucide-react';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
 const chartConfig = {
     intensity: {
@@ -95,7 +95,7 @@ export function IntensityChart() {
             </CardHeader>
             <CardContent>
                 <ChartContainer config={chartConfig} className='aspect-auto h-80'>
-                    <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                         <CartesianGrid strokeDasharray='3 3' />
                         <XAxis dataKey='formattedDate' tickLine={false} axisLine={false} />
                         <YAxis tickLine={false} axisLine={false} domain={[0, 100]} />
@@ -116,11 +116,13 @@ export function IntensityChart() {
                                 );
                             }}
                         />
-                        <Bar
+                        <Area
                             name='intensity'
+                            type='monotone'
                             dataKey='intensity'
                             fill={chartConfig.intensity.color}
-                            radius={[4, 4, 0, 0]}
+                            stroke={chartConfig.intensity.color}
+                            fillOpacity={0.3}
                         />
                         <ChartLegend
                             content={({ payload }) => {
@@ -131,7 +133,7 @@ export function IntensityChart() {
                                 return null;
                             }}
                         />
-                    </BarChart>
+                    </AreaChart>
                 </ChartContainer>
             </CardContent>
         </Card>

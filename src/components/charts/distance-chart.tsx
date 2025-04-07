@@ -14,14 +14,14 @@ import { trainings } from '@/data/trainings';
 import date from '@/lib/date';
 import { Training } from '@/types/training';
 
-import { Bar, BarChart, CartesianGrid, Line, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
 const chartConfig = {
     distance: {
         label: 'Średni dystans (km)',
         color: '#4f46e5'
     },
-    cumulative: {
+    cumulativeDistance: {
         label: 'Łączny dystans (km)',
         color: '#ef4444'
     }
@@ -63,7 +63,7 @@ export function DistanceChart() {
             </CardHeader>
             <CardContent>
                 <ChartContainer config={chartConfig} className='aspect-auto h-80'>
-                    <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                         <CartesianGrid strokeDasharray='3 3' />
                         <XAxis dataKey='formattedDate' tickLine={false} axisLine={false} />
                         <YAxis
@@ -87,31 +87,37 @@ export function DistanceChart() {
                                 return (
                                     <ChartTooltipContent
                                         className='w-[250px]'
-                                        payload={payload.map((p) => ({
-                                            ...p,
-                                            value: `${p.value} km`,
-                                            name: chartConfig[p.dataKey as keyof typeof chartConfig].label
-                                        }))}
+                                        payload={payload.map((p) => {
+                                            const key = p.name === 'distance' ? 'distance' : 'cumulativeDistance';
+
+                                            return {
+                                                ...p,
+                                                value: `${p.value} km`,
+                                                name: chartConfig[key].label
+                                            };
+                                        })}
                                         active={active}
                                     />
                                 );
                             }}
                         />
-                        <Bar
+                        <Area
                             name='distance'
+                            type='monotone'
                             dataKey='distance'
                             yAxisId='left'
                             fill={chartConfig.distance.color}
-                            radius={[4, 4, 0, 0]}
+                            stroke={chartConfig.distance.color}
+                            fillOpacity={0.3}
                         />
-                        <Line
-                            name='cumulative'
+                        <Area
+                            name='cumulativeDistance'
                             type='monotone'
                             dataKey='cumulativeDistance'
                             yAxisId='right'
-                            stroke={chartConfig.cumulative.color}
-                            strokeWidth={2}
-                            dot={false}
+                            fill={chartConfig.cumulativeDistance.color}
+                            stroke={chartConfig.cumulativeDistance.color}
+                            fillOpacity={0.3}
                         />
                         <ChartLegend
                             content={({ payload }) => {
@@ -122,7 +128,7 @@ export function DistanceChart() {
                                 return null;
                             }}
                         />
-                    </BarChart>
+                    </AreaChart>
                 </ChartContainer>
             </CardContent>
         </Card>
