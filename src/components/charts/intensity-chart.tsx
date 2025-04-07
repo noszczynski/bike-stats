@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +12,6 @@ import {
 } from '@/components/ui/chart';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { trainings } from '@/data/trainings';
-import { getIntensityMetricsOverTime } from '@/features/training/get-intensity-metrics-over-time';
 import date from '@/lib/date';
 import { Training } from '@/types/training';
 
@@ -19,17 +20,50 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
 const chartConfig = {
     intensity: {
-        label: 'Intensywność',
+        label: 'Średnia intensywność',
         color: '#4f46e5'
     }
 };
 
 export function IntensityChart() {
-    const data = getIntensityMetricsOverTime(trainings as Training[]);
-    const formattedData = data.map((item) => ({
-        ...item,
-        formattedDate: date(item.date).format('MMM YYYY')
-    }));
+    // Sort trainings by date
+    const sortedTrainings = [...trainings].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // Calculate moving average intensity
+    const data = sortedTrainings.map((training, index) => {
+        // Get all trainings up to current index (inclusive)
+        const trainingsToAverage = sortedTrainings.slice(0, index + 1);
+
+        // Find max values for normalization
+        const maxDistance = Math.max(...trainingsToAverage.map((t) => t.distance_km));
+        const maxSpeed = Math.max(...trainingsToAverage.map((t) => t.avg_speed_kmh));
+        const maxHeartRate = Math.max(...trainingsToAverage.map((t) => t.avg_heart_rate_bpm || 0));
+        const maxElevation = Math.max(...trainingsToAverage.map((t) => t.elevation_gain_m));
+
+        // Calculate normalized components for each training
+        const intensities = trainingsToAverage.map((t) => {
+            const distanceScore = (t.distance_km / maxDistance) * 30;
+            const speedScore = (t.avg_speed_kmh / maxSpeed) * 30;
+            const heartRateScore = t.avg_heart_rate_bpm ? (t.avg_heart_rate_bpm / maxHeartRate) * 20 : 0;
+            const elevationScore = (t.elevation_gain_m / maxElevation) * 20;
+
+            return distanceScore + speedScore + heartRateScore + elevationScore;
+        });
+
+        // Calculate average intensity
+        const avgIntensity = intensities.reduce((sum, score) => sum + score, 0) / intensities.length;
+
+        return {
+            date: training.date,
+            formattedDate: date(training.date).format('MMM YYYY'),
+            intensity: Number(avgIntensity.toFixed(1))
+        };
+    });
+
+    // Calculate progress
+    const firstIntensity = data[0]?.intensity || 0;
+    const lastIntensity = data[data.length - 1]?.intensity || 0;
+    const intensityProgress = ((lastIntensity - firstIntensity) / firstIntensity) * 100;
 
     return (
         <Card>
@@ -57,32 +91,29 @@ export function IntensityChart() {
                         </Tooltip>
                     </TooltipProvider>
                 </div>
-                <CardDescription>Wskaźnik intensywności treningów (0-100)</CardDescription>
+                <CardDescription>Średni wskaźnik intensywności treningów (0-100)</CardDescription>
             </CardHeader>
             <CardContent>
                 <ChartContainer config={chartConfig} className='aspect-auto h-80'>
-                    <BarChart data={formattedData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                         <CartesianGrid strokeDasharray='3 3' />
                         <XAxis dataKey='formattedDate' tickLine={false} axisLine={false} />
                         <YAxis tickLine={false} axisLine={false} domain={[0, 100]} />
                         <ChartTooltip
-                            content={({ active, payload, label }) => {
-                                if (active && payload && payload.length) {
-                                    return (
-                                        <ChartTooltipContent
-                                            className='w-[250px]'
-                                            payload={payload.map((p) => ({
-                                                ...p,
-                                                value: p.value,
-                                                name: chartConfig.intensity.label
-                                            }))}
-                                            active={active}
-                                            label={label}
-                                        />
-                                    );
-                                }
+                            content={({ active, payload }) => {
+                                if (!active || !payload?.length) return null;
 
-                                return null;
+                                return (
+                                    <ChartTooltipContent
+                                        className='w-[250px]'
+                                        payload={payload.map((p) => ({
+                                            ...p,
+                                            value: Number(p.value).toFixed(1),
+                                            name: chartConfig.intensity.label
+                                        }))}
+                                        active={active}
+                                    />
+                                );
                             }}
                         />
                         <Bar

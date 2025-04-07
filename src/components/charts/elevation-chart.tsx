@@ -1,4 +1,6 @@
-import React, { useMemo, useState } from 'react';
+'use client';
+
+import React, { useState } from 'react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -10,20 +12,18 @@ import {
 } from '@/components/ui/chart';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { trainings } from '@/data/trainings';
-import { getElevationMetricsOverTime } from '@/features/training/get-elevation-metrics-over-time';
-import { getElevationPerKmMetricsOverTime } from '@/features/training/get-elevation-per-km-metrics-over-time';
 import date from '@/lib/date';
 import { Training } from '@/types/training';
 
-import { Area, AreaChart, CartesianGrid, Line, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
 const chartConfig = {
     elevation: {
-        label: 'Przewyższenie (m)',
+        label: 'Średnie przewyższenie (m)',
         color: '#4f46e5'
     },
     elevationPerKm: {
-        label: 'Przewyższenie na km',
+        label: 'Średnie przewyższenie na km',
         color: '#ef4444'
     }
 };
@@ -39,18 +39,36 @@ interface ChartPayload {
 export function ElevationChart() {
     const [variant, setVariant] = useState<ChartVariant>('elevation');
 
-    const data = useMemo(() => {
-        if (variant === 'elevationPerKm') {
-            return getElevationPerKmMetricsOverTime(trainings as Training[]);
-        } else {
-            return getElevationMetricsOverTime(trainings as Training[]);
-        }
-    }, [variant]);
+    // Sort trainings by date
+    const sortedTrainings = [...trainings].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    const formattedData = data.map((item) => ({
-        ...item,
-        formattedDate: date(item.date).format('LL')
-    }));
+    // Calculate moving averages
+    const data = sortedTrainings.map((training, index) => {
+        // Get all trainings up to current index (inclusive)
+        const trainingsToAverage = sortedTrainings.slice(0, index + 1);
+
+        // Calculate average elevation or elevation per km
+        let value;
+        if (variant === 'elevationPerKm') {
+            const totalElevation = trainingsToAverage.reduce((sum, t) => sum + t.elevation_gain_m, 0);
+            const totalDistance = trainingsToAverage.reduce((sum, t) => sum + t.distance_km, 0);
+            value = totalElevation / totalDistance;
+        } else {
+            value = trainingsToAverage.reduce((sum, t) => sum + t.elevation_gain_m, 0) / trainingsToAverage.length;
+        }
+
+        return {
+            date: training.date,
+            formattedDate: date(training.date).format('LL'),
+            elevation: variant === 'elevation' ? Number(value.toFixed(1)) : undefined,
+            elevationPerKm: variant === 'elevationPerKm' ? Number(value.toFixed(1)) : undefined
+        };
+    });
+
+    // Calculate progress
+    const firstValue = data[0]?.[variant === 'elevation' ? 'elevation' : 'elevationPerKm'] || 0;
+    const lastValue = data[data.length - 1]?.[variant === 'elevation' ? 'elevation' : 'elevationPerKm'] || 0;
+    const progress = ((lastValue - firstValue) / firstValue) * 100;
 
     return (
         <Card>
@@ -67,43 +85,48 @@ export function ElevationChart() {
                         </SelectContent>
                     </Select>
                 </div>
-                <CardDescription>Całkowite przewyższenie i przewyższenie na kilometr</CardDescription>
+                <CardDescription>Średnie przewyższenie i średnie przewyższenie na kilometr</CardDescription>
             </CardHeader>
             <CardContent>
                 <ChartContainer config={chartConfig} className='aspect-auto h-80'>
-                    <AreaChart data={formattedData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                         <CartesianGrid strokeDasharray='3 3' />
                         <XAxis dataKey='formattedDate' tickLine={false} axisLine={false} />
                         <YAxis
                             yAxisId='left'
                             orientation='left'
-                            label={{ value: 'm', angle: -90, position: 'insideLeft' }}
+                            label={{
+                                value: variant === 'elevation' ? 'm' : 'm/km',
+                                angle: -90,
+                                position: 'insideLeft'
+                            }}
                             tickLine={false}
                             axisLine={false}
                         />
                         <ChartTooltip
-                            content={({ active, payload, label }) => {
-                                if (active && payload && payload.length) {
-                                    return (
-                                        <ChartTooltipContent
-                                            className='w-[250px]'
-                                            payload={payload as ChartPayload[]}
-                                            active={active}
-                                            label={label}
-                                        />
-                                    );
-                                }
+                            content={({ active, payload }) => {
+                                if (!active || !payload?.length) return null;
 
-                                return null;
+                                return (
+                                    <ChartTooltipContent
+                                        className='w-[250px]'
+                                        payload={payload.map((p) => ({
+                                            ...p,
+                                            value: `${p.value} ${variant === 'elevation' ? 'm' : 'm/km'}`,
+                                            name: chartConfig[variant].label
+                                        }))}
+                                        active={active}
+                                    />
+                                );
                             }}
                         />
                         <Area
-                            name='elevation'
+                            name={variant}
                             type='monotone'
-                            dataKey='elevation'
+                            dataKey={variant}
                             yAxisId='left'
-                            fill={chartConfig.elevation.color}
-                            stroke={chartConfig.elevation.color}
+                            fill={chartConfig[variant].color}
+                            stroke={chartConfig[variant].color}
                             fillOpacity={0.3}
                         />
                         <ChartLegend

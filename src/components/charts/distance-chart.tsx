@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +11,6 @@ import {
     ChartTooltipContent
 } from '@/components/ui/chart';
 import { trainings } from '@/data/trainings';
-import { getDistanceMetricsOverTime } from '@/features/training/get-distance-metrics-over-time';
 import date from '@/lib/date';
 import { Training } from '@/types/training';
 
@@ -17,7 +18,7 @@ import { Bar, BarChart, CartesianGrid, Line, XAxis, YAxis } from 'recharts';
 
 const chartConfig = {
     distance: {
-        label: 'Dystans (km)',
+        label: 'Średni dystans (km)',
         color: '#4f46e5'
     },
     cumulative: {
@@ -27,52 +28,73 @@ const chartConfig = {
 };
 
 export function DistanceChart() {
-    const data = getDistanceMetricsOverTime(trainings as Training[]);
-    const formattedData = data.map((item) => ({
-        ...item,
-        formattedDate: date(item.date).format('MMM YYYY')
-    }));
+    // Sort trainings by date
+    const sortedTrainings = [...trainings].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // Calculate moving average and cumulative distance
+    const data = sortedTrainings.map((training, index) => {
+        // Get all trainings up to current index (inclusive)
+        const trainingsToAverage = sortedTrainings.slice(0, index + 1);
+
+        // Calculate average distance
+        const avgDistance = trainingsToAverage.reduce((sum, t) => sum + t.distance_km, 0) / trainingsToAverage.length;
+
+        // Calculate cumulative distance
+        const cumulativeDistance = trainingsToAverage.reduce((sum, t) => sum + t.distance_km, 0);
+
+        return {
+            date: training.date,
+            formattedDate: date(training.date).format('MMM YYYY'),
+            distance: Number(avgDistance.toFixed(1)),
+            cumulativeDistance: Number(cumulativeDistance.toFixed(1))
+        };
+    });
+
+    // Calculate progress
+    const firstDistance = data[0]?.distance || 0;
+    const lastDistance = data[data.length - 1]?.distance || 0;
+    const distanceProgress = ((lastDistance - firstDistance) / firstDistance) * 100;
 
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Dystans w czasie</CardTitle>
-                <CardDescription>Dystans poszczególnych treningów i łączny przejechany dystans</CardDescription>
+                <CardDescription>Średni dystans treningów i łączny przejechany dystans</CardDescription>
             </CardHeader>
             <CardContent>
                 <ChartContainer config={chartConfig} className='aspect-auto h-80'>
-                    <BarChart data={formattedData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                         <CartesianGrid strokeDasharray='3 3' />
                         <XAxis dataKey='formattedDate' tickLine={false} axisLine={false} />
                         <YAxis
                             yAxisId='left'
                             orientation='left'
-                            label={{ value: 'km (trening)', angle: -90, position: 'insideLeft' }}
+                            label={{ value: 'km (średnia)', angle: -90, position: 'insideLeft' }}
                             tickLine={false}
                             axisLine={false}
                         />
                         <YAxis
                             yAxisId='right'
                             orientation='right'
-                            name='cumulative'
                             label={{ value: 'km (łącznie)', angle: 90, position: 'insideRight' }}
                             tickLine={false}
                             axisLine={false}
                         />
                         <ChartTooltip
-                            content={({ active, payload, label }) => {
-                                if (active && payload && payload.length) {
-                                    return (
-                                        <ChartTooltipContent
-                                            className='w-[250px]'
-                                            payload={payload}
-                                            active={active}
-                                            label={label}
-                                        />
-                                    );
-                                }
+                            content={({ active, payload }) => {
+                                if (!active || !payload?.length) return null;
 
-                                return null;
+                                return (
+                                    <ChartTooltipContent
+                                        className='w-[250px]'
+                                        payload={payload.map((p) => ({
+                                            ...p,
+                                            value: `${p.value} km`,
+                                            name: chartConfig[p.dataKey as keyof typeof chartConfig].label
+                                        }))}
+                                        active={active}
+                                    />
+                                );
                             }}
                         />
                         <Bar

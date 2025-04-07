@@ -41,3 +41,6 @@ next-env.d.ts
 
 # stats
 src/data/*
+
+.env
+.env.*
