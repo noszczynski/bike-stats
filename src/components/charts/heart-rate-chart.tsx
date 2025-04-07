@@ -18,10 +18,6 @@ import { TrendingDownIcon, TrendingUpIcon } from 'lucide-react';
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
 const chartConfig = {
-    heartRate: {
-        label: 'Średnie tętno',
-        color: '#4f46e5'
-    },
     zone_1: {
         label: 'Strefa 1',
         color: '#4CAF50'
@@ -41,6 +37,10 @@ const chartConfig = {
     zone_5: {
         label: 'Strefa 5',
         color: '#F44336'
+    },
+    heartRate: {
+        label: 'Średnie tętno',
+        color: '#4f46e5'
     }
 };
 
@@ -112,8 +112,6 @@ export function HeartRateChart() {
         );
     }
 
-    console.log(data);
-
     const firstTraining = data[0];
     const lastTraining = data[data.length - 1];
 
@@ -139,31 +137,7 @@ export function HeartRateChart() {
                             tickFormatter={(value) => `${(value * 100).toFixed(0)}%`}
                             domain={[0, 1]}
                         />
-                        <ChartTooltip
-                            content={({ active, payload }) => {
-                                if (!active || !payload?.length) return null;
-
-                                const total = payload.reduce((sum, p) => sum + (Number(p.value) || 0), 0);
-
-                                return (
-                                    <ChartTooltipContent
-                                        className='w-[250px]'
-                                        payload={[
-                                            ...payload.map((p) => ({
-                                                ...p,
-                                                value: `${((Number(p.value) / total) * 100).toFixed(1)}%`,
-                                                name: chartConfig[p.name as keyof typeof chartConfig].label
-                                            })),
-                                            {
-                                                name: chartConfig.heartRate.label,
-                                                value: `${payload[0].payload.avg_heart_rate} bpm`,
-                                                color: chartConfig.heartRate.color
-                                            }
-                                        ]}
-                                    />
-                                );
-                            }}
-                        />
+                        <ChartTooltip cursor={false} content={<ChartTooltipContent indicator='line' />} />
                         <Area
                             name='zone_1'
                             type='monotone'
@@ -212,7 +186,13 @@ export function HeartRateChart() {
                         <ChartLegend
                             content={({ payload }) => {
                                 if (payload && payload.length) {
-                                    return <ChartLegendContent payload={payload} />;
+                                    const legendPayload = payload.map((entry) => ({
+                                        ...entry,
+                                        name: chartConfig[entry.dataKey as keyof typeof chartConfig].label,
+                                        color: chartConfig[entry.dataKey as keyof typeof chartConfig].color
+                                    }));
+
+                                    return <ChartLegendContent payload={legendPayload} />;
                                 }
 
                                 return null;
