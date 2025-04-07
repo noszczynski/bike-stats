@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     ChartContainer,
     ChartLegend,
@@ -14,16 +14,17 @@ import { trainings } from '@/data/trainings';
 import date from '@/lib/date';
 import { Training } from '@/types/training';
 
+import { TrendingDownIcon, TrendingUpIcon } from 'lucide-react';
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
 const chartConfig = {
     distance: {
         label: 'Średni dystans (km)',
-        color: '#4f46e5'
+        color: '#ef4444'
     },
     cumulativeDistance: {
         label: 'Łączny dystans (km)',
-        color: '#ef4444'
+        color: '#4f46e5'
     }
 };
 
@@ -54,6 +55,8 @@ export function DistanceChart() {
     const firstDistance = data[0]?.distance || 0;
     const lastDistance = data[data.length - 1]?.distance || 0;
     const distanceProgress = ((lastDistance - firstDistance) / firstDistance) * 100;
+
+    const TrendIcon = distanceProgress > 0 ? TrendingUpIcon : TrendingDownIcon;
 
     return (
         <Card>
@@ -131,6 +134,15 @@ export function DistanceChart() {
                     </AreaChart>
                 </ChartContainer>
             </CardContent>
+            <CardFooter className='flex-col items-start gap-2 text-sm'>
+                <div className='flex gap-2 leading-none font-medium'>
+                    {Math.abs(distanceProgress).toFixed(1)}% {distanceProgress > 0 ? 'wzrost' : 'spadek'} średniego
+                    dystansu od pierwszego treningu <TrendIcon className='h-4 w-4' />
+                </div>
+                <div className='text-muted-foreground leading-none'>
+                    Pokazuje średni dystans i łączny dystans dla wszystkich treningów do danego momentu
+                </div>
+            </CardFooter>
         </Card>
     );
 }

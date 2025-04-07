@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     ChartContainer,
     ChartLegend,
@@ -15,13 +15,13 @@ import { trainings } from '@/data/trainings';
 import date from '@/lib/date';
 import { Training } from '@/types/training';
 
-import { InfoIcon } from 'lucide-react';
+import { InfoIcon, TrendingDownIcon, TrendingUpIcon } from 'lucide-react';
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
 const chartConfig = {
     intensity: {
         label: 'Średnia intensywność',
-        color: '#4f46e5'
+        color: '#ef4444'
     }
 };
 
@@ -64,6 +64,8 @@ export function IntensityChart() {
     const firstIntensity = data[0]?.intensity || 0;
     const lastIntensity = data[data.length - 1]?.intensity || 0;
     const intensityProgress = ((lastIntensity - firstIntensity) / firstIntensity) * 100;
+
+    const TrendIcon = intensityProgress > 0 ? TrendingUpIcon : TrendingDownIcon;
 
     return (
         <Card>
@@ -136,6 +138,16 @@ export function IntensityChart() {
                     </AreaChart>
                 </ChartContainer>
             </CardContent>
+            <CardFooter className='flex-col items-start gap-2 text-sm'>
+                <div className='flex gap-2 leading-none font-medium'>
+                    {Math.abs(intensityProgress).toFixed(1)}% {intensityProgress > 0 ? 'wzrost' : 'spadek'} średniej
+                    intensywności od pierwszego treningu <TrendIcon className='h-4 w-4' />
+                </div>
+                <div className='text-muted-foreground leading-none'>
+                    Pokazuje średnią intensywność treningów obliczoną na podstawie dystansu, prędkości, tętna i
+                    przewyższenia
+                </div>
+            </CardFooter>
         </Card>
     );
 }
