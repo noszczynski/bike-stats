@@ -13,6 +13,11 @@ export const HeartRateZonesSchema = z.object({
 });
 
 export const TrainingSchema = z.object({
+    id: z.string().uuid(),
+    /** Strava activity id */
+    strava_activity_id: z.number(),
+    /** Name of the training */
+    name: z.string(),
     /** Date of the training */
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
     /** Distance of the training in km */

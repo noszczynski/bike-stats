@@ -174,7 +174,7 @@ export function TrainingOverview({ training, compareTo }: TrainingOverviewProps)
                     <div className='flex items-center gap-2'>
                         {prevTraining ? (
                             <Link
-                                href={`/trainings/${prevTraining.date}?compareTo=${compareTo}`}
+                                href={`/trainings/${prevTraining.id}?compareTo=${compareTo}`}
                                 className='ring-offset-background focus-visible:ring-ring border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex h-10 w-10 items-center justify-center rounded-md border text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50'>
                                 <ChevronLeft className='h-4 w-4' />
                             </Link>
@@ -187,7 +187,7 @@ export function TrainingOverview({ training, compareTo }: TrainingOverviewProps)
                         )}
                         {nextTraining ? (
                             <Link
-                                href={`/trainings/${nextTraining.date}?compareTo=${compareTo}`}
+                                href={`/trainings/${nextTraining.id}?compareTo=${compareTo}`}
                                 className='ring-offset-background focus-visible:ring-ring border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex h-10 w-10 items-center justify-center rounded-md border text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50'>
                                 <ChevronRight className='h-4 w-4' />
                             </Link>
@@ -203,10 +203,12 @@ export function TrainingOverview({ training, compareTo }: TrainingOverviewProps)
                 </div>
             </div>
             <div>
-                <div className='flex items-center justify-between'>
-                    <h2 className='text-xl font-semibold'>Trening {date(training.date).format('LL')}</h2>
+                <div className='flex items-center justify-start gap-2'>
+                    <h2 className='text-xl font-semibold'>
+                        Trening {training.name} z dnia {date(training.date).format('LL')}
+                    </h2>
+                    <p className='text-muted-foreground text-sm'>(W porównaniu do {compareToLabel})</p>
                 </div>
-                <p className='text-muted-foreground mt-4'>W porównaniu do {compareToLabel}</p>
                 <div className='mt-4 space-y-24'>
                     {/* Basic Training Info */}
                     <div>

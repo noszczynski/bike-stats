@@ -61,6 +61,17 @@ export default async function StravaProfilePage({ searchParams }: StravaProfileP
 
         const bikeActivities = (activities as StravaActivity[]).filter((activity) => activity.sport_type === 'Ride');
 
+        console.log(
+            bikeActivities.map((activity) => ({
+                id: activity.id,
+                name: activity.name,
+                date: activity.start_date_local,
+                distance: activity.distance,
+                moving_time: `${Math.floor(activity.moving_time / 3600)}:${String(Math.floor((activity.moving_time % 3600) / 60)).padStart(2, '0')}:${String(activity.moving_time % 60).padStart(2, '0')}`,
+                average_speed: activity.average_speed
+            }))
+        );
+
         return (
             <main className='flex min-h-screen flex-col items-center p-24'>
                 <div className='w-full max-w-4xl space-y-8'>

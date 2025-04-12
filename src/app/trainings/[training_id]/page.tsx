@@ -7,7 +7,7 @@ type CompareToType = 'all' | 'earlier' | 'other';
 
 interface TrainingPageProps {
     params: {
-        training_date: string;
+        training_id: string;
     };
     searchParams: {
         compareTo?: string;
@@ -15,8 +15,8 @@ interface TrainingPageProps {
 }
 
 export default function TrainingPage({ params, searchParams }: TrainingPageProps) {
-    // Find the training with the given date
-    const training = trainings.find((t) => t.date === params.training_date);
+    // Find the training with the given ID
+    const training = trainings.find((t) => t.id === params.training_id);
 
     // If no training found, return 404
     if (!training) {
