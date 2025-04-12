@@ -47,6 +47,7 @@ function formatElevation(meters: number) {
 export default async function StravaProfilePage({ searchParams }: StravaProfilePageProps) {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('strava_access_token')?.value;
+    const refreshToken = cookieStore.get('strava_refresh_token')?.value;
 
     if (!accessToken) {
         redirect('/auth/strava');
@@ -54,8 +55,8 @@ export default async function StravaProfilePage({ searchParams }: StravaProfileP
 
     try {
         const [athlete, activities] = await Promise.all([
-            getAthlete(accessToken),
-            getActivities(accessToken, { per_page: 100 })
+            getAthlete(accessToken, refreshToken),
+            getActivities(accessToken, refreshToken, { per_page: 100 })
         ]);
 
         const bikeActivities = (activities as StravaActivity[]).filter((activity) => activity.sport_type === 'Ride');

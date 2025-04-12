@@ -6,13 +6,14 @@ import { LogoutButton } from '@/components/LogoutButton';
 export async function StravaProfile() {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('strava_access_token')?.value;
+    const refreshToken = cookieStore.get('strava_refresh_token')?.value;
 
     if (!accessToken) {
         return null;
     }
 
     try {
-        const athlete = await getAthlete(accessToken);
+        const athlete = await getAthlete(accessToken, refreshToken);
 
         return (
             <div className='flex items-center gap-3'>
