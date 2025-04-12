@@ -3,9 +3,16 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { getAthlete } from '@/app/api/_lib/strava';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 
-export default async function StravaProfilePage() {
+interface StravaProfilePageProps {
+    searchParams: {
+        error?: string;
+    };
+}
+
+export default async function StravaProfilePage({ searchParams }: StravaProfilePageProps) {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('strava_access_token')?.value;
 
@@ -19,6 +26,14 @@ export default async function StravaProfilePage() {
         return (
             <main className='flex min-h-screen flex-col items-center justify-center p-24'>
                 <div className='w-full max-w-xl space-y-8'>
+                    {searchParams.error === 'failed_to_fetch_athlete' && (
+                        <Alert variant='destructive'>
+                            <AlertTitle>Error</AlertTitle>
+                            <AlertDescription>
+                                Failed to fetch athlete data. Please try again later or reconnect your Strava account.
+                            </AlertDescription>
+                        </Alert>
+                    )}
                     <div className='flex items-center justify-between'>
                         <h1 className='text-3xl font-bold'>Strava Profile</h1>
                         <Link href='/'>
