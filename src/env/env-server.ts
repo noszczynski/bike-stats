@@ -5,8 +5,13 @@ import { z } from 'zod';
  */
 export const serverEnvSchema = z.object({
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-    STRAVA_CLIENT_ID: z.string().min(1),
-    STRAVA_CLIENT_SECRET: z.string().min(1)
+    STRAVA_CLIENT_ID: z
+        .string()
+        .min(1)
+        .transform((val) => parseInt(val, 10))
+        .pipe(z.number().int()),
+    STRAVA_CLIENT_SECRET: z.string().min(1),
+    STRAVA_AUTH_CALLBACK_URI: z.string().url()
 });
 
 // For development debugging
@@ -14,7 +19,8 @@ if (process.env.NODE_ENV !== 'production') {
     console.log('Environment variables loaded:', {
         NODE_ENV: process.env.NODE_ENV,
         STRAVA_CLIENT_ID: process.env.STRAVA_CLIENT_ID,
-        STRAVA_CLIENT_SECRET: process.env.STRAVA_CLIENT_SECRET
+        STRAVA_CLIENT_SECRET: process.env.STRAVA_CLIENT_SECRET,
+        STRAVA_AUTH_CALLBACK_URI: process.env.STRAVA_AUTH_CALLBACK_URI
     });
 }
 
@@ -24,7 +30,8 @@ if (process.env.NODE_ENV !== 'production') {
 export const serverEnv = {
     NODE_ENV: process.env.NODE_ENV || 'development',
     STRAVA_CLIENT_ID: process.env.STRAVA_CLIENT_ID,
-    STRAVA_CLIENT_SECRET: process.env.STRAVA_CLIENT_SECRET
+    STRAVA_CLIENT_SECRET: process.env.STRAVA_CLIENT_SECRET,
+    STRAVA_AUTH_CALLBACK_URI: process.env.STRAVA_AUTH_CALLBACK_URI
 };
 
 /**
