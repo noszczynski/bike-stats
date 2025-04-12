@@ -28,10 +28,10 @@ export const calculateTrainingLoad = (training: Training, maxValues: MaxValues):
     const { maxDistance, maxSpeed, maxHR, maxElevation } = maxValues;
 
     // Normalize each component (0-1 scale)
-    const distanceScore = training.distance_km / maxDistance;
-    const speedScore = training.avg_speed_kmh / maxSpeed;
-    const heartRateScore = training.avg_heart_rate_bpm ? training.avg_heart_rate_bpm / maxHR : 0.5;
-    const elevationScore = training.elevation_gain_m / maxElevation;
+    const distanceScore = Math.min(training.distance_km / maxDistance, 1);
+    const speedScore = Math.min(training.avg_speed_kmh / maxSpeed, 1);
+    const heartRateScore = training.avg_heart_rate_bpm ? Math.min(training.avg_heart_rate_bpm / maxHR, 1) : 0.5;
+    const elevationScore = Math.min(training.elevation_gain_m / maxElevation, 1);
 
     // Calculate composite intensity score (0-100 scale)
     const intensityScore = Math.round(

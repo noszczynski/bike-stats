@@ -2,9 +2,7 @@ import { DashboardGlobalStatsTabContent } from '@/components/dashboard-global-st
 import { DashboardLastTrainingTabContent } from '@/components/dashboard-last-training-tab-content';
 import { DashboardMetricsTabContent } from '@/components/dashboard-metrics-tab-content';
 import { DashboardOverviewTabContent } from '@/components/dashboard-overview-tab-content';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ThemeSwitch } from '@/components/ui/theme-switch';
 
 /**
  * The main page component that renders the HomePage component.
