@@ -3,9 +3,6 @@ import { StravaAuthResponse, StravaTokens } from '@/types/strava';
 
 const STRAVA_CLIENT_ID = serverEnv.STRAVA_CLIENT_ID;
 const STRAVA_CLIENT_SECRET = serverEnv.STRAVA_CLIENT_SECRET;
-const STRAVA_REDIRECT_URI = `${process.env.NEXT_PUBLIC_APP_URL}/api/strava/callback`;
-
-export const STRAVA_AUTH_URL = `https://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&response_type=code&redirect_uri=${STRAVA_REDIRECT_URI}&scope=read,activity:read_all`;
 
 export async function exchangeCodeForToken(code: string): Promise<StravaAuthResponse> {
     const response = await fetch('https://www.strava.com/oauth/token', {
