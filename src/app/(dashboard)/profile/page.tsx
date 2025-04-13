@@ -100,7 +100,7 @@ export default async function StravaProfilePage({ searchParams }: StravaProfileP
                         </div>
                     </div>
 
-                    <div className='space-y-4'>
+                    {/* <div className='space-y-4'>
                         <h2 className='text-2xl font-semibold'>Latest Bike Activities</h2>
                         <div className='grid gap-4 md:grid-cols-2'>
                             {bikeActivities.map((activity) => (
@@ -132,7 +132,7 @@ export default async function StravaProfilePage({ searchParams }: StravaProfileP
                                 </Card>
                             ))}
                         </div>
-                    </div>
+                    </div> */}
                 </div>
             </main>
         );

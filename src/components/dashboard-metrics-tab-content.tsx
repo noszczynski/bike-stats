@@ -2,6 +2,7 @@ import React from 'react';
 
 import { cookies } from 'next/headers';
 
+import { getActivities } from '@/app/api/_lib/strava';
 import { DistanceChart } from '@/components/charts/distance-chart';
 import { ElevationChart } from '@/components/charts/elevation-chart';
 import { HeartRateChart } from '@/components/charts/heart-rate-chart';
@@ -20,8 +21,9 @@ export async function DashboardMetricsTabContent() {
     }
 
     const trainings = await getAllTrainings(accessToken, refreshToken);
-
-    console.log(trainings);
+    const sa = await getActivities(accessToken, refreshToken, {
+        per_page: 100
+    });
 
     return (
         <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-2'>

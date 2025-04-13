@@ -1,9 +1,10 @@
+import { cookies } from 'next/headers';
 import Link from 'next/link';
 
+import { ImportTrainingDialog } from '@/components/import-training-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getAllTrainings } from '@/lib/api/trainings';
 import date from '@/lib/date';
-import { cookies } from 'next/headers';
 
 export default async function TrainingsPage() {
     const cookieStore = await cookies();
@@ -28,7 +29,12 @@ export default async function TrainingsPage() {
                     <Link href={`/trainings/${training.id}`} key={training.id}>
                         <Card className='hover:bg-muted/50 h-full transition-all'>
                             <CardHeader className='pb-2'>
-                                <CardTitle>{date(training.date).format('LL')}</CardTitle>
+                                <CardTitle className='flex items-center justify-between'>
+                                    <span>{date(training.date).format('LL')}</span>
+                                    {!training.heart_rate_zones && (
+                                        <ImportTrainingDialog trainingId={training.strava_activity_id} />
+                                    )}
+                                </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className='space-y-2'>
@@ -44,6 +50,12 @@ export default async function TrainingsPage() {
                                         <span className='text-muted-foreground'>Średnia prędkość:</span>
                                         <span className='font-medium'>{training.avg_speed_kmh.toFixed(1)} km/h</span>
                                     </div>
+                                    {training.heart_rate_zones && (
+                                        <div className='flex justify-between'>
+                                            <span className='text-muted-foreground'>Imported</span>
+                                            <span className='font-medium'>✓</span>
+                                        </div>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>

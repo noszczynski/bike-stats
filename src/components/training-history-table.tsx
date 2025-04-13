@@ -1,8 +1,9 @@
+import { cookies } from 'next/headers';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { getAllTrainings } from '@/lib/api/trainings';
 import date from '@/lib/date';
-import { cookies } from 'next/headers';
 
 export async function TrainingHistoryTable() {
     const cookieStore = await cookies();
@@ -18,7 +19,9 @@ export async function TrainingHistoryTable() {
     return (
         <Card className='col-span-7'>
             <CardHeader>
-                <CardTitle>Historia treningów</CardTitle>
+                <CardTitle>
+                    Historia Twoich treningów <span className='text-sm text-gray-400'>({trainings.length})</span>
+                </CardTitle>
             </CardHeader>
             <CardContent>
                 <Table>

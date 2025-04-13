@@ -27,11 +27,9 @@ enum ActivityType {
   workout
 }
 
-// Define models for bike activities data
 model Activity {
-  id                    String       @id @default(uuid())
+  id                    String         @id @default(uuid())
   type                  ActivityType
-  strava_activity_id    BigInt       @unique
   heart_rate_zone_1     String?
   heart_rate_zone_2     String?
   heart_rate_zone_3     String?
@@ -41,10 +39,30 @@ model Activity {
   battery_percent_usage Int?
   device                String?
   effort                Int?
-  created_at            DateTime     @default(now())
-  updated_at            DateTime     @updatedAt
+  created_at            DateTime       @default(now())
+  updated_at            DateTime       @updatedAt
+  strava_activity_id    BigInt         @unique
+  strava_activity       StravaActivity @relation(fields: [strava_activity_id], references: [id])
 
   @@map("activities")
+}
+
+model StravaActivity {
+  id                 BigInt    @id
+  name               String
+  date               String
+  distance_m         Int
+  elevation_gain_m   Int
+  moving_time_s      String
+  avg_speed_kmh      Decimal
+  max_speed_kmh      Decimal
+  avg_heart_rate_bpm Int?
+  max_heart_rate_bpm Int?
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+  activity           Activity?
+
+  @@map("strava_activities")
 }
 
 model User {
