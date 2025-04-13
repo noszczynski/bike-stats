@@ -14,8 +14,30 @@ import {
     DialogTitle,
     DialogTrigger
 } from '@/components/ui/dialog';
+import { Form } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+import { Controller, useForm } from 'react-hook-form';
+import * as z from 'zod';
+
+// Define the schema
+const formSchema = z.object({
+    heart_rate_zones_zone_1: z.string().min(0),
+    heart_rate_zones_zone_2: z.string().min(0),
+    heart_rate_zones_zone_3: z.string().min(0),
+    heart_rate_zones_zone_4: z.string().min(0),
+    heart_rate_zones_zone_5: z.string().min(0),
+    summary: z.string().min(0),
+    device: z.string().min(0),
+    battery_percent_usage: z.string().min(0),
+    effort: z.string().refine((val) => !val || (parseInt(val) >= 1 && parseInt(val) <= 10), {
+        message: 'Effort must be between 1 and 10'
+    })
+});
+
+type FormData = z.infer<typeof formSchema>;
 
 interface ImportTrainingDialogProps {
     trainingId: number;
@@ -25,61 +47,60 @@ interface ImportTrainingDialogProps {
 export function ImportTrainingDialog({ trainingId, onImportSuccess }: ImportTrainingDialogProps) {
     const [open, setOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    // const { toast } = useToast();
     const router = useRouter();
 
-    const [formData, setFormData] = useState({
-        heart_rate_zones: {
-            zone_1: '',
-            zone_2: '',
-            zone_3: '',
-            zone_4: '',
-            zone_5: ''
-        },
-        summary: '',
-        device: '',
-        battery_percent_usage: '',
-        effort: ''
+    const form = useForm<FormData>({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+            heart_rate_zones_zone_1: '',
+            heart_rate_zones_zone_2: '',
+            heart_rate_zones_zone_3: '',
+            heart_rate_zones_zone_4: '',
+            heart_rate_zones_zone_5: '',
+            summary: '',
+            device: '',
+            battery_percent_usage: '',
+            effort: ''
+        }
     });
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const onSubmit = async (data: FormData) => {
         setIsLoading(true);
 
         try {
+            // Transform the data to match the API expectations
+            const transformedData = {
+                strava_activity_id: trainingId,
+                heart_rate_zones: {
+                    zone_1: data.heart_rate_zones_zone_1 || undefined,
+                    zone_2: data.heart_rate_zones_zone_2 || undefined,
+                    zone_3: data.heart_rate_zones_zone_3 || undefined,
+                    zone_4: data.heart_rate_zones_zone_4 || undefined,
+                    zone_5: data.heart_rate_zones_zone_5 || undefined
+                },
+                summary: data.summary || undefined,
+                device: data.device || undefined,
+                battery_percent_usage: data.battery_percent_usage ? parseInt(data.battery_percent_usage) : undefined,
+                effort: data.effort ? parseInt(data.effort) : undefined
+            };
+
             const response = await fetch('/api/trainings/import', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    strava_activity_id: trainingId,
-                    ...formData,
-                    battery_percent_usage: formData.battery_percent_usage
-                        ? parseInt(formData.battery_percent_usage)
-                        : undefined,
-                    effort: formData.effort ? parseInt(formData.effort) : undefined
-                })
+                body: JSON.stringify(transformedData)
             });
 
             if (!response.ok) {
                 throw new Error('Failed to import training');
             }
 
-            // toast({
-            //     title: 'Success',
-            //     description: 'Training imported successfully'
-            // });
-
             setOpen(false);
             onImportSuccess?.();
             router.refresh();
         } catch (error) {
-            // toast({
-            //     title: 'Error',
-            //     description: 'Failed to import training',
-            //     variant: 'destructive'
-            // });
+            // Handle error
         } finally {
             setIsLoading(false);
         }
@@ -88,7 +109,7 @@ export function ImportTrainingDialog({ trainingId, onImportSuccess }: ImportTrai
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant='outline' size='sm' className='ml-2'>
+                <Button variant='link' size='sm' className='text-primary ml-2 !h-fit !p-0'>
                     Import
                 </Button>
             </DialogTrigger>
@@ -97,78 +118,117 @@ export function ImportTrainingDialog({ trainingId, onImportSuccess }: ImportTrai
                     <DialogTitle>Import Training Data</DialogTitle>
                     <DialogDescription>Add additional data for this training session.</DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit}>
-                    <div className='grid gap-4 py-4'>
-                        <div className='grid gap-2'>
-                            <Label>Heart Rate Zones (hh:mm:ss)</Label>
-                            {Object.keys(formData.heart_rate_zones).map((zone, index) => (
-                                <div key={zone} className='grid grid-cols-2 items-center gap-4'>
-                                    <Label htmlFor={zone}>Zone {index + 1}</Label>
-                                    <Input
-                                        id={zone}
-                                        placeholder='00:00:00'
-                                        pattern='^(?:(?:([01]?\d|2[0-3]):)?([0-5]?\d):)?([0-5]?\d)$'
-                                        value={
-                                            formData.heart_rate_zones[zone as keyof typeof formData.heart_rate_zones]
-                                        }
-                                        onChange={(e) =>
-                                            setFormData({
-                                                ...formData,
-                                                heart_rate_zones: {
-                                                    ...formData.heart_rate_zones,
-                                                    [zone]: e.target.value
-                                                }
-                                            })
-                                        }
-                                    />
-                                </div>
-                            ))}
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
+                        <div className='grid gap-4 py-4'>
+                            <div className='grid gap-2'>
+                                <Label>Heart Rate Zones (hh:mm:ss)</Label>
+                                {[1, 2, 3, 4, 5].map((zoneNumber) => {
+                                    const fieldName = `heart_rate_zones_zone_${zoneNumber}` as
+                                        | 'heart_rate_zones_zone_1'
+                                        | 'heart_rate_zones_zone_2'
+                                        | 'heart_rate_zones_zone_3'
+                                        | 'heart_rate_zones_zone_4'
+                                        | 'heart_rate_zones_zone_5';
+
+                                    return (
+                                        <div key={`zone_${zoneNumber}`} className='grid grid-cols-2 items-center gap-4'>
+                                            <Label htmlFor={`zone_${zoneNumber}`}>Zone {zoneNumber}</Label>
+                                            <Controller
+                                                name={fieldName}
+                                                control={form.control}
+                                                render={({ field, fieldState }) => (
+                                                    <div>
+                                                        <Input
+                                                            id={`zone_${zoneNumber}`}
+                                                            placeholder='00:00:00'
+                                                            pattern='^(?:(?:([01]?\d|2[0-3]):)?([0-5]?\d):)?([0-5]?\d)$'
+                                                            {...field}
+                                                        />
+                                                        {fieldState.error && (
+                                                            <p className='mt-1 text-sm text-red-500'>
+                                                                {fieldState.error.message}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            <div className='grid gap-2'>
+                                <Label htmlFor='summary'>Summary</Label>
+                                <Controller
+                                    name='summary'
+                                    control={form.control}
+                                    render={({ field, fieldState }) => (
+                                        <div>
+                                            <Input id='summary' {...field} />
+                                            {fieldState.error && (
+                                                <p className='mt-1 text-sm text-red-500'>{fieldState.error.message}</p>
+                                            )}
+                                        </div>
+                                    )}
+                                />
+                            </div>
+
+                            <div className='grid gap-2'>
+                                <Label htmlFor='device'>Device</Label>
+                                <Controller
+                                    name='device'
+                                    control={form.control}
+                                    render={({ field, fieldState }) => (
+                                        <div>
+                                            <Input id='device' {...field} />
+                                            {fieldState.error && (
+                                                <p className='mt-1 text-sm text-red-500'>{fieldState.error.message}</p>
+                                            )}
+                                        </div>
+                                    )}
+                                />
+                            </div>
+
+                            <div className='grid gap-2'>
+                                <Label htmlFor='battery'>Battery Usage (%)</Label>
+                                <Controller
+                                    name='battery_percent_usage'
+                                    control={form.control}
+                                    render={({ field, fieldState }) => (
+                                        <div>
+                                            <Input id='battery' type='number' min='0' max='100' {...field} />
+                                            {fieldState.error && (
+                                                <p className='mt-1 text-sm text-red-500'>{fieldState.error.message}</p>
+                                            )}
+                                        </div>
+                                    )}
+                                />
+                            </div>
+
+                            <div className='grid gap-2'>
+                                <Label htmlFor='effort'>Effort (1-10)</Label>
+                                <Controller
+                                    name='effort'
+                                    control={form.control}
+                                    render={({ field, fieldState }) => (
+                                        <div>
+                                            <Input id='effort' type='number' min='1' max='10' {...field} />
+                                            {fieldState.error && (
+                                                <p className='mt-1 text-sm text-red-500'>{fieldState.error.message}</p>
+                                            )}
+                                        </div>
+                                    )}
+                                />
+                            </div>
                         </div>
-                        <div className='grid gap-2'>
-                            <Label htmlFor='summary'>Summary</Label>
-                            <Input
-                                id='summary'
-                                value={formData.summary}
-                                onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
-                            />
-                        </div>
-                        <div className='grid gap-2'>
-                            <Label htmlFor='device'>Device</Label>
-                            <Input
-                                id='device'
-                                value={formData.device}
-                                onChange={(e) => setFormData({ ...formData, device: e.target.value })}
-                            />
-                        </div>
-                        <div className='grid gap-2'>
-                            <Label htmlFor='battery'>Battery Usage (%)</Label>
-                            <Input
-                                id='battery'
-                                type='number'
-                                min='0'
-                                max='100'
-                                value={formData.battery_percent_usage}
-                                onChange={(e) => setFormData({ ...formData, battery_percent_usage: e.target.value })}
-                            />
-                        </div>
-                        <div className='grid gap-2'>
-                            <Label htmlFor='effort'>Effort (1-10)</Label>
-                            <Input
-                                id='effort'
-                                type='number'
-                                min='1'
-                                max='10'
-                                value={formData.effort}
-                                onChange={(e) => setFormData({ ...formData, effort: e.target.value })}
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button type='submit' disabled={isLoading}>
-                            {isLoading ? 'Importing...' : 'Import'}
-                        </Button>
-                    </DialogFooter>
-                </form>
+                        <DialogFooter>
+                            <Button type='submit' disabled={isLoading}>
+                                {isLoading ? 'Importing...' : 'Import'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
             </DialogContent>
         </Dialog>
     );

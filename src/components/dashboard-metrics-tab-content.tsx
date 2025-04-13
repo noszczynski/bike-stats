@@ -2,7 +2,7 @@ import React from 'react';
 
 import { cookies } from 'next/headers';
 
-import { getActivities } from '@/app/api/_lib/strava';
+import { getAllStravaRideActivities } from '@/lib/api/strava';
 import { DistanceChart } from '@/components/charts/distance-chart';
 import { ElevationChart } from '@/components/charts/elevation-chart';
 import { HeartRateChart } from '@/components/charts/heart-rate-chart';
@@ -21,7 +21,7 @@ export async function DashboardMetricsTabContent() {
     }
 
     const trainings = await getAllTrainings(accessToken, refreshToken);
-    const sa = await getActivities(accessToken, refreshToken, {
+    const sa = await getAllStravaRideActivities(accessToken, refreshToken, {
         per_page: 100
     });
 

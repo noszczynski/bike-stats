@@ -100,7 +100,7 @@ export async function getAthlete(accessToken: string, refreshToken?: string) {
     });
 }
 
-export async function getActivities(
+export async function getAllStravaRideActivities(
     accessToken: string,
     refreshToken?: string,
     params?: {
@@ -115,8 +115,9 @@ export async function getActivities(
 
         if (params?.before) queryParams.append('before', params.before.toString());
         if (params?.after) queryParams.append('after', params.after.toString());
-        if (params?.page) queryParams.append('page', params.page.toString());
-        if (params?.per_page) queryParams.append('per_page', params.per_page.toString());
+
+        queryParams.append('page', (params?.page ?? 1).toString());
+        queryParams.append('per_page', (params?.per_page ?? 100).toString());
 
         const response = await fetch(`https://www.strava.com/api/v3/athlete/activities?${queryParams.toString()}`, {
             headers: {
@@ -128,7 +129,9 @@ export async function getActivities(
             return [];
         }
 
-        return response.json() as Promise<StravaActivity[]>;
+        const json = await (response.json() as Promise<StravaActivity[]>);
+
+        return json.filter((activity) => activity.sport_type === 'Ride');
     });
 }
 

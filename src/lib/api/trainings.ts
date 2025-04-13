@@ -1,5 +1,5 @@
-import { getActivities, getActivity } from '@/app/api/_lib/strava';
 import { ActivityType, Prisma } from '@/generated/prisma';
+import { getActivity, getAllStravaRideActivities } from '@/lib/api/strava';
 import { Training, TrainingSchema } from '@/types/training';
 
 import { getActivitiesByType, getActivityById, getActivityByStravaId } from '../db';
@@ -58,7 +58,7 @@ function stravaActivityToTraining(activity: any, importedActivity: any = null): 
 /**
  * Fetch all imported trainings from the database
  */
-export async function getAllTrainings(accessToken: string, refreshToken: string): Promise<Training[]> {
+export async function getAllTrainings(): Promise<Training[]> {
     // Get all imported activities with their Strava data
     const importedActivities = await prisma.activity.findMany({
         where: {
@@ -68,7 +68,9 @@ export async function getAllTrainings(accessToken: string, refreshToken: string)
             strava_activity: true
         },
         orderBy: {
-            created_at: 'desc'
+            strava_activity: {
+                date: 'desc'
+            }
         }
     });
 
@@ -95,6 +97,18 @@ export async function getAllTrainings(accessToken: string, refreshToken: string)
     });
 
     return z.array(TrainingSchema).parse(trainings);
+}
+
+export async function getTrainingsToImport(accessToken: string, refreshToken: string) {
+    const stravaActivities = await prisma.stravaActivity.findMany({
+        orderBy: {
+            created_at: 'desc'
+        }
+    });
+    const stravaRides = await getAllStravaRideActivities(accessToken, refreshToken);
+
+    /** Filter out activities that are already imported to database */
+    return stravaRides.filter((ride) => !stravaActivities.some((activity) => activity.id === BigInt(ride.id)));
 }
 
 /**
@@ -138,17 +152,17 @@ export async function getTrainingById(
 export async function importActivity(
     stravaActivityId: number,
     additionalData: {
-        heart_rate_zones?: {
-            zone_1: string;
-            zone_2: string;
-            zone_3: string;
-            zone_4: string;
-            zone_5: string;
+        heart_rate_zones: {
+            zone_1?: string | undefined;
+            zone_2?: string | undefined;
+            zone_3?: string | undefined;
+            zone_4?: string | undefined;
+            zone_5?: string | undefined;
         };
-        summary?: string;
-        device?: string;
-        battery_percent_usage?: number;
-        effort?: number;
+        summary?: string | undefined;
+        device?: string | undefined;
+        battery_percent_usage?: number | undefined;
+        effort?: number | undefined;
     }
 ) {
     const existingActivity = await getActivityByStravaId(BigInt(stravaActivityId));
@@ -161,15 +175,15 @@ export async function importActivity(
         data: {
             type: ActivityType.ride,
             strava_activity_id: BigInt(stravaActivityId),
-            heart_rate_zone_1: additionalData.heart_rate_zones?.zone_1,
-            heart_rate_zone_2: additionalData.heart_rate_zones?.zone_2,
-            heart_rate_zone_3: additionalData.heart_rate_zones?.zone_3,
-            heart_rate_zone_4: additionalData.heart_rate_zones?.zone_4,
-            heart_rate_zone_5: additionalData.heart_rate_zones?.zone_5,
-            summary: additionalData.summary,
-            device: additionalData.device,
-            battery_percent_usage: additionalData.battery_percent_usage,
-            effort: additionalData.effort
+            heart_rate_zone_1: additionalData.heart_rate_zones?.zone_1 ?? null,
+            heart_rate_zone_2: additionalData.heart_rate_zones?.zone_2 ?? null,
+            heart_rate_zone_3: additionalData.heart_rate_zones?.zone_3 ?? null,
+            heart_rate_zone_4: additionalData.heart_rate_zones?.zone_4 ?? null,
+            heart_rate_zone_5: additionalData.heart_rate_zones?.zone_5 ?? null,
+            summary: additionalData.summary ?? null,
+            device: additionalData.device ?? null,
+            battery_percent_usage: additionalData.battery_percent_usage ?? null,
+            effort: additionalData.effort ?? null
         }
     });
 }

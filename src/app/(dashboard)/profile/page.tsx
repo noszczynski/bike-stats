@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
-import { getActivities, getAthlete } from '@/app/api/_lib/strava';
+import { getAllStravaRideActivities, getAthlete } from '@/lib/api/strava';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -56,7 +56,7 @@ export default async function StravaProfilePage({ searchParams }: StravaProfileP
     try {
         const [athlete, activities] = await Promise.all([
             getAthlete(accessToken, refreshToken),
-            getActivities(accessToken, refreshToken, { per_page: 100 })
+            getAllStravaRideActivities(accessToken, refreshToken, { per_page: 100 })
         ]);
 
         const bikeActivities = (activities as StravaActivity[]).filter((activity) => activity.sport_type === 'Ride');

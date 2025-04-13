@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 
-import { getAthlete } from '@/app/api/_lib/strava';
+import { getAthlete } from '@/lib/api/strava';
 import { LogoutButton } from '@/components/LogoutButton';
 
 export async function StravaProfile() {

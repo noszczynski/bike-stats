@@ -9,11 +9,26 @@ const importSchema = z.object({
     strava_activity_id: z.number(),
     heart_rate_zones: z
         .object({
-            zone_1: z.string().regex(/^(?:(?:([01]?\d|2[0-3]):)?([0-5]?\d):)?([0-5]?\d)$/),
-            zone_2: z.string().regex(/^(?:(?:([01]?\d|2[0-3]):)?([0-5]?\d):)?([0-5]?\d)$/),
-            zone_3: z.string().regex(/^(?:(?:([01]?\d|2[0-3]):)?([0-5]?\d):)?([0-5]?\d)$/),
-            zone_4: z.string().regex(/^(?:(?:([01]?\d|2[0-3]):)?([0-5]?\d):)?([0-5]?\d)$/),
-            zone_5: z.string().regex(/^(?:(?:([01]?\d|2[0-3]):)?([0-5]?\d):)?([0-5]?\d)$/)
+            zone_1: z
+                .string()
+                .regex(/^(?:(?:([01]?\d|2[0-3]):)?([0-5]?\d):)?([0-5]?\d)$/)
+                .optional(),
+            zone_2: z
+                .string()
+                .regex(/^(?:(?:([01]?\d|2[0-3]):)?([0-5]?\d):)?([0-5]?\d)$/)
+                .optional(),
+            zone_3: z
+                .string()
+                .regex(/^(?:(?:([01]?\d|2[0-3]):)?([0-5]?\d):)?([0-5]?\d)$/)
+                .optional(),
+            zone_4: z
+                .string()
+                .regex(/^(?:(?:([01]?\d|2[0-3]):)?([0-5]?\d):)?([0-5]?\d)$/)
+                .optional(),
+            zone_5: z
+                .string()
+                .regex(/^(?:(?:([01]?\d|2[0-3]):)?([0-5]?\d):)?([0-5]?\d)$/)
+                .optional()
         })
         .optional(),
     summary: z.string().optional(),
@@ -36,11 +51,11 @@ export async function POST(request: Request) {
         const data = importSchema.parse(body);
 
         const activity = await importActivity(data.strava_activity_id, {
-            heart_rate_zones: data.heart_rate_zones,
-            summary: data.summary,
-            device: data.device,
-            battery_percent_usage: data.battery_percent_usage,
-            effort: data.effort
+            heart_rate_zones: data.heart_rate_zones || {},
+            summary: data.summary || undefined,
+            device: data.device || undefined,
+            battery_percent_usage: data.battery_percent_usage || undefined,
+            effort: data.effort || undefined
         });
 
         return NextResponse.json({ activity }, { status: 201 });
@@ -48,9 +63,9 @@ export async function POST(request: Request) {
         console.error('Import error:', error);
 
         if (error instanceof z.ZodError) {
-            return NextResponse.json({ error: 'Invalid request data' }, { status: 400 });
+            return NextResponse.json({ error: 'Invalid request data', details: error.errors }, { status: 400 });
         }
 
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        return NextResponse.json({ error: 'Internal server error', details: error?.message ?? '' }, { status: 500 });
     }
 }
