@@ -48,3 +48,6 @@ src/data/*
 
 # database
 database.db
+
+# prisma
+src/generated
