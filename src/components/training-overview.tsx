@@ -4,7 +4,6 @@ import Link from 'next/link';
 
 import { HeartRateZonesChart } from '@/components/heart-rate-zones-chart';
 import { StatsCard } from '@/components/stats-card';
-import { trainings } from '@/data/trainings';
 import { calculateTrainingLoad } from '@/features/training/calculate-training-load';
 import {
     MetricType,
@@ -40,11 +39,12 @@ function formatMinutes(minutes: number): string {
 type TrainingOverviewProps = {
     training: Training;
     compareTo: 'all' | 'earlier' | 'other';
+    allTrainings: Training[];
 };
 
-export function TrainingOverview({ training, compareTo }: TrainingOverviewProps) {
+export function TrainingOverview({ training, compareTo, allTrainings }: TrainingOverviewProps) {
     // Make sure trainings are sorted by date (newest first)
-    const sortedTrainings = [...trainings].sort(
+    const sortedTrainings = [...allTrainings].sort(
         (a, b) => date(b.date).valueOf() - date(a.date).valueOf()
     ) as Training[];
 

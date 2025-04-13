@@ -11,7 +11,6 @@ import {
     ChartTooltipContent
 } from '@/components/ui/chart';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { trainings } from '@/data/trainings';
 import date from '@/lib/date';
 import { Training } from '@/types/training';
 
@@ -25,7 +24,7 @@ const chartConfig = {
     }
 };
 
-export function IntensityChart() {
+export function IntensityChart({ trainings }: { trainings: Training[] }) {
     // Sort trainings by date
     const sortedTrainings = [...trainings].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 

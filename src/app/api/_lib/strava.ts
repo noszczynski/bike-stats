@@ -1,5 +1,5 @@
 import { serverEnv } from '@/env/env-server';
-import { StravaAuthResponse, StravaTokens } from '@/types/strava';
+import { StravaActivity, StravaAuthResponse, StravaTokens } from '@/types/strava';
 
 const STRAVA_CLIENT_ID = serverEnv.STRAVA_CLIENT_ID;
 const STRAVA_CLIENT_SECRET = serverEnv.STRAVA_CLIENT_SECRET;
@@ -112,6 +112,7 @@ export async function getActivities(
 ) {
     return handleStravaRequest(accessToken, refreshToken, async (token) => {
         const queryParams = new URLSearchParams();
+
         if (params?.before) queryParams.append('before', params.before.toString());
         if (params?.after) queryParams.append('after', params.after.toString());
         if (params?.page) queryParams.append('page', params.page.toString());
@@ -124,7 +125,29 @@ export async function getActivities(
         });
 
         if (!response.ok) {
-            throw new Error('Failed to fetch activities');
+            return [];
+        }
+
+        return response.json() as Promise<StravaActivity[]>;
+    });
+}
+
+/**
+ * Get a specific activity by ID from Strava
+ */
+export async function getActivity(activityId: number, accessToken: string, refreshToken?: string) {
+    return handleStravaRequest(accessToken, refreshToken, async (token) => {
+        const response = await fetch(
+            `https://www.strava.com/api/v3/activities/${activityId}?include_all_efforts=false`,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch activity ${activityId}`);
         }
 
         return response.json();

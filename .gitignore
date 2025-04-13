@@ -42,5 +42,12 @@ next-env.d.ts
 # stats
 src/data/*
 
+# env
 .env
 .env.*
+
+# database
+database.db
+
+# prisma
+src/generated

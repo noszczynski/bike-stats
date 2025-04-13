@@ -1,12 +1,23 @@
 import React from 'react';
 
 import { TrainingOverview } from '@/components/training-overview';
-import { trainings } from '@/data/trainings';
+import { getAllTrainings } from '@/lib/api/trainings';
 import date from '@/lib/date';
+import { cookies } from 'next/headers';
 
-export function DashboardLastTrainingTabContent() {
+export async function DashboardLastTrainingTabContent() {
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get('strava_access_token')?.value;
+    const refreshToken = cookieStore.get('strava_refresh_token')?.value;
+
+    if (!accessToken || !refreshToken) {
+        return <div>No access token or refresh token found</div>;
+    }
+
+    const allTrainings = await getAllTrainings(accessToken, refreshToken);
+
     // Make sure trainings are sorted by date (newest first)
-    const sortedTrainings = [...trainings].sort((a, b) => date(b.date).valueOf() - date(a.date).valueOf());
+    const sortedTrainings = [...allTrainings].sort((a, b) => date(b.date).valueOf() - date(a.date).valueOf());
 
     // Get the latest training
     const lastTraining = sortedTrainings[0];
@@ -23,5 +34,5 @@ export function DashboardLastTrainingTabContent() {
         );
     }
 
-    return <TrainingOverview training={lastTraining} compareTo='earlier' />;
+    return <TrainingOverview training={lastTraining} compareTo='earlier' allTrainings={allTrainings} />;
 }
