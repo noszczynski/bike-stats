@@ -10,7 +10,6 @@ import {
     ChartTooltip,
     ChartTooltipContent
 } from '@/components/ui/chart';
-import { trainings } from '@/data/trainings';
 import date from '@/lib/date';
 import { Training } from '@/types/training';
 
@@ -28,7 +27,7 @@ const chartConfig = {
     }
 };
 
-export function ElevationChart() {
+export function ElevationChart({ trainings }: { trainings: Training[] }) {
     // Sort trainings by date
     const sortedTrainings = [...trainings].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 

@@ -1,10 +1,10 @@
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 import { exchangeCodeForToken } from '@/app/api/_lib/strava';
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
+
     const code = searchParams.get('code');
     const error = searchParams.get('error');
 

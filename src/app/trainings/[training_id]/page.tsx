@@ -1,7 +1,8 @@
+import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 
 import { TrainingOverview } from '@/components/training-overview';
-import { trainings } from '@/data/trainings';
+import { getAllTrainings, getTrainingById } from '@/lib/api/trainings';
 
 type CompareToType = 'all' | 'earlier' | 'other';
 
@@ -14,9 +15,19 @@ interface TrainingPageProps {
     };
 }
 
-export default function TrainingPage({ params, searchParams }: TrainingPageProps) {
+export default async function TrainingPage({ params, searchParams }: TrainingPageProps) {
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get('strava_access_token')?.value;
+    const refreshToken = cookieStore.get('strava_refresh_token')?.value;
+
+    if (!accessToken || !refreshToken) {
+        return <div>No access token or refresh token found</div>;
+    }
+
+    const allTrainings = await getAllTrainings(accessToken, refreshToken);
+
     // Find the training with the given ID
-    const training = trainings.find((t) => t.id === params.training_id);
+    const training = await getTrainingById(params.training_id, accessToken, refreshToken);
 
     // If no training found, return 404
     if (!training) {
@@ -38,7 +49,7 @@ export default function TrainingPage({ params, searchParams }: TrainingPageProps
     return (
         <div className='container py-8'>
             <h1 className='mb-6 text-3xl font-bold'>Szczegóły treningu</h1>
-            <TrainingOverview training={training} compareTo={compareTo} />
+            <TrainingOverview training={training} compareTo={compareTo} allTrainings={allTrainings} />
         </div>
     );
 }

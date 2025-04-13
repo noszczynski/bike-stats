@@ -10,7 +10,6 @@ import {
     ChartTooltip,
     ChartTooltipContent
 } from '@/components/ui/chart';
-import { trainings } from '@/data/trainings';
 import date from '@/lib/date';
 import { Training } from '@/types/training';
 
@@ -50,7 +49,7 @@ function parseTimeToMinutes(time: string): number {
     return parseInt(hours) * 60 + parseInt(minutes) + parseInt(seconds) / 60;
 }
 
-export function HeartRateChart() {
+export function HeartRateChart({ trainings }: { trainings: Training[] }) {
     const sortedTrainings = [...trainings]
         .filter((t) => t.heart_rate_zones && t.avg_heart_rate_bpm)
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());

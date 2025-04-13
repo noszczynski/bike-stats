@@ -2,7 +2,6 @@
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { trainings } from '@/data/trainings';
 import date from '@/lib/date';
 import { Training } from '@/types/training';
 
@@ -16,7 +15,11 @@ const chartConfig = {
     }
 };
 
-export function AverageSpeedPerKilometrChart() {
+interface AverageSpeedPerKilometrChartProps {
+    trainings: Training[];
+}
+
+export function AverageSpeedPerKilometrChart({ trainings }: AverageSpeedPerKilometrChartProps) {
     // Sort trainings by date
     const sortedTrainings = [...trainings].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 

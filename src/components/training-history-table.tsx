@@ -1,9 +1,20 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { trainings } from '@/data/trainings';
+import { getAllTrainings } from '@/lib/api/trainings';
 import date from '@/lib/date';
+import { cookies } from 'next/headers';
 
-export const TrainingHistoryTable = () => {
+export async function TrainingHistoryTable() {
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get('strava_access_token')?.value;
+    const refreshToken = cookieStore.get('strava_refresh_token')?.value;
+
+    if (!accessToken || !refreshToken) {
+        return <div>No access token or refresh token found</div>;
+    }
+
+    const trainings = await getAllTrainings(accessToken, refreshToken);
+
     return (
         <Card className='col-span-7'>
             <CardHeader>
@@ -42,4 +53,4 @@ export const TrainingHistoryTable = () => {
             </CardContent>
         </Card>
     );
-};
+}

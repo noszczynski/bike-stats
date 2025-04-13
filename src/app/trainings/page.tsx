@@ -1,12 +1,23 @@
 import Link from 'next/link';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { trainings } from '@/data/trainings';
+import { getAllTrainings } from '@/lib/api/trainings';
 import date from '@/lib/date';
+import { cookies } from 'next/headers';
 
-export default function TrainingsPage() {
+export default async function TrainingsPage() {
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get('strava_access_token')?.value;
+    const refreshToken = cookieStore.get('strava_refresh_token')?.value;
+
+    if (!accessToken || !refreshToken) {
+        return <div>No access token or refresh token found</div>;
+    }
+
+    const allTrainings = await getAllTrainings(accessToken, refreshToken);
+
     // Sort trainings by date (newest first)
-    const sortedTrainings = [...trainings].sort((a, b) => date(b.date).valueOf() - date(a.date).valueOf());
+    const sortedTrainings = [...allTrainings].sort((a, b) => date(b.date).valueOf() - date(a.date).valueOf());
 
     return (
         <div className='container py-8'>

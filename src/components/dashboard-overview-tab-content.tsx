@@ -1,18 +1,28 @@
+import { cookies } from 'next/headers';
+
 import { StatsCard } from '@/components/stats-card';
 import { TrainingHistoryTable } from '@/components/training-history-table';
-import { trainings } from '@/data/trainings';
 import { calculateAverageHeartRate } from '@/features/training/calculate-average-heart-rate';
 import { calculateAverageSpeed } from '@/features/training/calculate-average-speed';
 import { calculateHighestAverageSpeed } from '@/features/training/calculate-highest-average-speed';
 import { calculateMaxSpeed } from '@/features/training/calculate-max-speed';
+import { getAllTrainings } from '@/lib/api/trainings';
 import date from '@/lib/date';
-import { Training } from '@/types/training';
 
-export const DashboardOverviewTabContent = () => {
+export async function DashboardOverviewTabContent() {
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get('strava_access_token')?.value;
+    const refreshToken = cookieStore.get('strava_refresh_token')?.value;
+
+    if (!accessToken || !refreshToken) {
+        return <div>No access token or refresh token found</div>;
+    }
+
+    const trainings = await getAllTrainings(accessToken, refreshToken);
+
     const avgSpeed = calculateAverageSpeed(trainings);
     const maxSpeed = calculateMaxSpeed(trainings);
     const avgHeartRate = calculateAverageHeartRate(trainings);
-    const highestAvgSpeed = calculateHighestAverageSpeed(trainings);
 
     return (
         <div className='space-y-4'>
@@ -81,4 +91,4 @@ export const DashboardOverviewTabContent = () => {
             </div>
         </div>
     );
-};
+}

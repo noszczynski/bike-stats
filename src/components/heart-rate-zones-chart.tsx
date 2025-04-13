@@ -52,6 +52,11 @@ function formatMinutes(minutes: number): string {
     return hours > 0 ? `${hours}h ${remainingMinutes}m` : `${remainingMinutes}m`;
 }
 
+// Helper function to format minutes back to time string
+function formatSeconds(seconds: number): string {
+    return formatMinutes(seconds / 60);
+}
+
 type TooltipProps = {
     active?: boolean;
     payload?: Array<{
