@@ -4,6 +4,10 @@ export const timeStringToMinutes = (timeStr: string): number => {
     return hours * 60 + minutes + seconds / 60;
 };
 
+export const secondsToTimeString = (seconds: number): string => {
+    return minutesToTimeString(seconds / 60)
+};
+
 export const minutesToTimeString = (minutes: number): string => {
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = Math.floor(minutes % 60);
