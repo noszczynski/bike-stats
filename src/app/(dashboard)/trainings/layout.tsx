@@ -10,5 +10,5 @@ export default function TrainingsLayout({
 }: Readonly<{
     children: React.ReactNode;
 }>) {
-    return <>{children}</>;
+    return <div className='container mx-auto py-8'>{children}</div>;
 }

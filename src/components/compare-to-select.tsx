@@ -34,7 +34,7 @@ export function CompareToSelect({ trainingDate }: CompareToSelectProps) {
 
     return (
         <div className='flex items-center gap-2'>
-            <label htmlFor='compare-to' className='block text-sm font-medium'>
+            <label htmlFor='compare-to' className='text-muted-foreground block text-sm font-medium'>
                 Porównaj z:
             </label>
             <Select value={compareTo} onValueChange={(value: CompareToType) => setCompareTo(value)}>

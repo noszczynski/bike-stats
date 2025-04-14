@@ -15,7 +15,6 @@ const Page = () => {
             <TabsList>
                 <TabsTrigger value='overview'>Przegląd</TabsTrigger>
                 <TabsTrigger value='metrics'>Metryki</TabsTrigger>
-                <TabsTrigger value='last-training'>Ostatni trening</TabsTrigger>
                 <TabsTrigger value='global-stats'>Statystyki globalne</TabsTrigger>
             </TabsList>
             <TabsContent value='overview'>
@@ -23,9 +22,6 @@ const Page = () => {
             </TabsContent>
             <TabsContent value='metrics'>
                 <DashboardMetricsTabContent />
-            </TabsContent>
-            <TabsContent value='last-training'>
-                <DashboardLastTrainingTabContent />
             </TabsContent>
             <TabsContent value='global-stats'>
                 <DashboardGlobalStatsTabContent />

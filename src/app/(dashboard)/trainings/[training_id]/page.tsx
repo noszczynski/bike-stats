@@ -48,7 +48,6 @@ export default async function TrainingPage({ params, searchParams }: TrainingPag
 
     return (
         <div className='container py-8'>
-            <h1 className='mb-6 text-3xl font-bold'>Szczegóły treningu</h1>
             <TrainingOverview training={training} compareTo={compareTo} allTrainings={allTrainings} />
         </div>
     );
