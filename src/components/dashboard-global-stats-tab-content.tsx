@@ -1,10 +1,12 @@
+import { cookies } from 'next/headers';
+
 import { StatsCard } from '@/components/stats-card';
 import { calculateHighestAverageSpeed } from '@/features/training/calculate-highest-average-speed';
 import { getAllTrainings } from '@/lib/api/trainings';
+import dayjs from '@/lib/date';
 import date from '@/lib/date';
 
 import { TrendingDownIcon, TrendingUpIcon } from 'lucide-react';
-import { cookies } from 'next/headers';
 
 export async function DashboardGlobalStatsTabContent() {
     const cookieStore = await cookies();
@@ -56,14 +58,16 @@ export async function DashboardGlobalStatsTabContent() {
                     />
 
                     <StatsCard
-                        title='Łączny dystans w 2025 roku'
+                        title='Łączny dystans w obecnym roku'
                         value={allTrainings.reduce((acc, training) => {
                             const trainingDate = date(training.date);
 
-                            return trainingDate.isAfter(date('2025-01-01')) ? acc + training.distance_km : acc;
+                            return trainingDate.isAfter(date(`${dayjs().year()}-01-01`))
+                                ? acc + training.distance_km
+                                : acc;
                         }, 0)}
                         unit='km'
-                        infoText={`Na podstawie ${allTrainings.length} treningów`}
+                        infoText={`Na podstawie ${allTrainings.filter((training) => dayjs(training.date).isAfter(date(`${dayjs().year()}-01-01`))).length} treningów`}
                         formatValue={(val) => val.toFixed(0)}
                     />
 
@@ -79,7 +83,8 @@ export async function DashboardGlobalStatsTabContent() {
                         title='Średni dystans treningu'
                         value={
                             allTrainings.length > 0
-                                ? allTrainings.reduce((acc, training) => acc + training.distance_km, 0) / allTrainings.length
+                                ? allTrainings.reduce((acc, training) => acc + training.distance_km, 0) /
+                                  allTrainings.length
                                 : 0
                         }
                         unit='km'

@@ -25,6 +25,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { BatteryUsageChart } from './battery-usage-chart';
 import { CompareToSelect } from './compare-to-select';
 import { EffortLevelChart } from './effort-level-chart';
+import { Slider } from './ui/slider';
 import isNil from 'lodash/isNil';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -506,15 +507,26 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                                         </div>
                                     </div>
                                     <div className='space-y-2'>
-                                        <Label htmlFor='effort'>Poziom wysiłku (1-10)</Label>
-                                        <input
-                                            type='number'
+                                        <div className='flex justify-between'>
+                                            <Label htmlFor='effort'>Poziom wysiłku (1-10)</Label>
+                                            <span className='text-muted-foreground text-sm'>
+                                                Obecny poziom: {training.effort ?? 1}
+                                            </span>
+                                        </div>
+                                        <Slider
                                             id='effort'
-                                            className='border-input w-full rounded-md border bg-transparent px-3 py-2'
-                                            defaultValue={training.effort ?? ''}
-                                            min='1'
-                                            max='10'
                                             {...register('effort')}
+                                            defaultValue={[training.effort ?? 1]}
+                                            min={1}
+                                            max={10}
+                                            step={1}
+                                            rangeClassName={`w-full ${
+                                                training.effort && training.effort > 7
+                                                    ? 'bg-red-200'
+                                                    : training.effort && training.effort > 4
+                                                      ? 'bg-yellow-200'
+                                                      : 'bg-green-200'
+                                            }`}
                                         />
                                     </div>
                                 </div>
