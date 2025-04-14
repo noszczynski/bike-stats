@@ -1,18 +1,17 @@
-import { Prisma, ActivityType } from '@prisma/client';
+import { getAllStravaRideActivities } from '@/lib/api/strava';
+import { meterPerSecondToKmph } from '@/lib/convert/meter-per-second-to-kmph';
 import { Training, TrainingSchema } from '@/types/training';
+import { minutesToTimeString, secondsToTimeString, timeStringToMinutes } from '@/utils/time';
+import type { Activity, StravaActivity } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 import { getActivityById, getActivityByStravaId } from '../db';
 import { prisma } from '../prisma';
 import dayjs from 'dayjs';
 import { Decimal } from 'decimal.js';
 import { z } from 'zod';
-import { meterPerSecondToKmph } from '@/lib/convert/meter-per-second-to-kmph';
-import { minutesToTimeString, secondsToTimeString, timeStringToMinutes } from '@/utils/time';
-import { getAllStravaRideActivities } from '@/lib/api/strava';
 
-function formatActivityToTraining(activity: Prisma.ActivityGetPayload<{
-    include: { strava_activity: true };
-}>): Training {
+function formatActivityToTraining(activity: Activity & { strava_activity: StravaActivity }): Training {
     return {
         id: activity.id,
         strava_activity_id: Number(activity.strava_activity.id),
@@ -53,7 +52,7 @@ function formatActivityToTraining(activity: Prisma.ActivityGetPayload<{
 export async function getAllTrainings(): Promise<Training[]> {
     const importedActivities = await prisma.activity.findMany({
         where: {
-            type: ActivityType.ride
+            type: 'ride'
         },
         include: {
             strava_activity: true
@@ -83,7 +82,7 @@ export async function getTrainingsToImport(accessToken: string, refreshToken: st
 export async function updateTrainings(accessToken: string, refreshToken: string) {
     const trainingsToImport = await getTrainingsToImport(accessToken, refreshToken);
 
-    return prisma.$transaction(async tx => {
+    return prisma.$transaction(async (tx: PrismaClient) => {
         for await (const training of trainingsToImport) {
             await tx.stravaActivity.create({
                 data: {
@@ -99,21 +98,19 @@ export async function updateTrainings(accessToken: string, refreshToken: string)
                     max_heart_rate_bpm: Number(training.max_heartrate),
                     activity: {
                         create: {
-                            type: ActivityType.ride,
+                            type: 'ride'
                         }
                     }
                 }
-            })
+            });
         }
-    })
+    });
 }
 
 /**
  * Fetch a specific training by ID from Strava API and local database
  */
-export async function getTrainingById(
-    trainingId: string,
-): Promise<Training | null> {
+export async function getTrainingById(trainingId: string): Promise<Training | null> {
     try {
         // First try to find the imported activity
         const importedActivity = await getActivityById(trainingId);
@@ -170,4 +167,46 @@ export async function importActivity(
             effort: additionalData.effort ?? null
         }
     });
+}
+
+/**
+ * Update a training's details
+ */
+export async function updateTraining(
+    trainingId: string,
+    data: {
+        heart_rate_zones?: {
+            zone_1?: string;
+            zone_2?: string;
+            zone_3?: string;
+            zone_4?: string;
+            zone_5?: string;
+        };
+        summary?: string;
+        device?: string;
+        battery_percent_usage?: number;
+        effort?: number;
+    }
+): Promise<Training> {
+    const activity = await prisma.activity.update({
+        where: {
+            id: trainingId
+        },
+        data: {
+            heart_rate_zone_1: data.heart_rate_zones?.zone_1 ?? undefined,
+            heart_rate_zone_2: data.heart_rate_zones?.zone_2 ?? undefined,
+            heart_rate_zone_3: data.heart_rate_zones?.zone_3 ?? undefined,
+            heart_rate_zone_4: data.heart_rate_zones?.zone_4 ?? undefined,
+            heart_rate_zone_5: data.heart_rate_zones?.zone_5 ?? undefined,
+            summary: data.summary ?? undefined,
+            device: data.device ?? undefined,
+            battery_percent_usage: data.battery_percent_usage ?? undefined,
+            effort: data.effort ?? undefined
+        },
+        include: {
+            strava_activity: true
+        }
+    });
+
+    return formatActivityToTraining(activity);
 }

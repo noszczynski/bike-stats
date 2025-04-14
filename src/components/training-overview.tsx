@@ -1,9 +1,14 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 import { HeartRateZonesChart } from '@/components/heart-rate-zones-chart';
 import { StatsCard } from '@/components/stats-card';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { calculateTrainingLoad } from '@/features/training/calculate-training-load';
 import {
@@ -15,12 +20,15 @@ import {
 } from '@/features/training/trend-utils';
 import date from '@/lib/date';
 import { Training } from '@/types/training';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 import { BatteryUsageChart } from './battery-usage-chart';
 import { CompareToSelect } from './compare-to-select';
 import { EffortLevelChart } from './effort-level-chart';
 import isNil from 'lodash/isNil';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 // Helper function to convert time string (hh:mm:ss) to minutes
 function timeToMinutes(time: string): number {
@@ -51,7 +59,84 @@ type HeartRateZones = {
     zone_5: string;
 };
 
+const editFormSchema = z.object({
+    heart_rate_zones: z.object({
+        zone_1: z.string().optional(),
+        zone_2: z.string().optional(),
+        zone_3: z.string().optional(),
+        zone_4: z.string().optional(),
+        zone_5: z.string().optional()
+    }),
+    summary: z.string().optional(),
+    device: z.string().optional(),
+    battery_percent_usage: z.string().optional(),
+    effort: z.string().optional()
+});
+
+type EditFormData = z.infer<typeof editFormSchema>;
+
 export function TrainingOverview({ training, compareTo, allTrainings }: TrainingOverviewProps) {
+    const router = useRouter();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const {
+        register,
+        handleSubmit,
+        formState: { errors }
+    } = useForm<EditFormData>({
+        resolver: zodResolver(editFormSchema),
+        defaultValues: {
+            heart_rate_zones: {
+                zone_1: training.heart_rate_zones?.zone_1 ?? '',
+                zone_2: training.heart_rate_zones?.zone_2 ?? '',
+                zone_3: training.heart_rate_zones?.zone_3 ?? '',
+                zone_4: training.heart_rate_zones?.zone_4 ?? '',
+                zone_5: training.heart_rate_zones?.zone_5 ?? ''
+            },
+            summary: training.summary ?? '',
+            device: training.device ?? '',
+            battery_percent_usage: training.battery_percent_usage?.toString() ?? '',
+            effort: training.effort?.toString() ?? ''
+        }
+    });
+
+    const onSubmit = async (data: EditFormData) => {
+        setIsSubmitting(true);
+        try {
+            const response = await fetch(`/api/trainings/${training.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    heart_rate_zones: {
+                        zone_1: data.heart_rate_zones.zone_1 || undefined,
+                        zone_2: data.heart_rate_zones.zone_2 || undefined,
+                        zone_3: data.heart_rate_zones.zone_3 || undefined,
+                        zone_4: data.heart_rate_zones.zone_4 || undefined,
+                        zone_5: data.heart_rate_zones.zone_5 || undefined
+                    },
+                    summary: data.summary || undefined,
+                    device: data.device || undefined,
+                    battery_percent_usage: data.battery_percent_usage
+                        ? parseInt(data.battery_percent_usage)
+                        : undefined,
+                    effort: data.effort ? parseInt(data.effort) : undefined
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to update training');
+            }
+
+            router.refresh();
+        } catch (error) {
+            console.error('Error updating training:', error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     // Make sure trainings are sorted by date (newest first)
     const sortedTrainings = [...allTrainings].sort(
         (a, b) => date(b.date).valueOf() - date(a.date).valueOf()
@@ -360,49 +445,83 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                     <div className='max-w-2xl space-y-6'>
                         <div className='space-y-4'>
                             <h3 className='text-lg font-medium'>Edytuj szczegóły treningu</h3>
-                            <div className='grid gap-4'>
-                                <div className='space-y-2'>
-                                    <label htmlFor='summary' className='text-sm font-medium'>
-                                        Podsumowanie
-                                    </label>
-                                    <textarea
-                                        id='summary'
-                                        className='border-input min-h-[100px] w-full rounded-md border bg-transparent px-3 py-2'
-                                        defaultValue={training.summary ?? ''}
-                                        placeholder='Dodaj podsumowanie treningu...'
-                                    />
-                                </div>
-                                <div className='grid grid-cols-2 gap-4'>
-                                    <div className='space-y-2'>
-                                        <label htmlFor='device' className='text-sm font-medium'>
-                                            Urządzenie
-                                        </label>
-                                        <input
-                                            type='text'
-                                            id='device'
-                                            className='border-input w-full rounded-md border bg-transparent px-3 py-2'
-                                            defaultValue={training.device ?? ''}
-                                            placeholder='Nazwa urządzenia...'
-                                        />
+                            <form onSubmit={handleSubmit(onSubmit)} className='grid gap-4'>
+                                <div className='grid gap-4'>
+                                    <div className='grid gap-2'>
+                                        <Label>Heart Rate Zones (hh:mm:ss)</Label>
+                                        {(['1', '2', '3', '4', '5'] as const).map((zoneNumber) => (
+                                            <div
+                                                key={`zone_${zoneNumber}`}
+                                                className='grid grid-cols-2 items-center gap-4'>
+                                                <Label htmlFor={`zone_${zoneNumber}`}>Zone {zoneNumber}</Label>
+                                                <input
+                                                    type='text'
+                                                    id={`zone_${zoneNumber}`}
+                                                    className='border-input w-full rounded-md border bg-transparent px-3 py-2'
+                                                    defaultValue={
+                                                        training.heart_rate_zones?.[
+                                                            `zone_${zoneNumber}` as keyof typeof training.heart_rate_zones
+                                                        ] ?? ''
+                                                    }
+                                                    placeholder='00:00:00'
+                                                    pattern='^(?:(?:([01]?\d|2[0-3]):)?([0-5]?\d):)?([0-5]?\d)$'
+                                                    {...register(`heart_rate_zones.zone_${zoneNumber}`)}
+                                                />
+                                            </div>
+                                        ))}
                                     </div>
                                     <div className='space-y-2'>
-                                        <label htmlFor='effort' className='text-sm font-medium'>
-                                            Poziom wysiłku (0-100)
-                                        </label>
+                                        <Label htmlFor='summary'>Podsumowanie</Label>
+                                        <textarea
+                                            id='summary'
+                                            className='border-input min-h-[100px] w-full rounded-md border bg-transparent px-3 py-2'
+                                            defaultValue={training.summary ?? ''}
+                                            placeholder='Dodaj podsumowanie treningu...'
+                                            {...register('summary')}
+                                        />
+                                    </div>
+                                    <div className='grid grid-cols-2 gap-4'>
+                                        <div className='space-y-2'>
+                                            <Label htmlFor='device'>Urządzenie</Label>
+                                            <input
+                                                type='text'
+                                                id='device'
+                                                className='border-input w-full rounded-md border bg-transparent px-3 py-2'
+                                                defaultValue={training.device ?? ''}
+                                                placeholder='Nazwa urządzenia...'
+                                                {...register('device')}
+                                            />
+                                        </div>
+                                        <div className='space-y-2'>
+                                            <Label htmlFor='battery_percent_usage'>Zużycie baterii (%)</Label>
+                                            <input
+                                                type='number'
+                                                id='battery_percent_usage'
+                                                className='border-input w-full rounded-md border bg-transparent px-3 py-2'
+                                                defaultValue={training.battery_percent_usage ?? ''}
+                                                min='0'
+                                                max='100'
+                                                {...register('battery_percent_usage')}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className='space-y-2'>
+                                        <Label htmlFor='effort'>Poziom wysiłku (1-10)</Label>
                                         <input
                                             type='number'
                                             id='effort'
-                                            min='0'
-                                            max='100'
                                             className='border-input w-full rounded-md border bg-transparent px-3 py-2'
                                             defaultValue={training.effort ?? ''}
+                                            min='1'
+                                            max='10'
+                                            {...register('effort')}
                                         />
                                     </div>
                                 </div>
-                                <button className='bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring inline-flex h-10 items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50'>
-                                    Zapisz zmiany
-                                </button>
-                            </div>
+                                <Button type='submit' disabled={isSubmitting}>
+                                    {isSubmitting ? 'Zapisywanie...' : 'Zapisz zmiany'}
+                                </Button>
+                            </form>
                         </div>
                     </div>
                 </TabsContent>
