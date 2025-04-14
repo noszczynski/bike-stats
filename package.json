@@ -1,9 +1,9 @@
 {
-    "name": "nextjs-15-starter-shadcn",
+    "name": "nextjs-15",
     "version": "1.0.0",
-    "private": false,
-    "website": "https://nextjs-15-starter-shadcn.vercel.app/",
-    "license": "MIT",
+    "private": true,
+    "website": "",
+    "license": "",
     "scripts": {
         "dev": "next dev -p 3100 --turbopack",
         "build": "next build",
@@ -13,7 +13,7 @@
         "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\"",
         "test": "vitest run",
         "test:watch": "vitest",
-        "db:migrate": "npx prisma db push",
+        "db:migrate": "npx prisma db push && pnpm db:generate",
         "db:generate": "npx prisma generate"
     },
     "dependencies": {

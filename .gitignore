@@ -47,7 +47,7 @@ src/data/*
 .env.*
 
 # database
-database.db
+database_old.db
 
 # prisma
 src/generated

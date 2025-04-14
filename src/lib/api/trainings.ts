@@ -1,13 +1,14 @@
-import { ActivityType, Prisma } from '@/generated/prisma';
+import { ActivityType } from '@prisma/client';
 import { getActivity, getAllStravaRideActivities } from '@/lib/api/strava';
 import { Training, TrainingSchema } from '@/types/training';
 
-import { getActivitiesByType, getActivityById, getActivityByStravaId } from '../db';
+import { getActivityById, getActivityByStravaId } from '../db';
 import { prisma } from '../prisma';
 import dayjs from 'dayjs';
 import { Decimal } from 'decimal.js';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
+import { meterPerSecondToKmph } from '@/lib/convert/meter-per-second-to-kmph';
 
 function metersToKilometers(meters: number) {
     return meters / 1000;
@@ -74,7 +75,6 @@ export async function getAllTrainings(): Promise<Training[]> {
         }
     });
 
-    // Convert to Training type
     const trainings = importedActivities.map((activity) => {
         if (!activity.strava_activity) {
             throw new Error(`No Strava activity found for imported activity ${activity.id}`);
@@ -86,7 +86,7 @@ export async function getAllTrainings(): Promise<Training[]> {
             start_date: activity.strava_activity.date,
             distance: activity.strava_activity.distance_m,
             total_elevation_gain: activity.strava_activity.elevation_gain_m,
-            moving_time: parseInt(activity.strava_activity.moving_time_s),
+            moving_time: activity.strava_activity.moving_time_s,
             average_speed: new Decimal(activity.strava_activity.avg_speed_kmh).toNumber(),
             max_speed: new Decimal(activity.strava_activity.max_speed_kmh).toNumber(),
             average_heartrate: activity.strava_activity.avg_heart_rate_bpm,
@@ -109,6 +109,34 @@ export async function getTrainingsToImport(accessToken: string, refreshToken: st
 
     /** Filter out activities that are already imported to database */
     return stravaRides.filter((ride) => !stravaActivities.some((activity) => activity.id === BigInt(ride.id)));
+}
+
+export async function updateTrainings(accessToken: string, refreshToken: string) {
+    const trainingsToImport = await getTrainingsToImport(accessToken, refreshToken);
+
+    return prisma.$transaction(async tx => {
+        for await (const training of trainingsToImport) {
+            await tx.stravaActivity.create({
+                data: {
+                    id: Number(training.id),
+                    name: training.name,
+                    date: training.start_date,
+                    distance_m: Number(training.distance),
+                    elevation_gain_m: Number(training.total_elevation_gain),
+                    moving_time_s: Number(training.moving_time),
+                    avg_speed_kmh: new Decimal(meterPerSecondToKmph(training.average_speed)),
+                    max_speed_kmh: new Decimal(meterPerSecondToKmph(training.max_speed * 3.6)),
+                    avg_heart_rate_bpm: Number(training.average_heartrate),
+                    max_heart_rate_bpm: Number(training.max_heartrate),
+                    activity: {
+                        create: {
+                            type: ActivityType.ride,
+                        }
+                    }
+                }
+            })
+        }
+    })
 }
 
 /**

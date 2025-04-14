@@ -46,7 +46,7 @@ export async function TrainingHistoryTable() {
                                     <TableCell>{training.distance_km.toFixed(2)}</TableCell>
                                     <TableCell>{training.elevation_gain_m}</TableCell>
                                     <TableCell>{training.moving_time}</TableCell>
-                                    <TableCell>{training.avg_speed_kmh.toFixed(1)}</TableCell>
+                                    <TableCell>{(training.avg_speed_kmh).toFixed(1)}</TableCell>
                                     <TableCell>{training.max_speed_kmh.toFixed(1)}</TableCell>
                                     <TableCell>{training.avg_heart_rate_bpm || '-'}</TableCell>
                                 </TableRow>

@@ -5,43 +5,12 @@ import { redirect } from 'next/navigation';
 import { getAllStravaRideActivities, getAthlete } from '@/lib/api/strava';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { StravaActivity } from '@/types/strava';
 
 interface StravaProfilePageProps {
     searchParams: {
         error?: string;
     };
-}
-
-function formatDate(dateStr: string) {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-}
-
-function formatDuration(seconds: number) {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-
-    return `${hours}h ${minutes}m`;
-}
-
-function formatDistance(meters: number) {
-    return `${(meters / 1000).toFixed(2)} km`;
-}
-
-function formatSpeed(metersPerSecond: number) {
-    return `${(metersPerSecond * 3.6).toFixed(1)} km/h`;
-}
-
-function formatElevation(meters: number) {
-    return `${Math.round(meters)}m`;
 }
 
 export default async function StravaProfilePage({ searchParams }: StravaProfilePageProps) {
