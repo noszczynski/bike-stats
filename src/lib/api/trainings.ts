@@ -93,7 +93,7 @@ export async function updateTrainings(accessToken: string, refreshToken: string)
                     elevation_gain_m: Number(training.total_elevation_gain),
                     moving_time_s: Number(training.moving_time),
                     avg_speed_kmh: new Decimal(meterPerSecondToKmph(training.average_speed)),
-                    max_speed_kmh: new Decimal(meterPerSecondToKmph(training.max_speed * 3.6)),
+                    max_speed_kmh: new Decimal(meterPerSecondToKmph(training.max_speed)),
                     avg_heart_rate_bpm: Number(training.average_heartrate),
                     max_heart_rate_bpm: Number(training.max_heartrate),
                     activity: {
