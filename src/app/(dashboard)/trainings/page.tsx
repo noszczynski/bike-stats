@@ -1,11 +1,10 @@
 import { cookies } from 'next/headers';
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { getAllTrainings, updateTrainings } from '@/lib/api/trainings';
-import date from '@/lib/date';
+import { TrainingCardsContainer } from '@/components/training-cards-container';
+import { UpdateTrainingsButton } from '@/components/update-trainings-button';
+import { getAllTrainings } from '@/lib/api/trainings';
+import { HydrationBoundary, QueryClient, dehydrate } from '@tanstack/react-query';
 
 export default async function TrainingsPage() {
     const cookieStore = await cookies();
@@ -16,63 +15,27 @@ export default async function TrainingsPage() {
         redirect('/auth/strava');
     }
 
-    const trainings = await getAllTrainings();
+    // Create a new QueryClient for the server
+    const queryClient = new QueryClient();
 
-    const update = async () => {
-        'use server';
-        const result = await updateTrainings(accessToken, refreshToken);
-        console.log(result);
-    };
+    // Prefetch data on the server and put it in the query cache
+    await queryClient.prefetchQuery({
+        queryKey: ['trainings'],
+        queryFn: getAllTrainings
+    });
+
+    // Dehydrate the query cache to send it to the client
+    const dehydratedState = dehydrate(queryClient);
 
     return (
         <div className='container py-8'>
             <div className='flex flex-row gap-2'>
                 <h1 className='mb-6 text-3xl font-bold'>Wszystkie treningi</h1>
-                <Button variant='link' onClick={update}>
-                    Aktualizuj
-                </Button>
+                <UpdateTrainingsButton accessToken={accessToken} refreshToken={refreshToken} />
             </div>
-            <TrainingCards trainings={trainings} />
+            <HydrationBoundary state={dehydratedState}>
+                <TrainingCardsContainer />
+            </HydrationBoundary>
         </div>
     );
 }
-
-const TrainingCards = ({ trainings }: { trainings: Awaited<ReturnType<typeof getAllTrainings>> }) => (
-    <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
-        {trainings.map((training) => {
-            return (
-                <div key={training.id}>
-                    <Link href={`/trainings/${training.id}`}>
-                        <Card className='hover:bg-muted/50 h-full transition-all'>
-                            <CardHeader className='pb-2'>
-                                <CardTitle className='flex items-center justify-between'>
-                                    <span>{date(training.date).format('LL')}</span>
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className='space-y-2'>
-                                    <div className='flex justify-between'>
-                                        <span className='text-muted-foreground'>Dystans:</span>
-                                        <span className='font-medium'>{training.distance_km.toFixed(2)} km</span>
-                                    </div>
-                                    <div className='flex justify-between'>
-                                        <span className='text-muted-foreground'>Czas jazdy:</span>
-                                        <span className='font-medium'>
-                                            {training.moving_time}
-                                        </span>
-                                    </div>
-                                    <div className='flex justify-between'>
-                                        <span className='text-muted-foreground'>Średnia prędkość:</span>
-                                        <span className='font-medium'>
-                                            {(training.avg_speed_kmh).toFixed(1)} km/h
-                                        </span>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </Link>
-                </div>
-            );
-        })}
-    </div>
-);

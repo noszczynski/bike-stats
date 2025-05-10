@@ -81,6 +81,7 @@ export interface StravaActivity {
     max_speed: number;
     average_watts?: number;
     device_watts?: boolean;
+    device_name?: string;
     kilojoules?: number;
     has_heartrate?: boolean;
     average_heartrate?: number;

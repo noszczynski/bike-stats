@@ -82,7 +82,7 @@ export async function getTrainingsToImport(accessToken: string, refreshToken: st
 export async function updateTrainings(accessToken: string, refreshToken: string) {
     const trainingsToImport = await getTrainingsToImport(accessToken, refreshToken);
 
-    return prisma.$transaction(async (tx: PrismaClient) => {
+    return prisma.$transaction(async (tx) => {
         for await (const training of trainingsToImport) {
             await tx.stravaActivity.create({
                 data: {
@@ -98,7 +98,8 @@ export async function updateTrainings(accessToken: string, refreshToken: string)
                     max_heart_rate_bpm: Number(training.max_heartrate),
                     activity: {
                         create: {
-                            type: 'ride'
+                            type: 'ride',
+                            device: training.device_name
                         }
                     }
                 }
@@ -209,4 +210,22 @@ export async function updateTraining(
     });
 
     return formatActivityToTraining(activity);
+}
+
+// Client-side version of updateTrainings that calls the API route instead of using Prisma directly
+export async function updateTrainingsClient(accessToken: string, refreshToken: string) {
+    const response = await fetch('/api/trainings/update', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ accessToken, refreshToken })
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update trainings');
+    }
+
+    return response.json();
 }
