@@ -25,8 +25,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { BatteryUsageChart } from './battery-usage-chart';
 import { CompareToSelect } from './compare-to-select';
 import { EffortLevelChart } from './effort-level-chart';
-import { Slider } from './ui/slider';
-import SliderTooltip, { SliderWithMarks, SliderWithThumbs } from './ui/slider-with-marks';
+import SliderTooltip from './ui/slider-with-marks';
 import isNil from 'lodash/isNil';
 import { Check, ChevronLeft, ChevronRight, Copy, Loader2, SparklesIcon } from 'lucide-react';
 import { useQueryState } from 'nuqs';
@@ -396,6 +395,10 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                             formatValue={(val) => val.toFixed(1)}
                         />
                     </div>
+                    {/* Strava Embed */}
+                    {typeof window !== 'undefined' && training.strava_activity_id && (
+                        <StravaEmbed stravaActivityId={training.strava_activity_id} />
+                    )}
                 </TabsContent>
 
                 <TabsContent value='performance' className='mt-6'>
@@ -548,14 +551,16 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                                     }}
                                     disabled={isGenerating}
                                     className='gap-2'>
-                                    <SparklesIcon size={16} />
                                     {isGenerating ? (
                                         <>
                                             <Loader2 className='h-4 w-4 animate-spin' />
                                             Generowanie...
                                         </>
                                     ) : (
-                                        'Generuj podsumowanie'
+                                        <>
+                                            <SparklesIcon size={16} />
+                                            Generuj podsumowanie
+                                        </>
                                     )}
                                 </Button>
                             </div>
@@ -788,6 +793,36 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                     </div>
                 </TabsContent>
             </Tabs>
+        </div>
+    );
+}
+
+function StravaEmbed({ stravaActivityId }: { stravaActivityId: number }) {
+    React.useEffect(() => {
+        // Declare StravaEmbeds on window to avoid TypeScript error
+
+        const win = window as typeof window & { StravaEmbeds?: any };
+        // Only add the script if it hasn't been added yet
+        if (!document.getElementById('strava-embed-script')) {
+            const script = document.createElement('script');
+            script.id = 'strava-embed-script';
+            script.src = 'https://strava-embeds.com/embed.js';
+            script.async = true;
+            document.body.appendChild(script);
+        } else if (win.StravaEmbeds) {
+            // If script is already loaded, re-parse embeds
+            win.StravaEmbeds.process();
+        }
+    }, [stravaActivityId]);
+
+    return (
+        <div className='mt-6 flex w-full justify-center'>
+            <div
+                className='strava-embed-placeholder w-full max-w-2xl'
+                data-embed-type='activity'
+                data-embed-id={stravaActivityId}
+                data-style='standard'
+            />
         </div>
     );
 }
