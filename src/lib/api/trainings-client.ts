@@ -1,0 +1,33 @@
+import { PaginationOptions, TrainingFilters, TrainingsResponse } from './trainings';
+
+/**
+ * Fetch trainings from the API with filters and pagination
+ */
+export async function fetchTrainings(
+    filters: TrainingFilters = {},
+    pagination: PaginationOptions = { page: 1, pageSize: 10 }
+): Promise<TrainingsResponse> {
+    // Construct the query string
+    const params = new URLSearchParams();
+
+    // Add filter parameters
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.type) params.append('type', filters.type);
+    if (filters.minDistance !== undefined) params.append('minDistance', filters.minDistance.toString());
+    if (filters.maxDistance !== undefined) params.append('maxDistance', filters.maxDistance.toString());
+
+    // Add pagination parameters
+    if (pagination.page) params.append('page', pagination.page.toString());
+    if (pagination.pageSize) params.append('pageSize', pagination.pageSize.toString());
+
+    // Make the request
+    const response = await fetch(`/api/trainings?${params.toString()}`);
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch trainings');
+    }
+
+    return response.json();
+}

@@ -52,14 +52,66 @@ function formatActivityToTraining(activity: Activity & { strava_activity: Strava
     } satisfies Training;
 }
 
+// Define filter types
+export type TrainingFilters = {
+    startDate?: string;
+    endDate?: string;
+    type?: string;
+    minDistance?: number;
+    maxDistance?: number;
+};
+
+export type PaginationOptions = {
+    page?: number;
+    pageSize?: number;
+};
+
+export type TrainingsResponse = {
+    trainings: Training[];
+    totalCount: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+};
+
 /**
  * Fetch all imported trainings from the database
  */
-export async function getAllTrainings(): Promise<Training[]> {
+export async function getAllTrainings(
+    filters: TrainingFilters = {},
+    pagination: PaginationOptions = { page: 1, pageSize: 10 }
+): Promise<TrainingsResponse> {
+    const { startDate, endDate, type, minDistance, maxDistance } = filters;
+    const { page = 1, pageSize = 200 } = pagination;
+
+    const skip = (page - 1) * pageSize;
+
+    // Build where clause based on filters
+    const where: any = {
+        type: 'ride'
+    };
+
+    // Add date range filter if provided
+    if (startDate || endDate) {
+        where.strava_activity = {
+            date: {}
+        };
+
+        if (startDate) {
+            where.strava_activity.date.gte = new Date(startDate);
+        }
+
+        if (endDate) {
+            where.strava_activity.date.lte = new Date(endDate);
+        }
+    }
+
+    // Query for total count first (without pagination)
+    const totalCount = await prisma.activity.count({ where });
+
+    // Then query for the actual data with pagination
     const importedActivities = await prisma.activity.findMany({
-        where: {
-            type: 'ride'
-        },
+        where,
         include: {
             strava_activity: true
         },
@@ -67,10 +119,20 @@ export async function getAllTrainings(): Promise<Training[]> {
             strava_activity: {
                 date: 'desc'
             }
-        }
+        },
+        skip,
+        take: pageSize
     });
 
-    return z.array(TrainingSchema).parse(importedActivities.map(formatActivityToTraining));
+    const trainings = z.array(TrainingSchema).parse(importedActivities.map(formatActivityToTraining));
+
+    return {
+        trainings,
+        totalCount,
+        page,
+        pageSize,
+        totalPages: Math.ceil(totalCount / pageSize)
+    };
 }
 
 export async function getTrainingsToImport(accessToken: string, refreshToken: string) {
