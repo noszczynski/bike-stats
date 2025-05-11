@@ -5,7 +5,7 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["postgresqlExtensions"]
 }
 
@@ -48,19 +48,21 @@ model Activity {
 }
 
 model StravaActivity {
-  id                 BigInt    @id
-  name               String
-  date               DateTime
-  distance_m         Int
-  elevation_gain_m   Int
-  moving_time_s      Int
-  avg_speed_kmh      Decimal
-  max_speed_kmh      Decimal
-  avg_heart_rate_bpm Int?
-  max_heart_rate_bpm Int?
-  created_at         DateTime  @default(now())
-  updated_at         DateTime  @updatedAt
-  activity           Activity?
+  id                   BigInt    @id
+  name                 String
+  date                 DateTime
+  distance_m           Int
+  elevation_gain_m     Int
+  moving_time_s        Int
+  avg_speed_kmh        Decimal
+  max_speed_kmh        Decimal
+  avg_heart_rate_bpm   Int?
+  max_heart_rate_bpm   Int?
+  map_summary_polyline String?   @db.Text
+  map_summary_id       String?   @db.VarChar(256)
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+  activity             Activity?
 
   @@map("strava_activities")
 }

@@ -19,7 +19,7 @@ export const TrainingSchema = z.object({
     /** Name of the training */
     name: z.string(),
     /** Date of the training */
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
+    date: z.string().regex(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/, 'Date must be in YYYY-MM-DD format'),
     /** Distance of the training in km */
     distance_km: z.number(),
     /** Elevation gain of the training in m */
@@ -52,7 +52,14 @@ export const TrainingSchema = z.object({
         .nullish()
         .refine((value) => !value || (value >= 1 && value <= 10), {
             message: 'Effort must be between 1 and 10'
+        }),
+    /** Strava map data (optional) */
+    map: z
+        .object({
+            id: z.string().nullish(),
+            summary_polyline: z.string().nullish()
         })
+        .nullish()
 });
 
 export type Training = z.infer<typeof TrainingSchema>;

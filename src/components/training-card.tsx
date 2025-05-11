@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import date from '@/lib/date';
 import type { Training } from '@/types/training';
 
+import { RouteBackground } from './route-background';
 import { Clipboard, HeartPulseIcon, ZapIcon } from 'lucide-react';
 
 interface TrainingCardsProps {
@@ -19,8 +20,11 @@ export function TrainingCards({ trainings }: TrainingCardsProps) {
             {trainings.map((training) => (
                 <div key={training.id}>
                     <Link href={`/trainings/${training.id}`}>
-                        <Card className='hover:bg-muted/50 h-full transition-all'>
-                            <CardHeader className='pb-2'>
+                        <Card className='hover:bg-muted/50 relative h-full overflow-hidden transition-all'>
+                            {training.map?.summary_polyline && (
+                                <RouteBackground summaryPolyline={training.map.summary_polyline} />
+                            )}
+                            <CardHeader className='relative z-10 pb-2'>
                                 <CardTitle className='flex items-center justify-between'>
                                     <span>{date(training.date).format('LL')}</span>
                                     <div className='flex items-center gap-2'>
@@ -68,7 +72,7 @@ export function TrainingCards({ trainings }: TrainingCardsProps) {
                                     </div>
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent>
+                            <CardContent className='relative z-10'>
                                 <div className='space-y-2'>
                                     <div className='flex justify-between'>
                                         <span className='text-muted-foreground'>Dystans:</span>

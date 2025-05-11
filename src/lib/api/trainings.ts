@@ -3,7 +3,7 @@ import { meterPerSecondToKmph } from '@/lib/convert/meter-per-second-to-kmph';
 import { Training, TrainingSchema } from '@/types/training';
 import { minutesToTimeString, secondsToTimeString, timeStringToMinutes } from '@/utils/time';
 import type { Activity, StravaActivity } from '@prisma/client';
-import { PrismaClient } from '@prisma/client';
+import { ActivityType, PrismaClient } from '@prisma/client';
 
 import { getActivityById, getActivityByStravaId } from '../db';
 import { prisma } from '../prisma';
@@ -12,6 +12,8 @@ import { Decimal } from 'decimal.js';
 import { z } from 'zod';
 
 function formatActivityToTraining(activity: Activity & { strava_activity: StravaActivity }): Training {
+    console.log({ activity });
+
     return {
         id: activity.id,
         strava_activity_id: Number(activity.strava_activity.id),
@@ -42,7 +44,13 @@ function formatActivityToTraining(activity: Activity & { strava_activity: Strava
         summary: activity.summary ?? null,
         device: activity.device ?? null,
         battery_percent_usage: activity.battery_percent_usage ?? null,
-        effort: activity.effort ?? null
+        effort: activity.effort ?? null,
+        map: activity.strava_activity.map_summary_polyline
+            ? {
+                  id: activity.strava_activity.map_summary_id,
+                  summary_polyline: activity.strava_activity.map_summary_polyline
+              }
+            : null
     } satisfies Training;
 }
 
