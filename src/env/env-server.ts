@@ -17,16 +17,16 @@ export const serverEnvSchema = z.object({
 });
 
 // For development debugging
-if (process.env.NODE_ENV !== 'production') {
-    console.log('Environment variables loaded:', {
-        NODE_ENV: process.env.NODE_ENV,
-        STRAVA_CLIENT_ID: process.env.STRAVA_CLIENT_ID,
-        STRAVA_CLIENT_SECRET: process.env.STRAVA_CLIENT_SECRET,
-        STRAVA_AUTH_CALLBACK_URI: process.env.STRAVA_AUTH_CALLBACK_URI,
-        JWT_SECRET: process.env.JWT_SECRET,
-        OPENAI_API_KEY: process.env.OPENAI_API_KEY
-    });
-}
+// if (process.env.NODE_ENV !== 'production') {
+//     console.log('Environment variables loaded:', {
+//         NODE_ENV: process.env.NODE_ENV,
+//         STRAVA_CLIENT_ID: process.env.STRAVA_CLIENT_ID,
+//         STRAVA_CLIENT_SECRET: process.env.STRAVA_CLIENT_SECRET,
+//         STRAVA_AUTH_CALLBACK_URI: process.env.STRAVA_AUTH_CALLBACK_URI,
+//         JWT_SECRET: process.env.JWT_SECRET,
+//         OPENAI_API_KEY: process.env.OPENAI_API_KEY
+//     });
+// }
 
 /**
  * Server-side environment variables - all values that should be accessible only on the server
@@ -64,7 +64,7 @@ export function validateEnv() {
 
         return parsed.data;
     } catch (error) {
-        console.error('Environment validation error:', error);
+        console.error('Environment validation error');
         throw error;
     }
 }

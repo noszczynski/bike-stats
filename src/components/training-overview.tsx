@@ -306,8 +306,6 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
     // Calculate percentage difference for training load
     const trainingLoadDiff = calcPercentageDiff(currentTrainingLoad.intensity, avgTrainingLoad);
 
-    console.log(training);
-
     return (
         <div className='space-y-8'>
             <div className='border-b pb-4'>
@@ -397,9 +395,9 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                             <RideMap summaryPolyline={training.map.summary_polyline} />
                         )}
                         {/* Strava Embed */}
-                        {typeof window !== 'undefined' && training.strava_activity_id && (
+                        {/* {typeof window !== 'undefined' && training.strava_activity_id && (
                             <StravaEmbed stravaActivityId={training.strava_activity_id} />
-                        )}
+                        )} */}
                     </div>
                 </TabsContent>
 

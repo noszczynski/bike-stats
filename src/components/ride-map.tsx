@@ -40,14 +40,17 @@ export function RideMap({ summaryPolyline }: RideMapProps) {
 
     return (
         <div className='mt-6 flex w-full justify-center'>
-            <div className='h-72 w-full max-w-2xl overflow-hidden rounded-lg border'>
-                <MapContainer bounds={bounds} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
-                    <TileLayer
-                        url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-                        attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-                    />
-                    <LeafletPolyline positions={latLngs} pathOptions={{ color: 'blue', weight: 4 }} />
-                </MapContainer>
+            <div className='relative w-full overflow-hidden rounded-lg border'>
+                <div className='pb-[56.25%]' /> {/* 16:9 aspect ratio */}
+                <div className='absolute inset-0'>
+                    <MapContainer bounds={bounds} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
+                        <TileLayer
+                            url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+                            attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+                        />
+                        <LeafletPolyline positions={latLngs} pathOptions={{ color: 'blue', weight: 4 }} />
+                    </MapContainer>
+                </div>
             </div>
         </div>
     );

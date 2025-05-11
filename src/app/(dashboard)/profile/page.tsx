@@ -2,9 +2,9 @@ import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
-import { getAllStravaRideActivities, getAthlete } from '@/lib/api/strava';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { getAllStravaRideActivities, getAthlete } from '@/lib/api/strava';
 import { StravaActivity } from '@/types/strava';
 
 interface StravaProfilePageProps {
@@ -29,8 +29,6 @@ export default async function StravaProfilePage({ searchParams }: StravaProfileP
         ]);
 
         const bikeActivities = (activities as StravaActivity[]).filter((activity) => activity.sport_type === 'Ride');
-
-        console.log(bikeActivities);
 
         return (
             <main className='flex min-h-screen flex-col items-center p-24'>

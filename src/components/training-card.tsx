@@ -26,7 +26,7 @@ export function TrainingCards({ trainings }: TrainingCardsProps) {
                             )}
                             <CardHeader className='relative z-10 pb-2'>
                                 <CardTitle className='flex items-center justify-between'>
-                                    <span>{date(training.date).format('LL')}</span>
+                                    <span className='line-clamp-1 text-ellipsis'>{training.name}</span>
                                     <div className='flex items-center gap-2'>
                                         <TooltipProvider>
                                             <Tooltip>
@@ -74,6 +74,10 @@ export function TrainingCards({ trainings }: TrainingCardsProps) {
                             </CardHeader>
                             <CardContent className='relative z-10'>
                                 <div className='space-y-2'>
+                                    <div className='flex justify-between'>
+                                        <span className='text-muted-foreground'>Data:</span>
+                                        <span className='font-medium'>{date(training.date).format('LL')}</span>
+                                    </div>
                                     <div className='flex justify-between'>
                                         <span className='text-muted-foreground'>Dystans:</span>
                                         <span className='font-medium'>{training.distance_km.toFixed(2)} km</span>
