@@ -1,13 +1,16 @@
+import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 import { updateTrainings as updateTrainingsDb } from '@/lib/api/trainings';
 
 export async function POST(request: Request) {
     try {
-        const { accessToken, refreshToken } = await request.json();
+        const cookieStore = await cookies();
+        const accessToken = cookieStore.get('strava_access_token')?.value;
+        const refreshToken = cookieStore.get('strava_refresh_token')?.value;
 
         if (!accessToken || !refreshToken) {
-            return NextResponse.json({ error: 'Access token and refresh token are required' }, { status: 400 });
+            return NextResponse.json({ error: 'No access token or refresh token found' }, { status: 401 });
         }
 
         const result = await updateTrainingsDb(accessToken, refreshToken);

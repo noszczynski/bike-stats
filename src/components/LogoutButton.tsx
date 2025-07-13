@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { Button } from '@/components/ui/button';
 
@@ -8,10 +9,15 @@ import { LogOut } from 'lucide-react';
 
 export function LogoutButton() {
     const router = useRouter();
+    const queryClient = useQueryClient();
 
     const handleLogout = async () => {
         try {
             await fetch('/api/auth/strava/logout', { method: 'POST' });
+            
+            // Invalidate the authentication query to update the UI
+            queryClient.invalidateQueries({ queryKey: ['strava-auth-status'] });
+            
             router.refresh();
             router.push('/auth/strava');
         } catch (error) {

@@ -79,7 +79,7 @@ export type TrainingsResponse = {
  */
 export async function getAllTrainings(
     filters: TrainingFilters = {},
-    pagination: PaginationOptions = { page: 1, pageSize: 10 }
+    pagination: PaginationOptions = { page: 1, pageSize: 200 }
 ): Promise<TrainingsResponse> {
     const { startDate, endDate, type, minDistance, maxDistance } = filters;
     const { page = 1, pageSize = 200 } = pagination;

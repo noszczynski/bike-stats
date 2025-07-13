@@ -5,16 +5,12 @@ import { useUpdateTrainings } from '@/hooks/use-update-trainings';
 
 import { Loader } from 'lucide-react';
 
-interface UpdateTrainingsButtonProps {
-    accessToken: string;
-    refreshToken: string;
-}
-
-export function UpdateTrainingsButton({ accessToken, refreshToken }: UpdateTrainingsButtonProps) {
+export function UpdateTrainingsButton() {
     const { mutate, isPending } = useUpdateTrainings();
 
     const handleUpdate = () => {
-        mutate({ accessToken, refreshToken });
+        // Call the mutation without tokens - the API will get them from cookies
+        mutate();
     };
 
     return (

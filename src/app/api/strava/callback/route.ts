@@ -18,7 +18,7 @@ export async function GET(request: Request) {
 
     try {
         const tokenData = await exchangeCodeForToken(code);
-        const response = NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/profile`);
+        const response = NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/?auth=success`);
 
         // Set cookies in the response
         response.cookies.set('strava_access_token', tokenData.access_token, {

@@ -8,10 +8,6 @@ import { ThemeProvider } from 'next-themes';
 
 import '@/app/globals.css';
 import { Providers } from '@/app/providers';
-import { StravaLoginButton } from '@/components/StravaLoginButton';
-import { StravaProfile } from '@/components/StravaProfile';
-import { Button } from '@/components/ui/button';
-import { ThemeSwitch } from '@/components/ui/theme-switch';
 
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 

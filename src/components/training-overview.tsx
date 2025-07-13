@@ -492,7 +492,7 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                 </TabsContent>
 
                 <TabsContent value='summary' className='mt-6'>
-                    <div className='space-y-4'>
+                    <div className='space-y-4 max-w-[800px]'>
                         {training.summary ? (
                             <div className='max-w-none'>
                                 <ReactMarkdown
@@ -514,57 +514,60 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                             <p className='text-muted-foreground'>Brak podsumowania treningu.</p>
                         )}
 
-                        {!training.summary && (
-                            <div className='mt-4 flex justify-end'>
-                                <Button
-                                    onClick={async () => {
-                                        setIsGenerating(true);
-                                        try {
-                                            const response = await fetch(
-                                                `/api/trainings/${training.id}/description/generate`,
-                                                {
-                                                    method: 'POST'
-                                                }
-                                            );
-
-                                            if (!response.ok) {
-                                                throw new Error('Nie udało się wygenerować podsumowania');
+                        <div className='mt-4 flex justify-end'>
+                            <Button
+                                onClick={async () => {
+                                    setIsGenerating(true);
+                                    try {
+                                        const response = await fetch(
+                                            `/api/trainings/${training.id}/description/generate`,
+                                            {
+                                                method: 'POST'
                                             }
+                                        );
 
-                                            const data = await response.json();
-
-                                            toast('Podsumowanie wygenerowane pomyślnie', {
-                                                description: 'Podsumowanie treningu zostało zaktualizowane.'
-                                            });
-
-                                            router.refresh();
-                                        } catch (error) {
-                                            toast('Nie udało się wygenerować podsumowania', {
-                                                description:
-                                                    error instanceof Error
-                                                        ? error.message
-                                                        : 'Proszę spróbować ponownie później'
-                                            });
-                                        } finally {
-                                            setIsGenerating(false);
+                                        if (!response.ok) {
+                                            throw new Error('Nie udało się wygenerować podsumowania');
                                         }
-                                    }}
-                                    disabled={isGenerating}
-                                    className='gap-2'>
-                                    {isGenerating ? (
-                                        <>
-                                            <Loader2 className='h-4 w-4 animate-spin' />
-                                            Generowanie...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <SparklesIcon size={16} />
-                                            Generuj podsumowanie
-                                        </>
-                                    )}
-                                </Button>
-                            </div>
-                        )}
+
+                                        const data = await response.json();
+
+                                        toast('Podsumowanie wygenerowane pomyślnie', {
+                                            description: 'Podsumowanie treningu zostało zaktualizowane.'
+                                        });
+
+                                        router.refresh();
+                                    } catch (error) {
+                                        toast('Nie udało się wygenerować podsumowania', {
+                                            description:
+                                                error instanceof Error
+                                                    ? error.message
+                                                    : 'Proszę spróbować ponownie później'
+                                        });
+                                    } finally {
+                                        setIsGenerating(false);
+                                    }
+                                }}
+                                disabled={isGenerating}
+                                className='gap-2'>
+                                {isGenerating ? (
+                                    <>
+                                        <Loader2 className='h-4 w-4 animate-spin' />
+                                        Generowanie...
+                                    </>
+                                ) : training.summary ? (
+                                    <>
+                                        <SparklesIcon size={16} />
+                                        Wygeneruj ponownie
+                                    </>
+                                ) : (
+                                    <>
+                                        <SparklesIcon size={16} />
+                                        Generuj podsumowanie
+                                    </>
+                                )}
+                            </Button>
+                        </div>
                     </div>
                 </TabsContent>
 

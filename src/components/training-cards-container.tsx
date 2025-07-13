@@ -5,11 +5,13 @@ import { useGetTrainings } from '@/hooks/use-get-trainings';
 
 export function TrainingCardsContainer() {
     // The data is now hydrated from the server through HydrationBoundary
-    const { data: trainings } = useGetTrainings();
+    const { data } = useGetTrainings();
 
-    if (!trainings) {
+    if (!data?.trainings) {
         return <div>Loading...</div>;
     }
 
-    return <TrainingCards trainings={trainings} />;
+    console.log(data.trainings);
+
+    return <TrainingCards trainings={data.trainings} />;
 }

@@ -15,6 +15,7 @@ import { calculateTotalElevationGain } from '@/features/training/calculate-total
 import { completion } from '@/lib/api/openai';
 import { getActivity } from '@/lib/api/strava';
 import { getAllTrainings, getTrainingById, updateTraining } from '@/lib/api/trainings';
+import date from '@/lib/date';
 
 export async function POST(request: Request, { params }: { params: { training_id: string } }) {
     try {
@@ -33,8 +34,17 @@ export async function POST(request: Request, { params }: { params: { training_id
             return NextResponse.json({ error: 'No access token or refresh token found' }, { status: 401 });
         }
 
-        const allTrainings = await getAllTrainings();
+        const { trainings: allTrainings } = await getAllTrainings();
         const stravaActivity = await getActivity(training.strava_activity_id, accessToken, refreshToken);
+
+        // Calculate average distance across all trainings
+        const averageDistance = allTrainings.reduce((sum, t) => sum + t.distance_km, 0) / allTrainings.length;
+
+        // Get latest 10 trainings above average distance
+        const latestLongTrainings = [...allTrainings]
+            .filter((t) => t.distance_km > averageDistance)
+            .sort((a, b) => date(b.date).valueOf() - date(a.date).valueOf())
+            .slice(0, 10);
 
         const averageSpeed = calculateAverageSpeed(allTrainings);
         const highestAverageSpeed = calculateHighestAverageSpeed(allTrainings);
@@ -55,6 +65,10 @@ export async function POST(request: Request, { params }: { params: { training_id
 Training Data:
 
 \`\`\`training_data
+Weight: 72kg
+Height: 185cm
+Sex: Male
+Age: ${date().year() - 1999}
 Date: ${training.date}
 Distance: ${training.distance_km || 'N/A'} km
 Moving Time: ${training.moving_time || 'N/A'}
@@ -86,17 +100,36 @@ Weather Conditions: ${stravaActivity.weather_report ? JSON.stringify(stravaActiv
 Historical Metrics:
 
 \`\`\`historical_metrics
-Your Average Speed: ${averageSpeed.toFixed(1)} km/h
-Your Highest Average Speed Ever: ${highestAverageSpeed.toFixed(1)} km/h
-Your Highest Recorded Speed Ever: ${maxSpeed.toFixed(1)} km/h
-Your Average Heart Rate: ${averageHeartRate.toFixed(0)} bpm
-Your Highest Average Heart Rate: ${highestAverageHeartRate} bpm
-Your Total Distance Cycled: ${totalDistance.toFixed(0)} km
-Your Longest Ride Distance: ${highestDistance.toFixed(1)} km
-Your Average Elevation Gain per km: ${elevationGainPerKm.toFixed(1)} m/km
-Your Total Elevation Climbed: ${totalElevationGain.toFixed(0)} m
-Your Average Pace: ${averageTimePerKm}
-Your Fastest Pace: ${shortestTimePerKm}
+Average Speed: ${averageSpeed.toFixed(1)} km/h
+Highest Average Speed Ever: ${highestAverageSpeed.toFixed(1)} km/h
+Highest Recorded Speed Ever: ${maxSpeed.toFixed(1)} km/h
+Average Heart Rate: ${averageHeartRate.toFixed(0)} bpm
+Highest Average Heart Rate: ${highestAverageHeartRate} bpm
+Total Distance Cycled: ${totalDistance.toFixed(0)} km
+Longest Ride Distance: ${highestDistance.toFixed(1)} km
+Average Elevation Gain per km: ${elevationGainPerKm.toFixed(1)} m/km
+Total Elevation Climbed: ${totalElevationGain.toFixed(0)} m
+Average Pace: ${averageTimePerKm}
+Fastest Pace: ${shortestTimePerKm}
+\`\`\`
+
+Historical latest long training sessions (Above Average ${averageDistance.toFixed(1)} km):
+
+\`\`\`historical_latest_long_trainings_data
+${latestLongTrainings
+    .map(
+        (t) => `
+Training "${t.name}" (${t.date}):
+- Distance: ${t.distance_km} km
+- Moving Time: ${t.moving_time}
+- Average Speed: ${t.avg_speed_kmh} km/h
+- Max Speed: ${t.max_speed_kmh} km/h
+- Elevation Gain: ${t.elevation_gain_m} m
+- Average Heart Rate: ${t.avg_heart_rate_bpm || 'N/A'} bpm
+- Effort Level: ${t.effort || 'N/A'}/10
+`
+    )
+    .join('\n')}
 \`\`\`
 
 Example Response in Markdown Format:
@@ -111,38 +144,46 @@ Twój dzisiejszy 28-kilometrowy trening trwający 1 godzinę i 15 minut był sol
 - Utrzymałeś stabilne tętno w strefie 3 przez większość treningu
 - Znacząco poprawiłeś tempo na odcinkach pod górę w porównaniu do poprzednich treningów
 
+### Osiągnięcia w porównaniu do innych treningów:
+- **Maksymalna prędkość:** 42 km/h, zbliżając się do swojego rekordu (45 km/h)
+- **Tętno:** Utrzymałeś stabilne tętno w strefie 3 przez większość treningu
+- **Tempo:** Znacząco poprawiłeś tempo na odcinkach pod górę w porównaniu do poprzednich treningów
+
 ### Twoje mocne strony:
-- Doskonała kontrola wysiłku na podjazdach (widoczna w stabilnym tętnie)
-- Konsekwentne tempo na płaskich odcinkach
-- Umiejętność osiągania wysokich prędkości na zjazdach przy zachowaniu bezpieczeństwa
+- **Wysoka regularność i wytrzymałość:** Doskonała kontrola wysiłku na podjazdach (widoczna w stabilnym tętnie)
+- **Stabilna praca serca:** Konsekwentne tempo na płaskich odcinkach
+- **Konsekwentne podtrzymywanie prędkości:** Umiejętność osiągania wysokich prędkości na zjazdach przy zachowaniu bezpieczeństwa
 
 ### Obszary do poprawy:
-- Możesz zwiększyć czas spędzony w strefie 4 dla lepszego rozwoju progów tlenowych
-- Warto spróbować utrzymać wyższe tempo na ostatnich kilometrach, gdzie nastąpił lekki spadek
+- **Wysoka regularność i wytrzymałość:** Możesz zwiększyć czas spędzony w strefie 4 dla lepszego rozwoju progów tlenowych
+- **Stabilna praca serca:** Warto spróbować utrzymać wyższe tempo na ostatnich kilometrach, gdzie nastąpił lekki spadek
 
 ### Rekomendacje dotyczące regeneracji:
-- Zalecany lekki stretching, skupiając się na mięśniach czworogłowych i łydkach
-- Nawodnij się z elektrolitami (około 500ml) w ciągu najbliższej godziny
-- Rozważ lekką 15-minutową jazdę regeneracyjną jutro, aby przyspieszyć usuwanie kwasu mlekowego
-- Pełna regeneracja powinna nastąpić w ciągu 24 godzin przy odpowiednim odżywianiu
+Poza typowymi rekomendacjami, zalecam dodatkowo:
+- **Stretching:** Skup się na mięśniach czworogłowych i łydkach
+- **Odpowiednie odżywianie:** Upewnij się, że masz odpowiednią ilość węglowodanów i białek w swoim jadłospisie
+
+or (Dla tego treningu nie zalecam żadnych dodatkowych rekomendacji poza standardowym )
 
 Twój postęp jest imponujący! Z każdym treningiem zwiększasz swoją wytrzymałość i efektywność. Przy utrzymaniu takiej konsekwencji, wkrótce pobijesz swoje rekordy średniej prędkości i dystansu. Kontynuuj świetną pracę!
 \`\`\`
 
 The summary should be professional and motivational. Return the summary in Polish using Markdown formatting with:
 1. Level 2 heading (##) for the training title and date
-2. Level 3 headings (###) for each section 
+2. Level 3 headings (###) for each section
 3. Bullet points for lists
 4. Basic formatting like **bold** or *italic* when appropriate for emphasis
+5. Bold the values and 
 
 Include the following sections:
 1. Name and date of the training as the main heading
 2. A brief overview paragraph of how this training compares to the rider's averages and personal bests
 3. Notable achievements or patterns in this particular ride
-4. Areas of strength shown in this training 
+4. Areas of strength shown in this training
 5. Any potential areas for improvement based on the metrics
 6. Recovery suggestions based on the intensity and duration of the workout
-7. End with an encouraging note about progress`;
+7. For recovery suggestions skip the general recommendations like stretching, hydration 500ml of water with electrolytes, short recovery ride on tomorrow and eat carbs & proteins. Skip this section entirely if you don't have any recovery suggestions except for the general recommendations.
+8. End with an encouraging note about progress`;
 
         const summary = await completion(prompt);
 

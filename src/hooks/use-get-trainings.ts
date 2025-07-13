@@ -8,7 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 
 export function useGetTrainings(
     filters: TrainingFilters = {},
-    paginationOptions: PaginationOptions = { page: 1, pageSize: 10 }
+    paginationOptions: PaginationOptions = { page: 1, pageSize: 200 }
 ) {
     const [pagination, setPagination] = useState<PaginationOptions>(paginationOptions);
 

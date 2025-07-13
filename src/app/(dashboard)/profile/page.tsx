@@ -1,6 +1,5 @@
 import { cookies } from 'next/headers';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -18,93 +17,91 @@ export default async function StravaProfilePage({ searchParams }: StravaProfileP
     const accessToken = cookieStore.get('strava_access_token')?.value;
     const refreshToken = cookieStore.get('strava_refresh_token')?.value;
 
-    if (!accessToken) {
-        redirect('/auth/strava');
-    }
+    // Since we're protected by AuthGate, we know tokens exist
+    const [athlete, activities] = await Promise.all([
+        getAthlete(accessToken!, refreshToken),
+        getAllStravaRideActivities(accessToken!, refreshToken, { per_page: 100 })
+    ]);
 
-    try {
-        const [athlete, activities] = await Promise.all([
-            getAthlete(accessToken, refreshToken),
-            getAllStravaRideActivities(accessToken, refreshToken, { per_page: 100 })
-        ]);
+    const bikeActivities = (activities as StravaActivity[]).filter((activity) => activity.sport_type === 'Ride');
 
-        const bikeActivities = (activities as StravaActivity[]).filter((activity) => activity.sport_type === 'Ride');
-
-        return (
-            <main className='flex min-h-screen flex-col items-center p-24'>
-                <div className='w-full max-w-4xl space-y-8'>
-                    {searchParams.error === 'failed_to_fetch_athlete' && (
-                        <Alert variant='destructive'>
-                            <AlertTitle>Error</AlertTitle>
-                            <AlertDescription>
-                                Failed to fetch athlete data. Please try again later or reconnect your Strava account.
-                            </AlertDescription>
-                        </Alert>
-                    )}
-                    <div className='flex items-center justify-between'>
-                        <h1 className='text-3xl font-bold'>Strava Profile</h1>
-                        <Link href='/'>
-                            <Button variant='outline'>Back to Home</Button>
-                        </Link>
-                    </div>
-
-                    <div className='bg-card rounded-lg p-6 shadow-lg'>
-                        <div className='flex items-center space-x-4'>
+    return (
+        <main className='flex min-h-screen flex-col items-center p-24'>
+            <div className='w-full max-w-4xl space-y-8'>
+                {searchParams.error === 'failed_to_fetch_athlete' && (
+                    <Alert variant='destructive'>
+                        <AlertTitle>Error</AlertTitle>
+                        <AlertDescription>
+                            Failed to fetch athlete data. Please try again later or reconnect your Strava account.
+                        </AlertDescription>
+                    </Alert>
+                )}
+                <div className='flex items-center justify-between'>
+                    <h1 className='text-3xl font-bold'>Strava Profile</h1>
+                    <Link href='/'>
+                        <Button variant='outline'>Back to Home</Button>
+                    </Link>
+                </div>
+                <div className='grid gap-8 md:grid-cols-2'>
+                    <div className='space-y-4'>
+                        <h2 className='text-xl font-semibold'>Profile Information</h2>
+                        <div className='flex items-center gap-4'>
                             <img
                                 src={athlete.profile}
                                 alt={`${athlete.firstname} ${athlete.lastname}`}
-                                className='h-20 w-20 rounded-full'
+                                className='h-16 w-16 rounded-full'
                             />
-                            <div className='space-y-2'>
-                                <h2 className='text-2xl font-semibold'>
+                            <div>
+                                <p className='text-lg font-medium'>
                                     {athlete.firstname} {athlete.lastname}
-                                </h2>
-                                {athlete.username && <p className='text-muted-foreground'>@{athlete.username}</p>}
-                                <p className='text-muted-foreground'>
-                                    {[athlete.city, athlete.state, athlete.country].filter(Boolean).join(', ')}
                                 </p>
+                                {athlete.username && (
+                                    <p className='text-muted-foreground text-sm'>@{athlete.username}</p>
+                                )}
                             </div>
                         </div>
-                    </div>
-
-                    {/* <div className='space-y-4'>
-                        <h2 className='text-2xl font-semibold'>Latest Bike Activities</h2>
-                        <div className='grid gap-4 md:grid-cols-2'>
-                            {bikeActivities.map((activity) => (
-                                <Card key={activity.id} className='p-4'>
-                                    <h3 className='font-semibold'>{activity.name}</h3>
-                                    <p className='text-muted-foreground text-sm'>
-                                        {formatDate(activity.start_date_local)}
-                                    </p>
-                                    <div className='mt-2 grid grid-cols-2 gap-2 text-sm'>
-                                        <div>
-                                            <p className='text-muted-foreground'>Distance</p>
-                                            <p className='font-medium'>{formatDistance(activity.distance)}</p>
-                                        </div>
-                                        <div>
-                                            <p className='text-muted-foreground'>Duration</p>
-                                            <p className='font-medium'>{formatDuration(activity.moving_time)}</p>
-                                        </div>
-                                        <div>
-                                            <p className='text-muted-foreground'>Avg Speed</p>
-                                            <p className='font-medium'>{formatSpeed(activity.average_speed)}</p>
-                                        </div>
-                                        <div>
-                                            <p className='text-muted-foreground'>Elevation</p>
-                                            <p className='font-medium'>
-                                                {formatElevation(activity.total_elevation_gain)}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </Card>
-                            ))}
+                        <div className='space-y-2'>
+                            <p>
+                                <span className='font-medium'>Location:</span> {athlete.city}, {athlete.country}
+                            </p>
+                            <p>
+                                <span className='font-medium'>Premium:</span> {athlete.premium ? 'Yes' : 'No'}
+                            </p>
+                            <p>
+                                <span className='font-medium'>Summit:</span> {athlete.summit ? 'Yes' : 'No'}
+                            </p>
+                            {athlete.bio && (
+                                <p>
+                                    <span className='font-medium'>Bio:</span> {athlete.bio}
+                                </p>
+                            )}
                         </div>
-                    </div> */}
+                    </div>
+                    <div className='space-y-4'>
+                        <h2 className='text-xl font-semibold'>Recent Activities</h2>
+                        {bikeActivities.length > 0 ? (
+                            <div className='space-y-2'>
+                                {bikeActivities.slice(0, 5).map((activity) => (
+                                    <div key={activity.id} className='border-border rounded-lg border p-3'>
+                                        <h3 className='font-medium'>{activity.name}</h3>
+                                        <p className='text-muted-foreground text-sm'>
+                                            {new Date(activity.start_date).toLocaleDateString()} •{' '}
+                                            {(activity.distance / 1000).toFixed(1)} km
+                                        </p>
+                                    </div>
+                                ))}
+                                {bikeActivities.length > 5 && (
+                                    <p className='text-muted-foreground text-sm'>
+                                        And {bikeActivities.length - 5} more activities...
+                                    </p>
+                                )}
+                            </div>
+                        ) : (
+                            <p className='text-muted-foreground'>No bike activities found.</p>
+                        )}
+                    </div>
                 </div>
-            </main>
-        );
-    } catch (error) {
-        console.error('Error fetching data:', error);
-        redirect('/auth/strava?error=failed_to_fetch_athlete');
-    }
+            </div>
+        </main>
+    );
 }

@@ -1,6 +1,10 @@
 import React from 'react';
 
+
+
 import { cookies } from 'next/headers';
+
+
 
 import { DistanceChart } from '@/components/charts/distance-chart';
 import { ElevationChart } from '@/components/charts/elevation-chart';
@@ -11,10 +15,16 @@ import { PaceChart } from '@/components/charts/pace-chart';
 import { YearlyDistanceChart } from '@/components/charts/yearly-distance-chart';
 import { getAllTrainings } from '@/lib/api/trainings';
 
+
+
 import { AverageSpeedPerKilometrChart } from './charts/average-speed-per-kilometr-chart';
 
+
+
+
+
 export async function DashboardMetricsTabContent() {
-    const trainings = await getAllTrainings();
+    const { trainings } = await getAllTrainings();
 
     return (
         <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-2'>
