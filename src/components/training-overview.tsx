@@ -23,6 +23,7 @@ import {
 import date from '@/lib/date';
 import { Training } from '@/types/training';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useUpdateTraining } from '@/hooks/use-training-mutations';
 
 import { CompareToSelect } from './compare-to-select';
 import { EffortLevelChart } from './effort-level-chart';
@@ -193,6 +194,7 @@ function combineTimeComponents(hours: string, minutes: string, seconds: string):
 export function TrainingOverview({ training, compareTo, allTrainings }: TrainingOverviewProps) {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const updateTrainingMutation = useUpdateTraining();
     const [isGenerating, setIsGenerating] = useState(false);
     const [activeTab, setActiveTab] = useQueryState('tab', { defaultValue: 'overview' });
 
@@ -228,50 +230,45 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
     const onSubmit = async (data: EditFormData) => {
         setIsSubmitting(true);
         try {
-            const response = await fetch(`/api/trainings/${training.id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
+            const updateData = {
+                heart_rate_zones: {
+                    zone_1: combineTimeComponents(
+                        data.heart_rate_zones.zone_1_h || '',
+                        data.heart_rate_zones.zone_1_m || '',
+                        data.heart_rate_zones.zone_1_s || ''
+                    ),
+                    zone_2: combineTimeComponents(
+                        data.heart_rate_zones.zone_2_h || '',
+                        data.heart_rate_zones.zone_2_m || '',
+                        data.heart_rate_zones.zone_2_s || ''
+                    ),
+                    zone_3: combineTimeComponents(
+                        data.heart_rate_zones.zone_3_h || '',
+                        data.heart_rate_zones.zone_3_m || '',
+                        data.heart_rate_zones.zone_3_s || ''
+                    ),
+                    zone_4: combineTimeComponents(
+                        data.heart_rate_zones.zone_4_h || '',
+                        data.heart_rate_zones.zone_4_m || '',
+                        data.heart_rate_zones.zone_4_s || ''
+                    ),
+                    zone_5: combineTimeComponents(
+                        data.heart_rate_zones.zone_5_h || '',
+                        data.heart_rate_zones.zone_5_m || '',
+                        data.heart_rate_zones.zone_5_s || ''
+                    )
                 },
-                body: JSON.stringify({
-                    heart_rate_zones: {
-                        zone_1: combineTimeComponents(
-                            data.heart_rate_zones.zone_1_h || '',
-                            data.heart_rate_zones.zone_1_m || '',
-                            data.heart_rate_zones.zone_1_s || ''
-                        ),
-                        zone_2: combineTimeComponents(
-                            data.heart_rate_zones.zone_2_h || '',
-                            data.heart_rate_zones.zone_2_m || '',
-                            data.heart_rate_zones.zone_2_s || ''
-                        ),
-                        zone_3: combineTimeComponents(
-                            data.heart_rate_zones.zone_3_h || '',
-                            data.heart_rate_zones.zone_3_m || '',
-                            data.heart_rate_zones.zone_3_s || ''
-                        ),
-                        zone_4: combineTimeComponents(
-                            data.heart_rate_zones.zone_4_h || '',
-                            data.heart_rate_zones.zone_4_m || '',
-                            data.heart_rate_zones.zone_4_s || ''
-                        ),
-                        zone_5: combineTimeComponents(
-                            data.heart_rate_zones.zone_5_h || '',
-                            data.heart_rate_zones.zone_5_m || '',
-                            data.heart_rate_zones.zone_5_s || ''
-                        )
-                    },
-                    device: data.device || undefined,
-                    battery_percent_usage: data.battery_percent_usage
-                        ? parseInt(data.battery_percent_usage)
-                        : undefined,
-                    effort: data.effort ? parseInt(data.effort) : undefined
-                })
-            });
+                device: data.device || undefined,
+                battery_percent_usage: data.battery_percent_usage
+                    ? parseInt(data.battery_percent_usage)
+                    : undefined,
+                effort: data.effort ? parseInt(data.effort) : undefined
+            };
 
-            if (!response.ok) {
-                throw new Error('Failed to update training');
-            }
+            await updateTrainingMutation.mutateAsync({ 
+                trainingId: training.id, 
+                data: updateData 
+            });
 
             router.refresh();
         } catch (error) {

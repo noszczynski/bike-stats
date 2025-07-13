@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 import { useRouter } from 'next/navigation';
+import { useImportTraining } from '@/hooks/use-training-mutations';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -46,8 +47,8 @@ interface ImportTrainingDialogProps {
 
 export function ImportTrainingDialog({ trainingId, onImportSuccess }: ImportTrainingDialogProps) {
     const [open, setOpen] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
+    const importTrainingMutation = useImportTraining();
 
     const form = useForm<FormData>({
         resolver: zodResolver(formSchema),
@@ -65,8 +66,6 @@ export function ImportTrainingDialog({ trainingId, onImportSuccess }: ImportTrai
     });
 
     const onSubmit = async (data: FormData) => {
-        setIsLoading(true);
-
         try {
             // Transform the data to match the API expectations
             const transformedData = {
@@ -84,25 +83,13 @@ export function ImportTrainingDialog({ trainingId, onImportSuccess }: ImportTrai
                 effort: data.effort ? parseInt(data.effort) : undefined
             };
 
-            const response = await fetch('/api/trainings/import', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(transformedData)
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to import training');
-            }
-
+            await importTrainingMutation.mutateAsync(transformedData);
+            
             setOpen(false);
             onImportSuccess?.();
             router.refresh();
         } catch (error) {
             // Handle error
-        } finally {
-            setIsLoading(false);
         }
     };
 
@@ -223,8 +210,8 @@ export function ImportTrainingDialog({ trainingId, onImportSuccess }: ImportTrai
                             </div>
                         </div>
                         <DialogFooter>
-                            <Button type='submit' disabled={isLoading}>
-                                {isLoading ? 'Importing...' : 'Import'}
+                            <Button type='submit' disabled={importTrainingMutation.isPending}>
+                                {importTrainingMutation.isPending ? 'Importing...' : 'Import'}
                             </Button>
                         </DialogFooter>
                     </form>

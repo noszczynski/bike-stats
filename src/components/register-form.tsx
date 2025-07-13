@@ -11,6 +11,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import { useRegister } from '@/hooks/use-auth-mutations';
 
 const registerSchema = z
     .object({
@@ -26,6 +27,8 @@ const registerSchema = z
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export function RegisterForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
+    const registerMutation = useRegister();
+    
     const form = useForm<RegisterFormValues>({
         resolver: zodResolver(registerSchema),
         defaultValues: {
@@ -37,23 +40,12 @@ export function RegisterForm({ className, ...props }: React.ComponentPropsWithou
 
     async function onSubmit(data: RegisterFormValues) {
         try {
-            const response = await fetch('/api/auth/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    email: data.email,
-                    password: data.password
-                })
+            await registerMutation.mutateAsync({
+                email: data.email,
+                password: data.password,
+                confirmPassword: data.confirmPassword
             });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error || 'Something went wrong');
-            }
-
+            
             // Redirect to login page after successful registration
             window.location.href = '/login';
         } catch (error) {
@@ -111,8 +103,8 @@ export function RegisterForm({ className, ...props }: React.ComponentPropsWithou
                                     </FormItem>
                                 )}
                             />
-                            <Button type='submit' className='w-full'>
-                                Zarejestruj się
+                            <Button type='submit' className='w-full' disabled={registerMutation.isPending}>
+                                {registerMutation.isPending ? 'Rejestrowanie...' : 'Zarejestruj się'}
                             </Button>
                             <div className='mt-4 text-center text-sm'>
                                 Masz już konto?{' '}

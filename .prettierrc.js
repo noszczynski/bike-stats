@@ -19,7 +19,7 @@ module.exports = {
             files: ["**/*.md"],
             options: {
                 requirePragma: true,
-            },
+            }, 
         },
     ],
     importOrderParserPlugins: ["typescript", "jsx", "decorators-legacy"],

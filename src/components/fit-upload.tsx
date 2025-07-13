@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Upload, CheckCircle, XCircle, FileText, Activity } from 'lucide-react';
 import { toast } from 'sonner';
+import { useUploadFitFile, useCheckFitFileExists } from '@/hooks/use-training-mutations';
 
 interface FitUploadProps {
   trainingId: string;

@@ -1,21 +1,15 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
-import { logout } from '@/hooks/use-auth';
-
+import { useLogout } from '@/hooks/use-auth-mutations';
 import { Button } from '@/components/ui/button';
-
 import { LogOut } from 'lucide-react';
 
 export function LogoutButton() {
-    const queryClient = useQueryClient();
+    const logoutMutation = useLogout();
 
     const handleLogout = async () => {
         try {
-            await logout();
-            
-            // Invalidate the authentication query to update the UI
-            queryClient.invalidateQueries({ queryKey: ['auth-status'] });
+            await logoutMutation.mutateAsync();
         } catch (error) {
             console.error('Error logging out:', error);
         }
@@ -27,6 +21,7 @@ export function LogoutButton() {
             size='icon'
             onClick={handleLogout}
             title='Logout'
+            disabled={logoutMutation.isPending}
             className='text-muted-foreground hover:text-foreground'>
             <LogOut className='h-4 w-4' />
         </Button>

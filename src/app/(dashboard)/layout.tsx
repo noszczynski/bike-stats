@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 
 import { AuthGate } from '@/components/auth-gate';
-import { StravaProfileClient } from '@/components/strava-profile-client';
+import { StravaProfileHeader } from '@/components/strava-profile-header';
 import { ThemeSwitch } from '@/components/ui/theme-switch';
 
 const Layout = ({ children }: Readonly<{ children: ReactNode }>) => {
@@ -12,13 +12,13 @@ const Layout = ({ children }: Readonly<{ children: ReactNode }>) => {
             <div className='flex w-full flex-col'>
                 <div className='flex w-full items-center justify-between gap-8 border-b px-8'>
                     <nav className='flex items-center gap-4'>
-                        <Link href='/'>Panel</Link>
+                        <Link href='/'>Panel</Link> 
                         <Link href='/profile'>Profil</Link>
                         <Link href='/trainings'>Treningi</Link>
                         <Link href='/trainings/calendar'>Kalendarz</Link>
                     </nav>
                     <div className='flex h-16 items-center gap-4'>
-                        <StravaProfileClient />
+                        <StravaProfileHeader />
                         <ThemeSwitch />
                     </div>
                 </div>
