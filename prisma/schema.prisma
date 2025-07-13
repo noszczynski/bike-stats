@@ -39,12 +39,63 @@ model Activity {
   battery_percent_usage Int?
   device                String?
   effort                Int?
+  fit_processed         Boolean        @default(false)
   created_at            DateTime       @default(now())
   updated_at            DateTime       @updatedAt
   strava_activity_id    BigInt         @unique
   strava_activity       StravaActivity @relation(fields: [strava_activity_id], references: [id])
+  trackpoints           Trackpoint[]
+  laps                  Lap[]
 
   @@map("activities")
+}
+
+model Trackpoint {
+  id             String   @id @default(uuid())
+  activity_id    String
+  timestamp      DateTime
+  latitude       Float?
+  longitude      Float?
+  altitude_m     Float?
+  distance_m     Float?
+  speed_ms       Float?
+  heart_rate_bpm Int?
+  cadence_rpm    Int?
+  temperature_c  Float?
+  created_at     DateTime @default(now())
+  activity       Activity @relation(fields: [activity_id], references: [id], onDelete: Cascade)
+
+  @@index([activity_id])
+  @@index([timestamp])
+  @@map("trackpoints")
+}
+
+model Lap {
+  id                     String   @id @default(uuid())
+  activity_id            String
+  lap_number             Int
+  start_time             DateTime
+  end_time               DateTime
+  distance_m             Float
+  moving_time_s          Int
+  elapsed_time_s         Int
+  avg_speed_ms           Float?
+  max_speed_ms           Float?
+  avg_heart_rate_bpm     Int?
+  max_heart_rate_bpm     Int?
+  avg_cadence_rpm        Int?
+  max_cadence_rpm        Int?
+  total_elevation_gain_m Float?
+  start_latitude         Float?
+  start_longitude        Float?
+  end_latitude           Float?
+  end_longitude          Float?
+  created_at             DateTime @default(now())
+  activity               Activity @relation(fields: [activity_id], references: [id], onDelete: Cascade)
+
+  @@unique([activity_id, lap_number])
+  @@index([activity_id])
+  @@map("laps")
 }
 
 model StravaActivity {
@@ -68,12 +119,30 @@ model StravaActivity {
 }
 
 model User {
-  id             String   @id @default(uuid())
-  email          String   @unique
+  id             String        @id @default(uuid())
+  email          String        @unique
   password       String
   strava_user_id String?
-  created_at     DateTime @default(now())
-  updated_at     DateTime @updatedAt
+  created_at     DateTime      @default(now())
+  updated_at     DateTime      @updatedAt
+  settings       UserSettings?
 
   @@map("users")
+}
+
+model UserSettings {
+  id                    String   @id @default(uuid())
+  user_id               String   @unique
+  heart_rate_zone_1_max Int? // bpm - strefa 1 (aktywny odpoczynek)
+  heart_rate_zone_2_max Int? // bpm - strefa 2 (podstawa)
+  heart_rate_zone_3_max Int? // bpm - strefa 3 (tempo)
+  heart_rate_zone_4_max Int? // bpm - strefa 4 (próg)
+  heart_rate_zone_5_max Int? // bpm - strefa 5 (VO2 max)
+  height_cm             Int? // wzrost w centymetrach
+  weight_kg             Int? // waga w kilogramach
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+  user                  User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("user_settings")
 }

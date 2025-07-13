@@ -15,7 +15,6 @@ import { Training } from '@/types/training';
 
 import { TrendingDownIcon, TrendingUpIcon } from 'lucide-react';
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
-import { Formatter } from 'recharts/types/component/DefaultLegendContent';
 
 const chartConfig = {
     zone_1: {

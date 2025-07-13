@@ -23,9 +23,10 @@ import date from '@/lib/date';
 import { Training } from '@/types/training';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import { BatteryUsageChart } from './battery-usage-chart';
 import { CompareToSelect } from './compare-to-select';
 import { EffortLevelChart } from './effort-level-chart';
+import { FitUpload } from './fit-upload';
+import { FitHeartRateChart } from './charts/fit-heart-rate-chart';
 import SliderTooltip from './ui/slider-with-marks';
 import isNil from 'lodash/isNil';
 import { Check, ChevronLeft, ChevronRight, Copy, Loader2, SparklesIcon } from 'lucide-react';
@@ -34,13 +35,6 @@ import { useForm } from 'react-hook-form';
 import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
 import { z } from 'zod';
-
-// Helper function to convert time string (hh:mm:ss) to minutes
-function timeToMinutes(time: string): number {
-    const [hours, minutes] = time.split(':').map(Number);
-
-    return hours * 60 + minutes;
-}
 
 // Helper function to format minutes back to time string
 function formatMinutes(minutes: number): string {
@@ -482,12 +476,21 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                 </TabsContent>
 
                 <TabsContent value='technical' className='mt-6'>
-                    <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
-                        <BatteryUsageChart
-                            device={training.device ?? null}
-                            batteryUsage={training.battery_percent_usage ?? null}
-                        />
-                        <EffortLevelChart effort={training.effort ?? 0} />
+                    <div className='space-y-6 w-full'>
+                        <div className='flex flex-row items-stretch gap-4 w-full'>
+                            <div className='w-1/2 h-full'>
+                                <FitUpload 
+                                    trainingId={training.id} 
+                                    onUploadSuccess={() => router.refresh()} 
+                                />
+                            </div>
+                            <div className='w-1/2 h-full'>
+                            <EffortLevelChart effort={training.effort ?? 0} />
+                            </div>
+                        </div>
+                        <div className='mt-6 w-full'>
+                            <FitHeartRateChart trainingId={training.id} />
+                        </div>
                     </div>
                 </TabsContent>
 
