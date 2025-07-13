@@ -2,11 +2,11 @@ import { useQuery } from '@tanstack/react-query';
 
 type HeartRateZonesSuggestion = {
     zones: {
-        zone_1: string;
-        zone_2: string;
-        zone_3: string;
-        zone_4: string;
-        zone_5: string;
+        zone_1: {time: string, percentage: number};
+        zone_2: {time: string, percentage: number};
+        zone_3: {time: string, percentage: number};
+        zone_4: {time: string, percentage: number};
+        zone_5: {time: string, percentage: number};
     };
     trackpointsCount: number;
 };

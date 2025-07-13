@@ -102,7 +102,7 @@ function FitHeartRateZonesSuggestion({ trainingId }: { trainingId: string }) {
                     <div className="grid grid-cols-5 gap-2">
                         {Object.entries(HR_ZONES).map(([key, zone], index) => {
                             const zoneKey = `zone_${index + 1}` as keyof typeof suggestion.zones;
-                            const time = suggestion.zones[zoneKey];
+                            const time = suggestion.zones[zoneKey].time;
                             const isZero = time === '00:00:00';
                             
                             return (
@@ -119,7 +119,7 @@ function FitHeartRateZonesSuggestion({ trainingId }: { trainingId: string }) {
                                         {key}
                                     </Badge>
                                     <div className={`text-xs mt-1 ${isZero ? 'text-muted-foreground' : ''}`}>
-                                        {time}
+                                        {time} ({suggestion.zones[zoneKey].percentage})
                                     </div>
                                     <div className="text-xs text-muted-foreground">
                                         {key === 'Z1' ? '<113' : 

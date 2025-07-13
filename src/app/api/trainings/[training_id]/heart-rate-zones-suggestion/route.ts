@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { cookies } from 'next/headers';
+import { verify } from 'jsonwebtoken';
 import dayjs from 'dayjs';
+import { Prisma } from '@prisma/client';
+import { round } from 'lodash';
 
 type TrackpointData = {
     id: string;
@@ -9,11 +13,11 @@ type TrackpointData = {
 };
 
 type CalculatedZones = {
-    zone_1: string;
-    zone_2: string;
-    zone_3: string;
-    zone_4: string;
-    zone_5: string;
+    zone_1: {time: string, percentage: number};
+    zone_2: {time: string, percentage: number};
+    zone_3: {time: string, percentage: number};
+    zone_4: {time: string, percentage: number};
+    zone_5: {time: string, percentage: number};
 };
 
 export async function GET(
@@ -23,10 +27,72 @@ export async function GET(
     try {
         const trainingId = params.training_id;
 
-        // Get trackpoints for the training
+        // Get user from JWT token
+        const cookieStore = await cookies();
+        const token = cookieStore.get('token')?.value;
+
+        if (!token) {
+            return NextResponse.json({ error: 'No authentication token found' }, { status: 401 });
+        }
+
+        // Verify JWT token
+        let decoded;
+        try {
+            decoded = verify(token, process.env.JWT_SECRET || 'your-secret-key') as { userId: string };
+        } catch (error) {
+            return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { 
+                id: decoded.userId
+            },
+            select: {
+                id: true,
+                email: true,
+                settings: {
+                    select: {
+                        heart_rate_zone_1_max: true,
+                        heart_rate_zone_2_max: true,
+                        heart_rate_zone_3_max: true,
+                        heart_rate_zone_4_max: true,
+                        heart_rate_zone_5_max: true,
+                    }
+                }
+            }
+        });
+
+        if (!user || !user.settings) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const activity = await prisma.activity.findUnique({
+            where: {
+                id: trainingId,
+                user_id: user.id
+            },
+            select: {
+                id: true,
+            }
+        });
+
+        if (!activity) {
+            return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
+        }
+
         const trackpoints = await prisma.trackpoint.findMany({
-            where: { activity_id: trainingId },
-            orderBy: { timestamp: 'asc' }
+            where: { 
+                activity_id: activity.id,
+                heart_rate_bpm: {
+                    not: null
+                }
+            },
+            orderBy: {
+                timestamp: 'asc' },
+            select: {
+                heart_rate_bpm: true,
+                timestamp: true
+            }
         });
 
         if (trackpoints.length === 0) {
@@ -36,7 +102,22 @@ export async function GET(
         }
 
         // Calculate heart rate zones
-        const zones = calculateHeartRateZones(trackpoints);
+        const zones = calculateHeartRateZones(trackpoints, {
+            heart_rate_zone_1_min: 0,
+            heart_rate_zone_1_max: user.settings.heart_rate_zone_1_max ?? 0,
+
+            heart_rate_zone_2_min: (user.settings.heart_rate_zone_1_max ?? 0) + 1,
+            heart_rate_zone_2_max: user.settings.heart_rate_zone_2_max ?? 0,
+
+            heart_rate_zone_3_min: (user.settings.heart_rate_zone_2_max ?? 0) + 1,
+            heart_rate_zone_3_max: user.settings.heart_rate_zone_3_max ?? 0,
+
+            heart_rate_zone_4_min: (user.settings.heart_rate_zone_3_max ?? 0) + 1,
+            heart_rate_zone_4_max: user.settings.heart_rate_zone_4_max ?? 0,
+
+            heart_rate_zone_5_min: (user.settings.heart_rate_zone_4_max ?? 0) + 1,
+            heart_rate_zone_5_max: 300,
+        });
 
         return NextResponse.json({
             zones,
@@ -49,7 +130,23 @@ return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }
 
-function calculateHeartRateZones(trackpoints: any[]): CalculatedZones {
+function calculateHeartRateZones(trackpoints: Prisma.TrackpointGetPayload<{
+    select: {
+        heart_rate_bpm: true,
+        timestamp: true
+    }
+}>[], settings: {
+    heart_rate_zone_1_min: number,
+    heart_rate_zone_1_max: number,
+    heart_rate_zone_2_min: number,
+    heart_rate_zone_2_max: number,
+    heart_rate_zone_3_min: number,
+    heart_rate_zone_3_max: number,
+    heart_rate_zone_4_min: number,
+    heart_rate_zone_4_max: number,
+    heart_rate_zone_5_min: number,
+    heart_rate_zone_5_max: number
+}): CalculatedZones {
     const zoneTimes = {
         zone_1: 0,
         zone_2: 0,
@@ -57,6 +154,8 @@ function calculateHeartRateZones(trackpoints: any[]): CalculatedZones {
         zone_4: 0,
         zone_5: 0
     };
+
+    console.log("trackpoints:", trackpoints);
 
     // Filter trackpoints with heart rate data and sort by timestamp
     const heartRateTrackpoints = trackpoints
@@ -66,24 +165,18 @@ function calculateHeartRateZones(trackpoints: any[]): CalculatedZones {
     // Calculate time spent in each zone
     for (let i = 0; i < heartRateTrackpoints.length - 1; i++) {
         const current = heartRateTrackpoints[i];
-        const next = heartRateTrackpoints[i + 1];
-        
-        const currentTime = dayjs(current.timestamp);
-        const nextTime = dayjs(next.timestamp);
-        const timeDiff = nextTime.diff(currentTime, 'second'); // seconds
-        
         const hr = current.heart_rate_bpm!;
-        
-        if (hr < 113) {
-            zoneTimes.zone_1 += timeDiff;
-        } else if (hr >= 113 && hr <= 132) {
-            zoneTimes.zone_2 += timeDiff;
-        } else if (hr > 132 && hr <= 151) {
-            zoneTimes.zone_3 += timeDiff;
-        } else if (hr > 151 && hr <= 170) {
-            zoneTimes.zone_4 += timeDiff;
-        } else if (hr > 170) {
-            zoneTimes.zone_5 += timeDiff;
+
+        if (hr < settings.heart_rate_zone_1_max) {
+            zoneTimes.zone_1 += 1;
+        } else if (hr >= settings.heart_rate_zone_1_max && hr <= settings.heart_rate_zone_2_max) {
+            zoneTimes.zone_2 += 1;
+        } else if (hr > settings.heart_rate_zone_2_max && hr <= settings.heart_rate_zone_3_max) {
+            zoneTimes.zone_3 += 1;
+        } else if (hr > settings.heart_rate_zone_3_max && hr <= settings.heart_rate_zone_4_max) {
+            zoneTimes.zone_4 += 1;
+        } else if (hr > settings.heart_rate_zone_4_max) {
+            zoneTimes.zone_5 += 1;
         }
     }
 
@@ -97,10 +190,10 @@ function calculateHeartRateZones(trackpoints: any[]): CalculatedZones {
     };
 
     return {
-        zone_1: formatTime(zoneTimes.zone_1),
-        zone_2: formatTime(zoneTimes.zone_2),
-        zone_3: formatTime(zoneTimes.zone_3),
-        zone_4: formatTime(zoneTimes.zone_4),
-        zone_5: formatTime(zoneTimes.zone_5)
+        zone_1: {time: formatTime(zoneTimes.zone_1), percentage: round((zoneTimes.zone_1 / trackpoints.length) * 100, 1)},
+        zone_2: {time: formatTime(zoneTimes.zone_2), percentage: round((zoneTimes.zone_2 / trackpoints.length) * 100, 1)},
+        zone_3: {time: formatTime(zoneTimes.zone_3), percentage: round((zoneTimes.zone_3 / trackpoints.length) * 100, 1)},
+        zone_4: {time: formatTime(zoneTimes.zone_4), percentage: round((zoneTimes.zone_4 / trackpoints.length) * 100, 1)},
+        zone_5: {time: formatTime(zoneTimes.zone_5), percentage: round((zoneTimes.zone_5 / trackpoints.length) * 100, 1)}
     };
 } 
