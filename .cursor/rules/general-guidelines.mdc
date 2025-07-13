@@ -15,5 +15,6 @@ Before you code anything, read this general project rules:
 - Use "lucide-react" pnpm package for icons.
 - For colors see globals.css file.
 - NEVER add additional styles to the ui components like button.tsx or input.tsx unless the prompt directly instructs otherwise.
-- If User ask You for feature your first answer should be short response with questions to the user itself about this feature.
+- If User ask You for feature your first answer should be short response with questions to the user itself about this feature it helps you to better understand what User means.
+- If You will be ask about implementing business logic, keep as many of it as You can in the server side and use Tanstack to fetch it on frontend.
 - Always return your end summary in Polish language (input language doesn't matter).

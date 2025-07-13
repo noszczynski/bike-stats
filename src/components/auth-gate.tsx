@@ -1,18 +1,19 @@
 'use client';
 
 import { ReactNode } from 'react';
-import { useStravaAuth } from '@/hooks/use-strava-auth';
-import { StravaLoginButton } from '@/components/StravaLoginButton';
+import { useAuth } from '@/hooks/use-auth';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ThemeSwitch } from '@/components/ui/theme-switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import Link from 'next/link';
 
 interface AuthGateProps {
     children: ReactNode;
 }
 
 export function AuthGate({ children }: AuthGateProps) {
-    const { data, isLoading, error } = useStravaAuth();
+    const { data, isLoading, error } = useAuth();
 
     // Show loading state while checking authentication
     if (isLoading) {
@@ -53,20 +54,29 @@ export function AuthGate({ children }: AuthGateProps) {
                         
                         <div className='text-center'>
                             <h1 className='text-4xl font-bold mb-2'>Bike Stats</h1>
-                            <h2 className='text-2xl font-semibold mb-4'>Connect with Strava</h2>
+                            <h2 className='text-2xl font-semibold mb-4'>Zaloguj się</h2>
                             <p className='text-muted-foreground'>
-                                You need to connect your Strava account to access your cycling statistics and dashboard.
+                                Musisz się zalogować, aby uzyskać dostęp do swoich statystyk treningowych i dashboardu.
                             </p>
                         </div>
 
-                        <div className='flex justify-center'>
-                            <StravaLoginButton />
+                        <div className='flex flex-col gap-4 justify-center'>
+                            <Button asChild>
+                                <Link href="/login">
+                                    Zaloguj się
+                                </Link>
+                            </Button>
+                            <Button variant="outline" asChild>
+                                <Link href="/register">
+                                    Zarejestruj się
+                                </Link>
+                            </Button>
                         </div>
                         
                         <div className='text-center text-sm text-muted-foreground'>
                             <p>
-                                By connecting your Strava account, you'll be able to view your cycling metrics, 
-                                training history, and detailed analytics.
+                                Po zalogowaniu będziesz mógł połączyć swoje konto Strava i wyświetlić swoje metryki treningowe, 
+                                historię treningów i szczegółowe analizy.
                             </p>
                         </div>
                     </div>

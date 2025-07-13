@@ -28,7 +28,8 @@ enum ActivityType {
 }
 
 model Activity {
-  id                    String         @id @default(uuid())
+  id                    String       @id @default(uuid())
+  user_id               String
   type                  ActivityType
   heart_rate_zone_1     String?
   heart_rate_zone_2     String?
@@ -39,14 +40,17 @@ model Activity {
   battery_percent_usage Int?
   device                String?
   effort                Int?
-  fit_processed         Boolean        @default(false)
-  created_at            DateTime       @default(now())
-  updated_at            DateTime       @updatedAt
-  strava_activity_id    BigInt         @unique
-  strava_activity       StravaActivity @relation(fields: [strava_activity_id], references: [id])
-  trackpoints           Trackpoint[]
-  laps                  Lap[]
+  fit_processed         Boolean      @default(false)
+  created_at            DateTime     @default(now())
+  updated_at            DateTime     @updatedAt
+  strava_activity_id    BigInt?      @unique
 
+  user            User            @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  strava_activity StravaActivity? @relation(fields: [strava_activity_id], references: [id])
+  trackpoints     Trackpoint[]
+  laps            Lap[]
+
+  @@index([user_id])
   @@map("activities")
 }
 
@@ -63,7 +67,8 @@ model Trackpoint {
   cadence_rpm    Int?
   temperature_c  Float?
   created_at     DateTime @default(now())
-  activity       Activity @relation(fields: [activity_id], references: [id], onDelete: Cascade)
+
+  activity Activity @relation(fields: [activity_id], references: [id], onDelete: Cascade)
 
   @@index([activity_id])
   @@index([timestamp])
@@ -99,7 +104,7 @@ model Lap {
 }
 
 model StravaActivity {
-  id                   BigInt    @id
+  id                   BigInt   @id
   name                 String
   date                 DateTime
   distance_m           Int
@@ -109,23 +114,26 @@ model StravaActivity {
   max_speed_kmh        Decimal
   avg_heart_rate_bpm   Int?
   max_heart_rate_bpm   Int?
-  map_summary_polyline String?   @db.Text
-  map_summary_id       String?   @db.VarChar(256)
-  created_at           DateTime  @default(now())
-  updated_at           DateTime  @updatedAt
-  activity             Activity?
+  map_summary_polyline String?  @db.Text
+  map_summary_id       String?  @db.VarChar(256)
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  activity Activity?
 
   @@map("strava_activities")
 }
 
 model User {
-  id             String        @id @default(uuid())
-  email          String        @unique
+  id             String   @id @default(uuid())
+  email          String   @unique
   password       String
   strava_user_id String?
-  created_at     DateTime      @default(now())
-  updated_at     DateTime      @updatedAt
-  settings       UserSettings?
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  settings   UserSettings?
+  activities Activity[]
 
   @@map("users")
 }
@@ -142,7 +150,8 @@ model UserSettings {
   weight_kg             Int? // waga w kilogramach
   created_at            DateTime @default(now())
   updated_at            DateTime @updatedAt
-  user                  User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("user_settings")
 }
