@@ -8,7 +8,7 @@ import date from '@/lib/date';
 import type { Training } from '@/types/training';
 
 import { RouteBackground } from './route-background';
-import { Clipboard, HeartPulseIcon, ZapIcon } from 'lucide-react';
+import { Clipboard, HeartPulseIcon, ZapIcon, FileIcon } from 'lucide-react';
 
 interface TrainingCardsProps {
     trainings: Training[];
@@ -66,6 +66,19 @@ export function TrainingCards({ trainings }: TrainingCardsProps) {
                                                 </TooltipTrigger>
                                                 <TooltipContent>
                                                     <p>Effort: {training.effort ? 'Uzupełniony' : 'Brak'}</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger>
+                                                    <FileIcon
+                                                        className={`h-5 w-5 ${training.fit_processed ? 'text-green-500' : 'text-red-500'}`}
+                                                    />
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>Plik FIT: {training.fit_processed ? 'Przetworzony' : 'Brak'}</p>
                                                 </TooltipContent>
                                             </Tooltip>
                                         </TooltipProvider>

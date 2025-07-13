@@ -11,7 +11,11 @@ import dayjs from 'dayjs';
 import { Decimal } from 'decimal.js';
 import { z } from 'zod';
 
-function formatActivityToTraining(activity: Activity & { strava_activity: StravaActivity }): Training {
+function formatActivityToTraining(activity: Activity & { strava_activity: StravaActivity | null }): Training {
+    if (!activity.strava_activity) {
+        throw new Error('Activity must have strava_activity to be formatted as Training');
+    }
+    
     return {
         id: activity.id,
         strava_activity_id: Number(activity.strava_activity.id),
@@ -48,7 +52,8 @@ function formatActivityToTraining(activity: Activity & { strava_activity: Strava
                   id: activity.strava_activity.map_summary_id,
                   summary_polyline: activity.strava_activity.map_summary_polyline
               }
-            : null
+            : null,
+        fit_processed: activity.fit_processed
     } satisfies Training;
 }
 
@@ -167,7 +172,12 @@ export async function updateTrainings(accessToken: string, refreshToken: string)
                     activity: {
                         create: {
                             type: 'ride',
-                            device: training.device_name
+                            device: training.device_name,
+                            user: {
+                                connect: {
+                                    id: 'b3c8fc32-b5e8-4f90-8048-b8663d3bf02b' // todo: get user id from auth
+                                }
+                            }
                         }
                     }
                 }
@@ -233,7 +243,12 @@ export async function importActivity(
             summary: additionalData.summary ?? null,
             device: additionalData.device ?? null,
             battery_percent_usage: additionalData.battery_percent_usage ?? null,
-            effort: additionalData.effort ?? null
+            effort: additionalData.effort ?? null,
+            user: {
+                connect: {
+                    id: 'b3c8fc32-b5e8-4f90-8048-b8663d3bf02b' // todo: get user id from auth
+                }
+            }
         }
     });
 }
@@ -276,6 +291,10 @@ export async function updateTraining(
             strava_activity: true
         }
     });
+
+    if (!activity || !activity.strava_activity) {
+        throw new Error('Activity not found');
+    }
 
     return formatActivityToTraining(activity);
 }

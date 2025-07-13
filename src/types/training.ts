@@ -42,6 +42,8 @@ export const TrainingSchema = z.object({
     device: z.string().nullish(),
     /** Battery percent usage of the training (0-100) */
     battery_percent_usage: z.number().nullish(),
+    /** Fit file processed */
+    fit_processed: z.boolean().nullish(),
     /**
      * Effort of the training (e.g.: Apple Training Effort).
      * 1-3 is Easy, 4-6 is Medium, 7-8 is Hard, 9-10 is All Out

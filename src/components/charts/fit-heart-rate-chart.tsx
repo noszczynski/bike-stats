@@ -61,6 +61,7 @@ export function FitHeartRateChart({ trainingId }: FitHeartRateChartProps) {
   const trackpoints = data?.trackpoints || [];
 
   const heartRateData = trackpoints
+  .filter(tp => tp.heart_rate_bpm)
     .map((tp, index) => ({
       index,
       timestamp: tp.timestamp ? date(tp.timestamp).toISOString() : null,
