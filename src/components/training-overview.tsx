@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -21,7 +21,6 @@ import {
     getTrendProgress
 } from '@/features/training/trend-utils';
 import date from '@/lib/date';
-import dayjs from 'dayjs';
 import { Training } from '@/types/training';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -37,6 +36,8 @@ import { useForm } from 'react-hook-form';
 import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { useTrainingNavigation } from '@/hooks/use-training-navigation';
+import { useHeartRateZonesSuggestion } from '@/hooks/use-heart-rate-zones-suggestion';
 
 // Helper function to format minutes back to time string
 function formatMinutes(minutes: number): string {
@@ -55,106 +56,13 @@ const HR_ZONES = {
     Z5: { name: 'Anaerobic', min: 171, max: 250, color: '#8b5cf6' }
 };
 
-type TrackpointData = {
-    id: string;
-    timestamp: string;
-    heart_rate_bpm?: number;
-};
 
-type CalculatedZones = {
-    zone_1: string;
-    zone_2: string;
-    zone_3: string;
-    zone_4: string;
-    zone_5: string;
-};
 
 // Component to display calculated heart rate zones from FIT data
 function FitHeartRateZonesSuggestion({ trainingId }: { trainingId: string }) {
-    const [calculatedZones, setCalculatedZones] = useState<CalculatedZones | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const { data: suggestion, isLoading, error } = useHeartRateZonesSuggestion(trainingId);
 
-    useEffect(() => {
-        const fetchAndCalculateZones = async () => {
-            try {
-                const response = await fetch(`/api/trainings/${trainingId}/trackpoints`);
-                if (!response.ok) {
-                    throw new Error('Failed to fetch trackpoints');
-                }
-                const data = await response.json();
-                const trackpoints: TrackpointData[] = data.trackpoints || [];
-
-                // Calculate time spent in each zone
-                const zones = calculateHeartRateZones(trackpoints);
-                setCalculatedZones(zones);
-            } catch (err) {
-                setError(err instanceof Error ? err.message : 'Unknown error');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchAndCalculateZones();
-    }, [trainingId]);
-
-    const calculateHeartRateZones = (trackpoints: TrackpointData[]): CalculatedZones => {
-        const zoneTimes = {
-            zone_1: 0,
-            zone_2: 0,
-            zone_3: 0,
-            zone_4: 0,
-            zone_5: 0
-        };
-
-        // Filter trackpoints with heart rate data and sort by timestamp
-        const heartRateTrackpoints = trackpoints
-            .filter(tp => tp.heart_rate_bpm != null)
-            .sort((a, b) => dayjs(a.timestamp).unix() - dayjs(b.timestamp).unix());
-
-        // Calculate time spent in each zone
-        for (let i = 0; i < heartRateTrackpoints.length - 1; i++) {
-            const current = heartRateTrackpoints[i];
-            const next = heartRateTrackpoints[i + 1];
-            
-            const currentTime = dayjs(current.timestamp);
-            const nextTime = dayjs(next.timestamp);
-            const timeDiff = nextTime.diff(currentTime, 'second'); // seconds
-            
-            const hr = current.heart_rate_bpm!;
-            
-            if (hr < 113) {
-                zoneTimes.zone_1 += timeDiff;
-            } else if (hr >= 113 && hr <= 132) {
-                zoneTimes.zone_2 += timeDiff;
-            } else if (hr > 132 && hr <= 151) {
-                zoneTimes.zone_3 += timeDiff;
-            } else if (hr > 151 && hr <= 170) {
-                zoneTimes.zone_4 += timeDiff;
-            } else if (hr > 170) {
-                zoneTimes.zone_5 += timeDiff;
-            }
-        }
-
-        // Convert seconds to HH:MM:SS format
-        const formatTime = (seconds: number) => {
-            const hours = Math.floor(seconds / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
-            const secs = Math.floor(seconds % 60);
-            
-return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-        };
-
-        return {
-            zone_1: formatTime(zoneTimes.zone_1),
-            zone_2: formatTime(zoneTimes.zone_2),
-            zone_3: formatTime(zoneTimes.zone_3),
-            zone_4: formatTime(zoneTimes.zone_4),
-            zone_5: formatTime(zoneTimes.zone_5)
-        };
-    };
-
-    if (loading) {
+    if (isLoading) {
         return (
             <Alert className="mt-4">
                 <Activity className="h-4 w-4" />
@@ -171,13 +79,13 @@ return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0
             <Alert className="mt-4">
                 <Activity className="h-4 w-4" />
                 <AlertDescription>
-                    Nie udało się obliczyć stref tętna: {error}
+                    Nie udało się obliczyć stref tętna: {error instanceof Error ? error.message : 'Nieznany błąd'}
                 </AlertDescription>
             </Alert>
         );
     }
 
-    if (!calculatedZones) {
+    if (!suggestion) {
         return null;
     }
 
@@ -192,8 +100,8 @@ return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0
                     </div>
                     <div className="grid grid-cols-5 gap-2">
                         {Object.entries(HR_ZONES).map(([key, zone], index) => {
-                            const zoneKey = `zone_${index + 1}` as keyof CalculatedZones;
-                            const time = calculatedZones[zoneKey];
+                            const zoneKey = `zone_${index + 1}` as keyof typeof suggestion.zones;
+                            const time = suggestion.zones[zoneKey];
                             const isZero = time === '00:00:00';
                             
                             return (
@@ -288,6 +196,9 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
     const [isGenerating, setIsGenerating] = useState(false);
     const [activeTab, setActiveTab] = useQueryState('tab', { defaultValue: 'overview' });
 
+    // Use React Query hooks for server-side data
+    const { data: navigationData } = useTrainingNavigation(training.id);
+
     const { register, handleSubmit } = useForm<EditFormData>({
         resolver: zodResolver(editFormSchema),
         defaultValues: {
@@ -370,18 +281,17 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
         }
     };
 
-    // Make sure trainings are sorted by date (newest first)
-    const sortedTrainings = [...allTrainings].sort(
-        (a, b) => date(b.date).valueOf() - date(a.date).valueOf()
-    ) as Training[];
-
-    // Find current training index
-    const currentIndex = sortedTrainings.findIndex((t) => t.date === training.date);
-    const prevTraining = currentIndex < sortedTrainings.length - 1 ? sortedTrainings[currentIndex + 1] : null;
-    const nextTraining = currentIndex > 0 ? sortedTrainings[currentIndex - 1] : null;
+    // Navigation data from server
+    const prevTraining = navigationData?.previous;
+    const nextTraining = navigationData?.next;
 
     // Get all trainings to compare against
     let compareTrainings: Training[] = [];
+    
+    // Sort trainings by date (newest first)
+    const sortedTrainings = [...allTrainings].sort(
+        (a, b) => date(b.date).valueOf() - date(a.date).valueOf()
+    );
 
     if (compareTo === 'all') {
         // Compare to all trainings
