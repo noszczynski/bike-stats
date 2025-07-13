@@ -1,0 +1,19 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Before you code anything, read this general project rules:
+- You are creating a web app to provide tranings analytics for Adam.
+- This project focus on importing training data from Strava and analyze it.
+- Project use Prisma, pnpm, tailwind, Tanstack Query and Nextjs app router.
+- Primarly use ui components from shadcn stored in @/components/ui dir. Do not add aditional className props (influence internal style of this components) to this components, e.g.: fonts, text style, colors.
+- For database schema look at: schema.prisma file
+- Always keep careful about current code - so do not overwrite this entirely, unless user says different.
+- Make sure You are using industry leading standards in UI and UX.
+- Every piece of code must be rwd ready.
+- Use "lucide-react" pnpm package for icons.
+- For colors see globals.css file.
+- NEVER add additional styles to the ui components like button.tsx or input.tsx unless the prompt directly instructs otherwise.
+- If User ask You for feature your first answer should be short response with questions to the user itself about this feature.
+- Always return your end summary in Polish language (input language doesn't matter).

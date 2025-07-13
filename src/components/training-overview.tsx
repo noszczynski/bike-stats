@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -11,15 +11,17 @@ import { StatsCard } from '@/components/stats-card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { calculateTrainingLoad } from '@/features/training/calculate-training-load';
 import {
-    MetricType,
     formatTrend,
     getTrendIcon,
     getTrendMessage,
     getTrendProgress
 } from '@/features/training/trend-utils';
 import date from '@/lib/date';
+import dayjs from 'dayjs';
 import { Training } from '@/types/training';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -29,7 +31,7 @@ import { FitUpload } from './fit-upload';
 import { FitHeartRateChart } from './charts/fit-heart-rate-chart';
 import SliderTooltip from './ui/slider-with-marks';
 import isNil from 'lodash/isNil';
-import { Check, ChevronLeft, ChevronRight, Copy, Loader2, SparklesIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, SparklesIcon, Clock, Activity } from 'lucide-react';
 import { useQueryState } from 'nuqs';
 import { useForm } from 'react-hook-form';
 import ReactMarkdown from 'react-markdown';
@@ -42,6 +44,192 @@ function formatMinutes(minutes: number): string {
     const remainingMinutes = (minutes % 60).toFixed(0);
 
     return hours > 0 ? `${hours}h ${remainingMinutes}m` : `${remainingMinutes}m`;
+}
+
+// Heart rate zone definitions
+const HR_ZONES = {
+    Z1: { name: 'Endurance', min: 0, max: 112, color: '#22c55e' },
+    Z2: { name: 'Moderate', min: 113, max: 132, color: '#3b82f6' },
+    Z3: { name: 'Tempo', min: 133, max: 151, color: '#f59e0b' },
+    Z4: { name: 'Threshold', min: 152, max: 170, color: '#ef4444' },
+    Z5: { name: 'Anaerobic', min: 171, max: 250, color: '#8b5cf6' }
+};
+
+type TrackpointData = {
+    id: string;
+    timestamp: string;
+    heart_rate_bpm?: number;
+};
+
+type CalculatedZones = {
+    zone_1: string;
+    zone_2: string;
+    zone_3: string;
+    zone_4: string;
+    zone_5: string;
+};
+
+// Component to display calculated heart rate zones from FIT data
+function FitHeartRateZonesSuggestion({ trainingId }: { trainingId: string }) {
+    const [calculatedZones, setCalculatedZones] = useState<CalculatedZones | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchAndCalculateZones = async () => {
+            try {
+                const response = await fetch(`/api/trainings/${trainingId}/trackpoints`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch trackpoints');
+                }
+                const data = await response.json();
+                const trackpoints: TrackpointData[] = data.trackpoints || [];
+
+                // Calculate time spent in each zone
+                const zones = calculateHeartRateZones(trackpoints);
+                setCalculatedZones(zones);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Unknown error');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchAndCalculateZones();
+    }, [trainingId]);
+
+    const calculateHeartRateZones = (trackpoints: TrackpointData[]): CalculatedZones => {
+        const zoneTimes = {
+            zone_1: 0,
+            zone_2: 0,
+            zone_3: 0,
+            zone_4: 0,
+            zone_5: 0
+        };
+
+        // Filter trackpoints with heart rate data and sort by timestamp
+        const heartRateTrackpoints = trackpoints
+            .filter(tp => tp.heart_rate_bpm != null)
+            .sort((a, b) => dayjs(a.timestamp).unix() - dayjs(b.timestamp).unix());
+
+        // Calculate time spent in each zone
+        for (let i = 0; i < heartRateTrackpoints.length - 1; i++) {
+            const current = heartRateTrackpoints[i];
+            const next = heartRateTrackpoints[i + 1];
+            
+            const currentTime = dayjs(current.timestamp);
+            const nextTime = dayjs(next.timestamp);
+            const timeDiff = nextTime.diff(currentTime, 'second'); // seconds
+            
+            const hr = current.heart_rate_bpm!;
+            
+            if (hr < 113) {
+                zoneTimes.zone_1 += timeDiff;
+            } else if (hr >= 113 && hr <= 132) {
+                zoneTimes.zone_2 += timeDiff;
+            } else if (hr > 132 && hr <= 151) {
+                zoneTimes.zone_3 += timeDiff;
+            } else if (hr > 151 && hr <= 170) {
+                zoneTimes.zone_4 += timeDiff;
+            } else if (hr > 170) {
+                zoneTimes.zone_5 += timeDiff;
+            }
+        }
+
+        // Convert seconds to HH:MM:SS format
+        const formatTime = (seconds: number) => {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = Math.floor(seconds % 60);
+            
+return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        };
+
+        return {
+            zone_1: formatTime(zoneTimes.zone_1),
+            zone_2: formatTime(zoneTimes.zone_2),
+            zone_3: formatTime(zoneTimes.zone_3),
+            zone_4: formatTime(zoneTimes.zone_4),
+            zone_5: formatTime(zoneTimes.zone_5)
+        };
+    };
+
+    if (loading) {
+        return (
+            <Alert className="mt-4">
+                <Activity className="h-4 w-4" />
+                <AlertDescription className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Obliczanie stref tętna z danych .FIT...
+                </AlertDescription>
+            </Alert>
+        );
+    }
+
+    if (error) {
+        return (
+            <Alert className="mt-4">
+                <Activity className="h-4 w-4" />
+                <AlertDescription>
+                    Nie udało się obliczyć stref tętna: {error}
+                </AlertDescription>
+            </Alert>
+        );
+    }
+
+    if (!calculatedZones) {
+        return null;
+    }
+
+    return (
+        <Alert className="mt-4">
+            <Activity className="h-4 w-4" />
+            <AlertDescription>
+                <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        <span className="font-medium">Obliczone strefy tętna z danych .FIT:</span>
+                    </div>
+                    <div className="grid grid-cols-5 gap-2">
+                        {Object.entries(HR_ZONES).map(([key, zone], index) => {
+                            const zoneKey = `zone_${index + 1}` as keyof CalculatedZones;
+                            const time = calculatedZones[zoneKey];
+                            const isZero = time === '00:00:00';
+                            
+                            return (
+                                <div key={key} className="text-center">
+                                    <Badge 
+                                        variant="outline" 
+                                        className="w-full justify-center"
+                                        style={{ 
+                                            borderColor: zone.color,
+                                            color: zone.color,
+                                            opacity: isZero ? 0.5 : 1
+                                        }}
+                                    >
+                                        {key}
+                                    </Badge>
+                                    <div className={`text-xs mt-1 ${isZero ? 'text-muted-foreground' : ''}`}>
+                                        {time}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                        {key === 'Z1' ? '<113' : 
+                                         key === 'Z2' ? '113-132' :
+                                         key === 'Z3' ? '132-151' :
+                                         key === 'Z4' ? '151-170' :
+                                         '>170'}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                        Możesz użyć tych wartości jako sugestii dla pól powyżej
+                    </div>
+                </div>
+            </AlertDescription>
+        </Alert>
+    );
 }
 
 type TrainingOverviewProps = {
@@ -97,7 +285,6 @@ function combineTimeComponents(hours: string, minutes: string, seconds: string):
 export function TrainingOverview({ training, compareTo, allTrainings }: TrainingOverviewProps) {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [copied, setCopied] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     const [activeTab, setActiveTab] = useQueryState('tab', { defaultValue: 'overview' });
 
@@ -353,7 +540,6 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                     <TabsTrigger value='technical'>Dane techniczne</TabsTrigger>
                     <TabsTrigger value='summary'>Podsumowanie</TabsTrigger>
                     <TabsTrigger value='edit'>Edycja</TabsTrigger>
-                    <TabsTrigger value='json'>JSON Data</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value='overview' className='mt-6'>
@@ -568,37 +754,6 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                     </div>
                 </TabsContent>
 
-                <TabsContent value='json' className='mt-6'>
-                    <div className='space-y-4'>
-                        <div className='bg-background relative overflow-auto rounded-md border p-4'>
-                            <div className='absolute top-2 right-2'>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    onClick={() => {
-                                        navigator.clipboard.writeText(JSON.stringify(training, null, 2));
-                                        setCopied(true);
-                                        setTimeout(() => setCopied(false), 2000);
-                                    }}
-                                    className='h-8 gap-1'>
-                                    {copied ? (
-                                        <>
-                                            <Check className='h-3.5 w-3.5' />
-                                            <span>Copied</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Copy className='h-3.5 w-3.5' />
-                                            <span>Copy</span>
-                                        </>
-                                    )}
-                                </Button>
-                            </div>
-                            <pre className='text-sm'>{JSON.stringify(training, null, 2)}</pre>
-                        </div>
-                    </div>
-                </TabsContent>
-
                 <TabsContent value='edit' className='mt-6'>
                     <div className='max-w-3xl space-y-8'>
                         <div className='space-y-6'>
@@ -686,13 +841,16 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                                                             {...register(`heart_rate_zones.zone_${zoneNumber}_s`)}
                                                         />
                                                     </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
+                                                                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
 
-                                <div className='rounded-lg border p-4'>
+                {/* Add FIT heart rate zones suggestion */}
+                <FitHeartRateZonesSuggestion trainingId={training.id} />
+
+                <div className='rounded-lg border p-4'>
                                     <h4 className='mb-2 text-lg font-medium'>Wysiłek</h4>
 
                                     <div className='space-y-3 pt-2'>
@@ -737,49 +895,6 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                                                 </>
                                             );
                                         })()}
-                                    </div>
-                                </div>
-
-                                <div className='rounded-lg border p-4'>
-                                    <h4 className='mb-2 text-lg font-medium'>Dane techniczne</h4>
-
-                                    <div className='space-y-3 pt-2'>
-                                        <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
-                                            <div className='space-y-3'>
-                                                <Label htmlFor='device' className='text-sm font-medium'>
-                                                    Urządzenie
-                                                </Label>
-                                                <input
-                                                    type='text'
-                                                    id='device'
-                                                    className='border-input w-full rounded-md border bg-transparent px-4 py-2'
-                                                    defaultValue={training.device ?? ''}
-                                                    placeholder='Nazwa urządzenia...'
-                                                    {...register('device')}
-                                                />
-                                                <p className='text-muted-foreground text-xs'>
-                                                    Urządzenie użyte podczas treningu
-                                                </p>
-                                            </div>
-
-                                            <div className='space-y-3'>
-                                                <Label htmlFor='battery_percent_usage' className='text-sm font-medium'>
-                                                    Zużycie baterii (%)
-                                                </Label>
-                                                <input
-                                                    type='number'
-                                                    id='battery_percent_usage'
-                                                    className='border-input w-full rounded-md border bg-transparent px-4 py-2'
-                                                    defaultValue={training.battery_percent_usage ?? ''}
-                                                    min='0'
-                                                    max='100'
-                                                    {...register('battery_percent_usage')}
-                                                />
-                                                <p className='text-muted-foreground text-xs'>
-                                                    Procent baterii zużyty podczas treningu
-                                                </p>
-                                            </div>
-                                        </div>
                                     </div>
                                 </div>
 
