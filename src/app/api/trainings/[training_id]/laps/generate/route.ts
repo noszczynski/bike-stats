@@ -52,6 +52,16 @@ export async function POST(
       );
     }
 
+    const lapsCount = await prisma.lap.count({
+      where: { activity_id: training_id },
+    });
+
+    if (lapsCount > 0 ) {
+      await prisma.lap.deleteMany({
+        where: { activity_id: training_id }
+      });
+    }
+
     // Get trackpoints sorted by timestamp
     const trackpoints = await prisma.trackpoint.findMany({
       where: { 
