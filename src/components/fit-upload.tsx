@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Upload, CheckCircle, XCircle, FileText, Activity } from 'lucide-react';
 import { toast } from 'sonner';
-import { useUploadFitFile, useCheckFitFileExists } from '@/hooks/use-training-mutations';
+import { useUploadFitFile, useCheckFitFileExists, useRemoveFitData } from '@/hooks/use-training-mutations';
 
 interface FitUploadProps {
   trainingId: string;
@@ -42,6 +42,8 @@ export function FitUpload({ trainingId, onUploadSuccess }: FitUploadProps) {
   const [uploadResult, setUploadResult] = useState<FitUploadResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const removeFitDataMutation = useRemoveFitData();
 
   const checkFitStatus = useCallback(async () => {
     try {
@@ -132,6 +134,23 @@ export function FitUpload({ trainingId, onUploadSuccess }: FitUploadProps) {
     fileInputRef.current?.click();
   };
 
+  const handleRemoveFitData = async () => {
+    try {
+      await removeFitDataMutation.mutateAsync(trainingId);
+      toast.success('Dane .FIT zostały pomyślnie usunięte!');
+      
+      // Update status
+      await checkFitStatus();
+      
+      if (onUploadSuccess) {
+        onUploadSuccess();
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Nieznany błąd';
+      toast.error(`Błąd: ${errorMessage}`);
+    }
+  };
+
   const formatDuration = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -152,16 +171,39 @@ return `${km.toFixed(1)} km`;
   if (fitStatus?.fit_processed) {
     return (
       <Card className="w-full">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-500" />
-            Dane .FIT przetworzono
-          </CardTitle>
-          <CardDescription>
-            Plik .FIT został już przetworzony dla tego treningu
-          </CardDescription>
+        <CardHeader className='flex flex-row justify-between'>
+          <div className='flex flex-col gap-2'>
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-500" />
+              Dane .FIT przetworzono
+            </CardTitle>
+            <CardDescription>
+              Plik .FIT został już przetworzony dla tego treningu
+            </CardDescription>
+          </div>
+          <div>
+          <Button 
+              onClick={handleRemoveFitData}
+              disabled={removeFitDataMutation.isPending}
+              variant="destructive"
+              size="sm"
+              className="w-full"
+            >
+              {removeFitDataMutation.isPending ? (
+                <>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+                  Usuwanie...
+                </>
+              ) : (
+                <>
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Usuń dane .FIT
+                </>
+              )}
+            </Button>
+            </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="flex items-center gap-2">
               <Activity className="h-4 w-4 text-blue-500" />

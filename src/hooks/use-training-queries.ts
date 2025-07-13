@@ -3,16 +3,16 @@
 import { useQuery } from '@tanstack/react-query';
 
 interface TrackPoint {
-    timestamp: number;
-    position_lat?: number;
-    position_long?: number;
-    altitude?: number;
-    distance?: number;
-    heart_rate?: number;
-    speed?: number;
-    cadence?: number;
-    power?: number;
-    temperature?: number;
+    timestamp: string; // iso string
+    position_lat?: number | null;
+    position_long?: number | null;
+    altitude?: number | null;
+    distance?: number | null;
+    heart_rate_bpm?: number | null;
+    speed?: number | null;
+    cadence?: number | null;
+    power?: number | null;
+    temperature?: number | null;
 }
 
 interface TrackPointsResponse {

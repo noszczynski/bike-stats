@@ -121,6 +121,22 @@ async function generateDescription(trainingId: string): Promise<GenerateDescript
     return response.json();
 }
 
+async function removeFitData(trainingId: string): Promise<{ message: string; deleted: { trackpoints: number; laps: number } }> {
+    const response = await fetch(`/api/trainings/${trainingId}/fit-upload`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to remove FIT data');
+    }
+
+    return response.json();
+}
+
 export function useImportTraining() {
     const queryClient = useQueryClient();
 
@@ -181,6 +197,22 @@ export function useGenerateDescription() {
         onSuccess: (_, trainingId) => {
             // Invalidate training to trigger refetch with new description
             queryClient.invalidateQueries({ queryKey: ['training', trainingId] });
+            queryClient.invalidateQueries({ queryKey: ['trainings'] });
+        }
+    });
+} 
+
+export function useRemoveFitData() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: removeFitData,
+        onSuccess: (_, trainingId) => {
+            // Invalidate training-related queries
+            queryClient.invalidateQueries({ queryKey: ['training', trainingId] });
+            queryClient.invalidateQueries({ queryKey: ['trackpoints', trainingId] });
+            queryClient.invalidateQueries({ queryKey: ['heart-rate-zones-suggestion', trainingId] });
+            queryClient.invalidateQueries({ queryKey: ['fit-file-exists', trainingId] });
             queryClient.invalidateQueries({ queryKey: ['trainings'] });
         }
     });

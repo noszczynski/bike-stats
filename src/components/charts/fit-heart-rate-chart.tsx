@@ -1,27 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Activity } from 'lucide-react';
+import { useTrackpoints } from '@/hooks/use-training-queries';
+import date from '../../lib/date';
 
 interface FitHeartRateChartProps {
   trainingId: string;
-}
-
-interface TrackpointData {
-  id: string;
-  timestamp: string;
-  latitude?: number;
-  longitude?: number;
-  altitude_m?: number;
-  distance_m?: number;
-  speed_ms?: number;
-  heart_rate_bpm?: number;
-  cadence_rpm?: number;
-  temperature_c?: number;
 }
 
 const chartConfig = {
@@ -32,30 +20,9 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export function FitHeartRateChart({ trainingId }: FitHeartRateChartProps) {
-  const [trackpoints, setTrackpoints] = useState<TrackpointData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, isLoading, error } = useTrackpoints(trainingId);
 
-  useEffect(() => {
-    const fetchTrackpoints = async () => {
-      try {
-        const response = await fetch(`/api/trainings/${trainingId}/trackpoints`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch trackpoints');
-        }
-        const data = await response.json();
-        setTrackpoints(data.trackpoints || []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTrackpoints();
-  }, [trainingId]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <Card className="w-full">
         <CardHeader>
@@ -84,28 +51,23 @@ export function FitHeartRateChart({ trainingId }: FitHeartRateChartProps) {
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
-            Błąd: {error}
+            Błąd: {error.message}
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  // Filter trackpoints with heart rate data
+  const trackpoints = data?.trackpoints || [];
+
   const heartRateData = trackpoints
-    .filter(tp => tp.heart_rate_bpm != null)
     .map((tp, index) => ({
       index,
-      timestamp: tp.timestamp,
-      heart_rate: tp.heart_rate_bpm,
-      distance: tp.distance_m ? (tp.distance_m / 1000).toFixed(1) : null,
-      timeFormatted: new Date(tp.timestamp).toLocaleTimeString('pl-PL', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        second: '2-digit'
-      })
+      timestamp: tp.timestamp ? date(tp.timestamp).toISOString() : null,
+      heart_rate: tp.heart_rate_bpm ?? null,
+      distance: tp.distance ? (tp.distance / 1000).toFixed(1) : null,
+      timeFormatted: tp.timestamp ? date(tp.timestamp).format('HH:mm') : null
     }))
-    .filter(data => data.heart_rate != null);
 
   if (heartRateData.length === 0) {
     return (
@@ -164,12 +126,12 @@ export function FitHeartRateChart({ trainingId }: FitHeartRateChartProps) {
               <XAxis 
                 dataKey="timeFormatted"
                 tick={{ fontSize: 12 }}
-                interval="preserveStartEnd"
               />
               <YAxis 
                 domain={['dataMin - 10', 'dataMax + 10']}
                 tick={{ fontSize: 12 }}
                 label={{ value: 'Tętno (bpm)', angle: -90, position: 'insideLeft' }}
+                ticks={[80, 100, 120, 140, 160, 180, 200]}
               />
               <ChartTooltip 
                 content={<ChartTooltipContent />}

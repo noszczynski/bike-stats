@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { calculateTrainingLoad } from '@/features/training/calculate-training-load';
 import {
     formatTrend,
@@ -29,7 +30,6 @@ import { CompareToSelect } from './compare-to-select';
 import { EffortLevelChart } from './effort-level-chart';
 import { FitUpload } from './fit-upload';
 import { FitHeartRateChart } from './charts/fit-heart-rate-chart';
-import SliderTooltip from './ui/slider-with-marks';
 import isNil from 'lodash/isNil';
 import { ChevronLeft, ChevronRight, Loader2, SparklesIcon, Clock, Activity } from 'lucide-react';
 import { useQueryState } from 'nuqs';
@@ -39,6 +39,7 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 import { useTrainingNavigation } from '@/hooks/use-training-navigation';
 import { useHeartRateZonesSuggestion } from '@/hooks/use-heart-rate-zones-suggestion';
+import { cn } from '../lib/utils';
 
 // Helper function to format minutes back to time string
 function formatMinutes(minutes: number): string {
@@ -46,99 +47,6 @@ function formatMinutes(minutes: number): string {
     const remainingMinutes = (minutes % 60).toFixed(0);
 
     return hours > 0 ? `${hours}h ${remainingMinutes}m` : `${remainingMinutes}m`;
-}
-
-// Heart rate zone definitions
-const HR_ZONES = {
-    Z1: { name: 'Endurance', min: 0, max: 112, color: '#22c55e' },
-    Z2: { name: 'Moderate', min: 113, max: 132, color: '#3b82f6' },
-    Z3: { name: 'Tempo', min: 133, max: 151, color: '#f59e0b' },
-    Z4: { name: 'Threshold', min: 152, max: 170, color: '#ef4444' },
-    Z5: { name: 'Anaerobic', min: 171, max: 250, color: '#8b5cf6' }
-};
-
-
-
-// Component to display calculated heart rate zones from FIT data
-function FitHeartRateZonesSuggestion({ trainingId }: { trainingId: string }) {
-    const { data: suggestion, isLoading, error } = useHeartRateZonesSuggestion(trainingId);
-
-    if (isLoading) {
-        return (
-            <Alert className="mt-4">
-                <Activity className="h-4 w-4" />
-                <AlertDescription className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Obliczanie stref tętna z danych .FIT...
-                </AlertDescription>
-            </Alert>
-        );
-    }
-
-    if (error) {
-        return (
-            <Alert className="mt-4">
-                <Activity className="h-4 w-4" />
-                <AlertDescription>
-                    Nie udało się obliczyć stref tętna: {error instanceof Error ? error.message : 'Nieznany błąd'}
-                </AlertDescription>
-            </Alert>
-        );
-    }
-
-    if (!suggestion) {
-        return null;
-    }
-
-    return (
-        <Alert className="mt-4">
-            <Activity className="h-4 w-4" />
-            <AlertDescription>
-                <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        <span className="font-medium">Obliczone strefy tętna z danych .FIT:</span>
-                    </div>
-                    <div className="grid grid-cols-5 gap-2">
-                        {Object.entries(HR_ZONES).map(([key, zone], index) => {
-                            const zoneKey = `zone_${index + 1}` as keyof typeof suggestion.zones;
-                            const time = suggestion.zones[zoneKey].time;
-                            const isZero = time === '00:00:00';
-                            
-                            return (
-                                <div key={key} className="text-center">
-                                    <Badge 
-                                        variant="outline" 
-                                        className="w-full justify-center"
-                                        style={{ 
-                                            borderColor: zone.color,
-                                            color: zone.color,
-                                            opacity: isZero ? 0.5 : 1
-                                        }}
-                                    >
-                                        {key}
-                                    </Badge>
-                                    <div className={`text-xs mt-1 ${isZero ? 'text-muted-foreground' : ''}`}>
-                                        {time} ({suggestion.zones[zoneKey].percentage})
-                                    </div>
-                                    <div className="text-xs text-muted-foreground">
-                                        {key === 'Z1' ? '<113' : 
-                                         key === 'Z2' ? '113-132' :
-                                         key === 'Z3' ? '132-151' :
-                                         key === 'Z4' ? '151-170' :
-                                         '>170'}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                        Możesz użyć tych wartości jako sugestii dla pól powyżej
-                    </div>
-                </div>
-            </AlertDescription>
-        </Alert>
-    );
 }
 
 type TrainingOverviewProps = {
@@ -744,73 +652,75 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                                                             defaultValue={seconds}
                                                             placeholder='00'
                                                             min='0'
-                                                            max='59'
+                                                            max='59'  
                                                             {...register(`heart_rate_zones.zone_${zoneNumber}_s`)}
                                                         />
                                                     </div>
-                                                                                </div>
-                            );
+                                                                                </div> 
+                            ); 
                         })}
+
+<div className='flex justify-end pt-2'>
+                                    <Button type='submit' className='px-8' variant='default' disabled={isSubmitting}>
+                                        {isSubmitting ? 'Zapisywanie...' : 'Zapisz zmiany'}
+                                    </Button>
+                                </div>
                     </div>
                 </div>
-
-                {/* Add FIT heart rate zones suggestion */}
-                <FitHeartRateZonesSuggestion trainingId={training.id} />
+                            </form>
 
                 <div className='rounded-lg border p-4'>
                                     <h4 className='mb-2 text-lg font-medium'>Wysiłek</h4>
 
                                     <div className='space-y-3 pt-2'>
-                                        <div className='flex items-center justify-between'>
-                                            <Label htmlFor='effort' className='text-sm font-medium'>
-                                                Poziom wysiłku (1-10)
-                                            </Label>
-                                            <span className='text-muted-foreground bg-background rounded-md border px-2 py-1 text-sm font-medium'>
-                                                {training.effort ?? 1}
-                                            </span>
-                                        </div>
-                                        {/* Add state to track current effort value */}
-                                        {(() => {
-                                            const [currentEffort, setCurrentEffort] = useState(training.effort ?? 1);
-
-                                            return (
-                                                <>
-                                                    <SliderTooltip
-                                                        id='effort'
-                                                        {...register('effort')}
-                                                        defaultValue={[training.effort ?? 1]}
-                                                        min={1}
-                                                        max={10}
-                                                        step={1}
-                                                        onValueCommit={(value) => setCurrentEffort(value[0])}
-                                                        hasMarks
-                                                        showTooltip
-                                                        labelFor='effort'
-                                                        labelTitle='Poziom wysiłku'
-                                                        labelValue={currentEffort}
+                                        
+                                        <RadioGroup
+                                            {...register('effort')}
+                                            defaultValue={String(training.effort ?? 1)}
+                                            className='grid grid-cols-5 gap-3 md:grid-cols-10'
+                                            onValueChange={async (value) => {
+                                                const effortValue = parseInt(value);
+                                                try {
+                                                    await updateTrainingMutation.mutateAsync({
+                                                        trainingId: training.id,
+                                                        data: { effort: effortValue }
+                                                    });
+                                                    router.refresh();
+                                                    toast.success('Poziom wysiłku został zaktualizowany');
+                                                } catch (error) {
+                                                    console.error('Error updating effort:', error);
+                                                    toast.error('Nie udało się zaktualizować poziomu wysiłku');
+                                                }
+                                            }}
+                                        >
+                                            {Array.from({ length: 10 }, (_, i) => i + 1).map((value) => (
+                                                <div key={value} className='flex items-center justify-center'>
+                                                    <RadioGroupItem
+                                                        value={String(value)}
+                                                        id={`effort-${value}`}
+                                                        className='peer sr-only'
                                                     />
-                                                    <div className='flex items-center justify-between'>
-                                                        <div className='text-muted-foreground flex w-full justify-between px-1 text-xs'>
-                                                            <span>Łatwy</span>
-                                                            <span>Umiarkowany</span>
-                                                            <span>Trudny</span>
-                                                        </div>
-                                                        <div className='bg-background ml-2 flex h-8 w-8 items-center justify-center rounded-full border text-sm font-medium'>
-                                                            {currentEffort}
-                                                        </div>
-                                                    </div>
-                                                </>
-                                            );
-                                        })()}
+                                                    <Label
+                                                        htmlFor={`effort-${value}`}
+                                                        className={cn('flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-2 text-sm font-medium transition-all hover:bg-accent peer-checked:bg-primary peer-checked:text-primary-foreground peer-checked:border-primary', {
+                                                            'bg-primary text-primary-foreground border-primary hover:bg-primary/80': value === (training.effort ?? 1),
+                                                        })}
+                                                    >
+                                                        {value}
+                                                    </Label>
+                                                </div>
+                                            ))}
+                                        </RadioGroup>
+                                        
+                                        <div className='flex items-center justify-between'>
+                                            <div className='text-muted-foreground flex w-full justify-between px-1 text-xs'>
+                                                <span>Łatwy</span>
+                                                <span>Umiarkowany</span>
+                                                <span>Trudny</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-
-                                <div className='flex justify-end pt-2'>
-                                    <Button type='submit' className='px-8' variant='default' disabled={isSubmitting}>
-                                        {isSubmitting ? 'Zapisywanie...' : 'Zapisz zmiany'}
-                                    </Button>
-                                </div>
-                            </form>
                         </div>
                     </div>
                 </TabsContent>
