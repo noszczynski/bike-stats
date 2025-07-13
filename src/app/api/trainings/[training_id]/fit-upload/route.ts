@@ -6,6 +6,8 @@ import {
   convertLapsForDB, 
   validateFitFile 
 } from '@/lib/fit-parser';
+import { calculateHeartRateZonesByTrackpoints } from '../heart-rate-zones-suggestion/route';
+import { getAuthenticatedUser } from '../../../../../lib/auth';
 
 export async function POST(
   request: NextRequest,
@@ -78,11 +80,35 @@ return NextResponse.json(
       );
     }
 
+    const user = await getAuthenticatedUser({
+      id: true,
+      email: true,
+      settings: {
+          select: {
+              heart_rate_zone_1_max: true,
+              heart_rate_zone_2_max: true,
+              heart_rate_zone_3_max: true,
+              heart_rate_zone_4_max: true,
+              heart_rate_zone_5_max: true,
+          }
+      }
+  });
+
+  if (!user || !user.settings) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+}
+
     // Start database transaction to save trackpoints and laps
     await prisma.$transaction(async (tx) => {
+      const rawTrackpoints = parsedFit.activity.trackpoints;
+
+      if (!user || !user.settings) {
+        throw new Error('Unauthorized');
+    }
+
       // Convert and insert trackpoints
       const trackpoints = convertTrackpointsForDB(
-        parsedFit.activity.trackpoints,
+        rawTrackpoints,
         training_id
       );
 
@@ -108,10 +134,39 @@ return NextResponse.json(
         });
       }
 
+      const zones = calculateHeartRateZonesByTrackpoints(trackpoints.map(tp => ({
+        heart_rate_bpm: tp.heart_rate_bpm ?? null,
+        timestamp: tp.timestamp
+      })), {
+        heart_rate_zone_1_min: 0,
+        heart_rate_zone_1_max: user.settings.heart_rate_zone_1_max ?? 0,
+
+        heart_rate_zone_2_min: (user.settings.heart_rate_zone_1_max ?? 0) + 1,
+        heart_rate_zone_2_max: user.settings.heart_rate_zone_2_max ?? 0,
+
+        heart_rate_zone_3_min: (user.settings.heart_rate_zone_2_max ?? 0) + 1,
+        heart_rate_zone_3_max: user.settings.heart_rate_zone_3_max ?? 0,
+
+        heart_rate_zone_4_min: (user.settings.heart_rate_zone_3_max ?? 0) + 1,
+        heart_rate_zone_4_max: user.settings.heart_rate_zone_4_max ?? 0,
+
+        heart_rate_zone_5_min: (user.settings.heart_rate_zone_4_max ?? 0) + 1,
+        heart_rate_zone_5_max: 300,
+    });
+
+    console.log("zones:", zones);
+
       // Mark activity as FIT processed
       await tx.activity.update({
         where: { id: training_id },
-        data: { fit_processed: true }
+        data: { 
+          fit_processed: true,
+          heart_rate_zone_1: zones.zone_1.time,
+          heart_rate_zone_2: zones.zone_2.time,
+          heart_rate_zone_3: zones.zone_3.time,
+          heart_rate_zone_4: zones.zone_4.time,
+          heart_rate_zone_5: zones.zone_5.time
+         }
       });
     });
 

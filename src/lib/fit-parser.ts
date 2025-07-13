@@ -117,7 +117,7 @@ export function convertTrackpointsForDB(
     heart_rate_bpm: tp.heart_rate,
     cadence_rpm: tp.cadence,
     temperature_c: tp.temperature
-  }));
+  }))
 }
 
 /**
