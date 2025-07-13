@@ -350,7 +350,6 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                 <TabsList>
                     <TabsTrigger value='overview'>Przegląd</TabsTrigger>
                     <TabsTrigger value='performance'>Wydajność</TabsTrigger>
-                    <TabsTrigger value='physical'>Parametry fizyczne</TabsTrigger>
                     <TabsTrigger value='technical'>Dane techniczne</TabsTrigger>
                     <TabsTrigger value='summary'>Podsumowanie</TabsTrigger>
                     <TabsTrigger value='edit'>Edycja</TabsTrigger>
@@ -440,11 +439,6 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                             infoText={`Niższy czas na kilometr oznacza większą efektywność. Twój średni czas na kilometr wynosi: ${(avgTimePerKmPast * 60).toFixed(1)} min/km`}
                             formatValue={(val) => val.toFixed(1)}
                         />
-                    </div>
-                </TabsContent>
-
-                <TabsContent value='physical' className='mt-6'>
-                    <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
                         {!isNil(training.avg_heart_rate_bpm) && training.avg_heart_rate_bpm > 0 && (
                             <StatsCard
                                 title='Średnie tętno'
@@ -469,8 +463,13 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                             infoText={`Większe przewyższenie to wyższy poziom trudności. Twoje średnie przewyższenie wynosi: ${avgElevationPast.toFixed(0)} m`}
                             formatValue={(val) => val.toFixed(0)}
                         />
+                        
+                        <EffortLevelChart effort={training.effort ?? 0} />
+
                         {training.heart_rate_zones && (
-                            <HeartRateZonesChart heartRateZones={training.heart_rate_zones as HeartRateZones} />
+                            <div className='col-span-2'>
+                                    <HeartRateZonesChart heartRateZones={training.heart_rate_zones as HeartRateZones} />
+                            </div>
                         )}
                     </div>
                 </TabsContent>
@@ -478,15 +477,10 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                 <TabsContent value='technical' className='mt-6'>
                     <div className='space-y-6 w-full'>
                         <div className='flex flex-row items-stretch gap-4 w-full'>
-                            <div className='w-1/2 h-full'>
-                                <FitUpload 
-                                    trainingId={training.id} 
-                                    onUploadSuccess={() => router.refresh()} 
-                                />
-                            </div>
-                            <div className='w-1/2 h-full'>
-                            <EffortLevelChart effort={training.effort ?? 0} />
-                            </div>
+                            <FitUpload 
+                                trainingId={training.id} 
+                                onUploadSuccess={() => router.refresh()} 
+                            />
                         </div>
                         <div className='mt-6 w-full'>
                             <FitHeartRateChart trainingId={training.id} />
