@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface ImportTrainingData {
     name: string;
@@ -45,51 +45,57 @@ interface GenerateDescriptionResponse {
 }
 
 async function importTraining(data: ImportTrainingData): Promise<{ message: string }> {
-    const response = await fetch('/api/trainings/import', {
-        method: 'POST',
+    const response = await fetch("/api/trainings/import", {
+        method: "POST",
         headers: {
-            'Content-Type': 'application/json'
+            "Content-Type": "application/json",
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
     });
 
     if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to import training');
+        throw new Error(error.error || "Failed to import training");
     }
 
     return response.json();
 }
 
-async function updateTraining(trainingId: string, data: UpdateTrainingData): Promise<{ message: string }> {
+async function updateTraining(
+    trainingId: string,
+    data: UpdateTrainingData,
+): Promise<{ message: string }> {
     const response = await fetch(`/api/trainings/${trainingId}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-            'Content-Type': 'application/json'
+            "Content-Type": "application/json",
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
     });
 
     if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to update training');
+        throw new Error(error.error || "Failed to update training");
     }
 
     return response.json();
 }
 
-async function uploadFitFile(trainingId: string, data: FitUploadData): Promise<{ message: string }> {
+async function uploadFitFile(
+    trainingId: string,
+    data: FitUploadData,
+): Promise<{ message: string }> {
     const formData = new FormData();
-    formData.append('file', data.file);
+    formData.append("file", data.file);
 
     const response = await fetch(`/api/trainings/${trainingId}/fit-upload`, {
-        method: 'POST',
-        body: formData
+        method: "POST",
+        body: formData,
     });
 
     if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to upload FIT file');
+        throw new Error(error.error || "Failed to upload FIT file");
     }
 
     return response.json();
@@ -97,41 +103,43 @@ async function uploadFitFile(trainingId: string, data: FitUploadData): Promise<{
 
 async function checkFitFileExists(trainingId: string): Promise<{ exists: boolean }> {
     const response = await fetch(`/api/trainings/${trainingId}/fit-upload`);
-    
+
     if (!response.ok) {
-        throw new Error('Failed to check FIT file existence');
+        throw new Error("Failed to check FIT file existence");
     }
-    
+
     return response.json();
 }
 
 async function generateDescription(trainingId: string): Promise<GenerateDescriptionResponse> {
     const response = await fetch(`/api/trainings/${trainingId}/description/generate`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-            'Content-Type': 'application/json'
-        }
+            "Content-Type": "application/json",
+        },
     });
 
     if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to generate description');
+        throw new Error(error.error || "Failed to generate description");
     }
 
     return response.json();
 }
 
-async function removeFitData(trainingId: string): Promise<{ message: string; deleted: { trackpoints: number; laps: number } }> {
+async function removeFitData(
+    trainingId: string,
+): Promise<{ message: string; deleted: { trackpoints: number; laps: number } }> {
     const response = await fetch(`/api/trainings/${trainingId}/fit-upload`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-            'Content-Type': 'application/json'
-        }
+            "Content-Type": "application/json",
+        },
     });
 
     if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to remove FIT data');
+        throw new Error(error.error || "Failed to remove FIT data");
     }
 
     return response.json();
@@ -144,8 +152,8 @@ export function useImportTraining() {
         mutationFn: importTraining,
         onSuccess: () => {
             // Invalidate trainings to trigger refetch
-            queryClient.invalidateQueries({ queryKey: ['trainings'] });
-        }
+            queryClient.invalidateQueries({ queryKey: ["trainings"] });
+        },
     });
 }
 
@@ -153,13 +161,13 @@ export function useUpdateTraining() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ trainingId, data }: { trainingId: string; data: UpdateTrainingData }) => 
+        mutationFn: ({ trainingId, data }: { trainingId: string; data: UpdateTrainingData }) =>
             updateTraining(trainingId, data),
         onSuccess: (_, { trainingId }) => {
             // Invalidate specific training and trainings list
-            queryClient.invalidateQueries({ queryKey: ['training', trainingId] });
-            queryClient.invalidateQueries({ queryKey: ['trainings'] });
-        }
+            queryClient.invalidateQueries({ queryKey: ["training", trainingId] });
+            queryClient.invalidateQueries({ queryKey: ["trainings"] });
+        },
     });
 }
 
@@ -167,25 +175,27 @@ export function useUploadFitFile() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ trainingId, data }: { trainingId: string; data: FitUploadData }) => 
+        mutationFn: ({ trainingId, data }: { trainingId: string; data: FitUploadData }) =>
             uploadFitFile(trainingId, data),
         onSuccess: (_, { trainingId }) => {
             // Invalidate training-related queries
-            queryClient.invalidateQueries({ queryKey: ['training', trainingId] });
-            queryClient.invalidateQueries({ queryKey: ['trackpoints', trainingId] });
-            queryClient.invalidateQueries({ queryKey: ['heart-rate-zones-suggestion', trainingId] });
-            queryClient.invalidateQueries({ queryKey: ['fit-file-exists', trainingId] });
-        }
+            queryClient.invalidateQueries({ queryKey: ["training", trainingId] });
+            queryClient.invalidateQueries({ queryKey: ["trackpoints", trainingId] });
+            queryClient.invalidateQueries({
+                queryKey: ["heart-rate-zones-suggestion", trainingId],
+            });
+            queryClient.invalidateQueries({ queryKey: ["fit-file-exists", trainingId] });
+        },
     });
 }
 
 export function useCheckFitFileExists(trainingId: string) {
     return useQuery({
-        queryKey: ['fit-file-exists', trainingId],
+        queryKey: ["fit-file-exists", trainingId],
         queryFn: () => checkFitFileExists(trainingId),
         enabled: !!trainingId,
         staleTime: 30 * 1000, // 30 seconds
-        retry: false
+        retry: false,
     });
 }
 
@@ -196,11 +206,11 @@ export function useGenerateDescription() {
         mutationFn: generateDescription,
         onSuccess: (_, trainingId) => {
             // Invalidate training to trigger refetch with new description
-            queryClient.invalidateQueries({ queryKey: ['training', trainingId] });
-            queryClient.invalidateQueries({ queryKey: ['trainings'] });
-        }
+            queryClient.invalidateQueries({ queryKey: ["training", trainingId] });
+            queryClient.invalidateQueries({ queryKey: ["trainings"] });
+        },
     });
-} 
+}
 
 export function useRemoveFitData() {
     const queryClient = useQueryClient();
@@ -209,11 +219,13 @@ export function useRemoveFitData() {
         mutationFn: removeFitData,
         onSuccess: (_, trainingId) => {
             // Invalidate training-related queries
-            queryClient.invalidateQueries({ queryKey: ['training', trainingId] });
-            queryClient.invalidateQueries({ queryKey: ['trackpoints', trainingId] });
-            queryClient.invalidateQueries({ queryKey: ['heart-rate-zones-suggestion', trainingId] });
-            queryClient.invalidateQueries({ queryKey: ['fit-file-exists', trainingId] });
-            queryClient.invalidateQueries({ queryKey: ['trainings'] });
-        }
+            queryClient.invalidateQueries({ queryKey: ["training", trainingId] });
+            queryClient.invalidateQueries({ queryKey: ["trackpoints", trainingId] });
+            queryClient.invalidateQueries({
+                queryKey: ["heart-rate-zones-suggestion", trainingId],
+            });
+            queryClient.invalidateQueries({ queryKey: ["fit-file-exists", trainingId] });
+            queryClient.invalidateQueries({ queryKey: ["trainings"] });
+        },
     });
-} 
+}

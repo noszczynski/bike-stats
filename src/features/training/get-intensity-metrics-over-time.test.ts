@@ -1,23 +1,24 @@
-import trainingsData from '../../data/trainings.json';
-import { Training } from '../../types/training';
-import { getIntensityMetricsOverTime } from './get-intensity-metrics-over-time';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from "vitest";
 
-describe('getIntensityMetricsOverTime', () => {
-    it('should generate metrics correctly for sample data', () => {
+import trainingsData from "../../data/trainings.json";
+import { Training } from "../../types/training";
+import { getIntensityMetricsOverTime } from "./get-intensity-metrics-over-time";
+
+describe("getIntensityMetricsOverTime", () => {
+    it("should generate metrics correctly for sample data", () => {
         const result = getIntensityMetricsOverTime(trainingsData as Training[]);
 
         expect(result).toBeInstanceOf(Array);
         expect(result.length).toBe(trainingsData.length);
-        expect(result[0]).toHaveProperty('date');
-        expect(result[0]).toHaveProperty('intensity');
-        expect(result[0]).toHaveProperty('distanceContribution');
-        expect(result[0]).toHaveProperty('speedContribution');
-        expect(result[0]).toHaveProperty('heartRateContribution');
-        expect(result[0]).toHaveProperty('elevationContribution');
+        expect(result[0]).toHaveProperty("date");
+        expect(result[0]).toHaveProperty("intensity");
+        expect(result[0]).toHaveProperty("distanceContribution");
+        expect(result[0]).toHaveProperty("speedContribution");
+        expect(result[0]).toHaveProperty("heartRateContribution");
+        expect(result[0]).toHaveProperty("elevationContribution");
     });
 
-    it('should calculate intensity values between 0 and 100', () => {
+    it("should calculate intensity values between 0 and 100", () => {
         const result = getIntensityMetricsOverTime(trainingsData as Training[]);
 
         for (const item of result) {
@@ -26,52 +27,52 @@ describe('getIntensityMetricsOverTime', () => {
         }
     });
 
-    it('should sort trainings chronologically', () => {
+    it("should sort trainings chronologically", () => {
         const trainings = [
             {
-                date: '2023-01-03',
+                date: "2023-01-03",
                 distance_km: 10,
                 avg_speed_kmh: 15,
                 avg_heart_rate_bpm: 140,
-                elevation_gain_m: 100
+                elevation_gain_m: 100,
             },
             {
-                date: '2023-01-01',
+                date: "2023-01-01",
                 distance_km: 10,
                 avg_speed_kmh: 15,
                 avg_heart_rate_bpm: 140,
-                elevation_gain_m: 100
+                elevation_gain_m: 100,
             },
             {
-                date: '2023-01-02',
+                date: "2023-01-02",
                 distance_km: 10,
                 avg_speed_kmh: 15,
                 avg_heart_rate_bpm: 140,
-                elevation_gain_m: 100
-            }
+                elevation_gain_m: 100,
+            },
         ] as Training[];
 
         const result = getIntensityMetricsOverTime(trainings);
 
-        expect(result[0].date).toEqual('2023-01-01');
-        expect(result[1].date).toEqual('2023-01-02');
-        expect(result[2].date).toEqual('2023-01-03');
+        expect(result[0].date).toEqual("2023-01-01");
+        expect(result[1].date).toEqual("2023-01-02");
+        expect(result[2].date).toEqual("2023-01-03");
     });
 
-    it('should return empty array for empty input', () => {
+    it("should return empty array for empty input", () => {
         const result = getIntensityMetricsOverTime([]);
         expect(result).toEqual([]);
     });
 
-    it('should handle trainings with missing heart rate data', () => {
+    it("should handle trainings with missing heart rate data", () => {
         const trainings = [
             {
-                date: '2023-01-01',
+                date: "2023-01-01",
                 distance_km: 10,
                 avg_speed_kmh: 15,
                 avg_heart_rate_bpm: 0,
-                elevation_gain_m: 100
-            }
+                elevation_gain_m: 100,
+            },
         ] as Training[];
 
         const result = getIntensityMetricsOverTime(trainings);
@@ -80,23 +81,23 @@ describe('getIntensityMetricsOverTime', () => {
         expect(result[0].heartRateContribution).toEqual(10); // Default 0.5 * 20
     });
 
-    it('should calculate component contributions correctly', () => {
+    it("should calculate component contributions correctly", () => {
         // Create two trainings where the second one has double values
         const trainings = [
             {
-                date: '2023-01-01',
+                date: "2023-01-01",
                 distance_km: 10,
                 avg_speed_kmh: 15,
                 avg_heart_rate_bpm: 140,
-                elevation_gain_m: 100
+                elevation_gain_m: 100,
             },
             {
-                date: '2023-01-02',
+                date: "2023-01-02",
                 distance_km: 20,
                 avg_speed_kmh: 30,
                 avg_heart_rate_bpm: 140,
-                elevation_gain_m: 200
-            }
+                elevation_gain_m: 200,
+            },
         ] as Training[];
 
         const result = getIntensityMetricsOverTime(trainings);

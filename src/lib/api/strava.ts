@@ -1,46 +1,46 @@
-import { serverEnv } from '@/env/env-server';
-import { StravaActivity, StravaAuthResponse, StravaTokens, StravaRoute } from '@/types/strava';
+import { serverEnv } from "@/env/env-server";
+import { StravaActivity, StravaAuthResponse, StravaRoute, StravaTokens } from "@/types/strava";
 
 const STRAVA_CLIENT_ID = serverEnv.STRAVA_CLIENT_ID;
 const STRAVA_CLIENT_SECRET = serverEnv.STRAVA_CLIENT_SECRET;
 
 export async function exchangeCodeForToken(code: string): Promise<StravaAuthResponse> {
-    const response = await fetch('https://www.strava.com/oauth/token', {
-        method: 'POST',
+    const response = await fetch("https://www.strava.com/oauth/token", {
+        method: "POST",
         headers: {
-            'Content-Type': 'application/json'
+            "Content-Type": "application/json",
         },
         body: JSON.stringify({
             client_id: STRAVA_CLIENT_ID,
             client_secret: STRAVA_CLIENT_SECRET,
             code,
-            grant_type: 'authorization_code'
-        })
+            grant_type: "authorization_code",
+        }),
     });
 
     if (!response.ok) {
-        throw new Error('Failed to exchange code for token');
+        throw new Error("Failed to exchange code for token");
     }
 
     return response.json();
 }
 
 export async function refreshStravaToken(refreshToken: string): Promise<StravaTokens> {
-    const response = await fetch('https://www.strava.com/oauth/token', {
-        method: 'POST',
+    const response = await fetch("https://www.strava.com/oauth/token", {
+        method: "POST",
         headers: {
-            'Content-Type': 'application/json'
+            "Content-Type": "application/json",
         },
         body: JSON.stringify({
             client_id: STRAVA_CLIENT_ID,
             client_secret: STRAVA_CLIENT_SECRET,
             refresh_token: refreshToken,
-            grant_type: 'refresh_token'
-        })
+            grant_type: "refresh_token",
+        }),
     });
 
     if (!response.ok) {
-        throw new Error('Failed to refresh token');
+        throw new Error("Failed to refresh token");
     }
 
     return response.json();
@@ -49,7 +49,7 @@ export async function refreshStravaToken(refreshToken: string): Promise<StravaTo
 async function handleStravaRequest<T>(
     accessToken: string,
     refreshToken: string | undefined,
-    request: (token: string) => Promise<T>
+    request: (token: string) => Promise<T>,
 ): Promise<T> {
     try {
         return await request(accessToken);
@@ -63,37 +63,37 @@ async function handleStravaRequest<T>(
             const newTokens = await refreshStravaToken(refreshToken);
 
             // Update cookies with new tokens
-            const response = await fetch('/api/auth/strava/refresh-tokens', {
-                method: 'POST',
+            const response = await fetch("/api/auth/strava/refresh-tokens", {
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json'
+                    "Content-Type": "application/json",
                 },
-                body: JSON.stringify(newTokens)
+                body: JSON.stringify(newTokens),
             });
 
             if (!response.ok) {
-                throw new Error('Failed to update tokens');
+                throw new Error("Failed to update tokens");
             }
 
             // Retry the request with new access token
             return await request(newTokens.access_token);
         } catch (refreshError) {
-            console.error('Failed to refresh token:', refreshError);
+            console.error("Failed to refresh token:", refreshError);
             throw refreshError;
         }
     }
 }
 
 export async function getAthlete(accessToken: string, refreshToken?: string) {
-    return handleStravaRequest(accessToken, refreshToken, async (token) => {
-        const response = await fetch('https://www.strava.com/api/v3/athlete', {
+    return handleStravaRequest(accessToken, refreshToken, async token => {
+        const response = await fetch("https://www.strava.com/api/v3/athlete", {
             headers: {
-                Authorization: `Bearer ${token}`
-            }
+                Authorization: `Bearer ${token}`,
+            },
         });
 
         if (!response.ok) {
-            throw new Error('Failed to fetch athlete data');
+            throw new Error("Failed to fetch athlete data");
         }
 
         return response.json();
@@ -108,22 +108,25 @@ export async function getAllStravaRideActivities(
         after?: number;
         page?: number;
         per_page?: number;
-    }
+    },
 ) {
-    return handleStravaRequest(accessToken, refreshToken, async (token) => {
+    return handleStravaRequest(accessToken, refreshToken, async token => {
         const queryParams = new URLSearchParams();
 
-        if (params?.before) queryParams.append('before', params.before.toString());
-        if (params?.after) queryParams.append('after', params.after.toString());
+        if (params?.before) queryParams.append("before", params.before.toString());
+        if (params?.after) queryParams.append("after", params.after.toString());
 
-        queryParams.append('page', (params?.page ?? 1).toString());
-        queryParams.append('per_page', (params?.per_page ?? 100).toString());
+        queryParams.append("page", (params?.page ?? 1).toString());
+        queryParams.append("per_page", (params?.per_page ?? 100).toString());
 
-        const response = await fetch(`https://www.strava.com/api/v3/athlete/activities?${queryParams.toString()}`, {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        });
+        const response = await fetch(
+            `https://www.strava.com/api/v3/athlete/activities?${queryParams.toString()}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            },
+        );
 
         if (!response.ok) {
             return [];
@@ -131,7 +134,7 @@ export async function getAllStravaRideActivities(
 
         const json = await (response.json() as Promise<StravaActivity[]>);
 
-        return json.filter((activity) => activity.sport_type === 'Ride');
+        return json.filter(activity => activity.sport_type === "Ride");
     });
 }
 
@@ -139,14 +142,14 @@ export async function getAllStravaRideActivities(
  * Get a specific activity by ID from Strava
  */
 export async function getActivity(activityId: number, accessToken: string, refreshToken?: string) {
-    return handleStravaRequest(accessToken, refreshToken, async (token) => {
+    return handleStravaRequest(accessToken, refreshToken, async token => {
         const response = await fetch(
             `https://www.strava.com/api/v3/activities/${activityId}?include_all_efforts=false`,
             {
                 headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            }
+                    Authorization: `Bearer ${token}`,
+                },
+            },
         );
 
         if (!response.ok) {
@@ -167,21 +170,21 @@ export async function getAthleteRoutes(
     params?: {
         page?: number;
         per_page?: number;
-    }
+    },
 ): Promise<StravaRoute[]> {
-    return handleStravaRequest(accessToken, refreshToken, async (token) => {
+    return handleStravaRequest(accessToken, refreshToken, async token => {
         const queryParams = new URLSearchParams();
 
-        queryParams.append('page', (params?.page ?? 1).toString());
-        queryParams.append('per_page', (params?.per_page ?? 100).toString());
+        queryParams.append("page", (params?.page ?? 1).toString());
+        queryParams.append("per_page", (params?.per_page ?? 100).toString());
 
         const response = await fetch(
             `https://www.strava.com/api/v3/athletes/${athleteId}/routes?${queryParams.toString()}`,
             {
                 headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            }
+                    Authorization: `Bearer ${token}`,
+                },
+            },
         );
 
         if (!response.ok) {

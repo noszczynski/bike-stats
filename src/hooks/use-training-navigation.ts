@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from "@tanstack/react-query";
 
 type NavigationData = {
     current: {
@@ -20,15 +20,15 @@ type NavigationData = {
 
 export function useTrainingNavigation(trainingId: string) {
     return useQuery<NavigationData>({
-        queryKey: ['training-navigation', trainingId],
+        queryKey: ["training-navigation", trainingId],
         queryFn: async () => {
             const response = await fetch(`/api/trainings/${trainingId}/navigation`);
             if (!response.ok) {
-                throw new Error('Failed to fetch navigation data');
+                throw new Error("Failed to fetch navigation data");
             }
-            
-return response.json();
+
+            return response.json();
         },
-        enabled: !!trainingId
+        enabled: !!trainingId,
     });
-} 
+}

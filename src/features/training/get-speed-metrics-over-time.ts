@@ -1,4 +1,4 @@
-import { Training } from '@/types/training';
+import { Training } from "@/types/training";
 
 /**
  * Analyzes speed metrics over time from training data
@@ -8,11 +8,13 @@ import { Training } from '@/types/training';
  */
 export const getSpeedMetricsOverTime = (trainings: Training[]) => {
     // Sort by date to ensure chronological order
-    const sortedTrainings = [...trainings].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const sortedTrainings = [...trainings].sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+    );
 
-    return sortedTrainings.map((training) => ({
+    return sortedTrainings.map(training => ({
         date: training.date,
         avgSpeed: training.avg_speed_kmh,
-        maxSpeed: training.max_speed_kmh
+        maxSpeed: training.max_speed_kmh,
     }));
 };

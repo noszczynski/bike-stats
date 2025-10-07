@@ -1,9 +1,8 @@
-'use client';
+"use client";
 
-import { Button } from '@/components/ui/button';
-import { useUpdateTrainings } from '@/hooks/use-update-trainings';
-
-import { Loader } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { useUpdateTrainings } from "@/hooks/use-update-trainings";
+import { Loader } from "lucide-react";
 
 export function UpdateTrainingsButton() {
     const { mutate, isPending } = useUpdateTrainings();
@@ -14,14 +13,14 @@ export function UpdateTrainingsButton() {
     };
 
     return (
-        <Button variant='link' onClick={handleUpdate} disabled={isPending}>
+        <Button variant="link" onClick={handleUpdate} disabled={isPending}>
             {isPending ? (
                 <>
-                    <Loader className='mr-2 h-4 w-4 animate-spin' />
+                    <Loader className="mr-2 h-4 w-4 animate-spin" />
                     Aktualizowanie...
                 </>
             ) : (
-                'Aktualizuj'
+                "Aktualizuj"
             )}
         </Button>
     );

@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { ReactNode, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
-import { useStravaAuth } from '@/hooks/use-strava-auth';
-import { StravaLoginButton } from '@/components/StravaLoginButton';
-import { Skeleton } from '@/components/ui/skeleton';
+import { ReactNode, useEffect } from "react";
+import { StravaLoginButton } from "@/components/StravaLoginButton";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useStravaAuth } from "@/hooks/use-strava-auth";
+import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 
 interface StravaAuthWrapperProps {
     children: ReactNode;
@@ -14,11 +14,11 @@ interface StravaAuthWrapperProps {
     redirectToAuth?: boolean;
 }
 
-export function StravaAuthWrapper({ 
-    children, 
-    fallback, 
-    showLoginButton = true, 
-    redirectToAuth = false 
+export function StravaAuthWrapper({
+    children,
+    fallback,
+    showLoginButton = true,
+    redirectToAuth = false,
 }: StravaAuthWrapperProps) {
     const { data, isLoading, error } = useStravaAuth();
     const router = useRouter();
@@ -26,14 +26,14 @@ export function StravaAuthWrapper({
 
     useEffect(() => {
         if (redirectToAuth && !isLoading && !data?.isAuthenticated) {
-            router.push('/auth/strava');
+            router.push("/auth/strava");
         }
     }, [redirectToAuth, isLoading, data?.isAuthenticated, router]);
 
     // Invalidate athlete query when authentication status changes
     useEffect(() => {
         if (data?.isAuthenticated === false) {
-            queryClient.invalidateQueries({ queryKey: ['strava-athlete'] });
+            queryClient.invalidateQueries({ queryKey: ["strava-athlete"] });
         }
     }, [data?.isAuthenticated, queryClient]);
 
@@ -42,9 +42,9 @@ export function StravaAuthWrapper({
     }
 
     if (error) {
-        console.error('Failed to check Strava authentication:', error);
-        
-return showLoginButton ? <StravaLoginButton /> : null;
+        console.error("Failed to check Strava authentication:", error);
+
+        return showLoginButton ? <StravaLoginButton /> : null;
     }
 
     if (!data?.isAuthenticated) {
@@ -52,4 +52,4 @@ return showLoginButton ? <StravaLoginButton /> : null;
     }
 
     return <>{children}</>;
-} 
+}

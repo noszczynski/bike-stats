@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from "@tanstack/react-query";
 
 interface TrackPoint {
     timestamp: string; // iso string
@@ -22,21 +22,21 @@ interface TrackPointsResponse {
 
 async function fetchTrackpoints(trainingId: string): Promise<TrackPointsResponse> {
     const response = await fetch(`/api/trainings/${trainingId}/trackpoints`);
-    
+
     if (!response.ok) {
-        throw new Error('Failed to fetch trackpoints');
+        throw new Error("Failed to fetch trackpoints");
     }
-    
+
     return response.json();
 }
 
 export function useTrackpoints(trainingId: string) {
     return useQuery<TrackPointsResponse>({
-        queryKey: ['trackpoints', trainingId],
+        queryKey: ["trackpoints", trainingId],
         queryFn: () => fetchTrackpoints(trainingId),
         enabled: !!trainingId,
         staleTime: 5 * 60 * 1000, // 5 minutes
         gcTime: 10 * 60 * 1000, // 10 minutes
-        retry: false // Don't retry if there are no trackpoints
+        retry: false, // Don't retry if there are no trackpoints
     });
-} 
+}

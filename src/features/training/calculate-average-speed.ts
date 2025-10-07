@@ -1,4 +1,4 @@
-import { Training } from '../../types/training';
+import { Training } from "../../types/training";
 
 export const calculateAverageSpeed = (trainings: Training[], decimals = 1): number => {
     if (trainings.length === 0) return 0;

@@ -1,19 +1,19 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 /**
  * Server-side environment variables schema
  */
 export const serverEnvSchema = z.object({
-    NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+    NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
     STRAVA_CLIENT_ID: z
         .string()
         .min(1)
-        .transform((val) => parseInt(val, 10))
+        .transform(val => parseInt(val, 10))
         .pipe(z.number().int()),
     STRAVA_CLIENT_SECRET: z.string().min(1),
     STRAVA_AUTH_CALLBACK_URI: z.string().url(),
     JWT_SECRET: z.string().min(1),
-    OPENAI_API_KEY: z.string()
+    OPENAI_API_KEY: z.string(),
 });
 
 // For development debugging
@@ -32,12 +32,12 @@ export const serverEnvSchema = z.object({
  * Server-side environment variables - all values that should be accessible only on the server
  */
 export const serverEnv = {
-    NODE_ENV: process.env.NODE_ENV || 'development',
+    NODE_ENV: process.env.NODE_ENV || "development",
     STRAVA_CLIENT_ID: process.env.STRAVA_CLIENT_ID,
     STRAVA_CLIENT_SECRET: process.env.STRAVA_CLIENT_SECRET,
     STRAVA_AUTH_CALLBACK_URI: process.env.STRAVA_AUTH_CALLBACK_URI,
     JWT_SECRET: process.env.JWT_SECRET,
-    OPENAI_API_KEY: process.env.OPENAI_API_KEY
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
 };
 
 /**
@@ -54,17 +54,17 @@ export function validateEnv() {
         const parsed = serverEnvSchema.safeParse(serverEnv);
         if (!parsed.success) {
             const errorMessages = parsed.error.issues
-                .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
-                .join('\n');
+                .map(issue => `${issue.path.join(".")}: ${issue.message}`)
+                .join("\n");
 
             throw new Error(
-                `❌ Invalid environment variables:\n${errorMessages}\n\nPlease check your .env file and make sure all required variables are set.`
+                `❌ Invalid environment variables:\n${errorMessages}\n\nPlease check your .env file and make sure all required variables are set.`,
             );
         }
 
         return parsed.data;
     } catch (error) {
-        console.error('Environment validation error');
+        console.error("Environment validation error");
         throw error;
     }
 }

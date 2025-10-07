@@ -1,13 +1,11 @@
-import { NextResponse } from 'next/server';
-
-import { prisma } from '@/lib/prisma';
-
-import { hash } from 'bcryptjs';
-import { z } from 'zod';
+import { prisma } from "@/lib/prisma";
+import { hash } from "bcryptjs";
+import { NextResponse } from "next/server";
+import { z } from "zod";
 
 const registerSchema = z.object({
     email: z.string().email(),
-    password: z.string().min(6)
+    password: z.string().min(6),
 });
 
 export async function POST(request: Request) {
@@ -17,11 +15,14 @@ export async function POST(request: Request) {
 
         // Check if user already exists
         const existingUser = await prisma.user.findUnique({
-            where: { email }
+            where: { email },
         });
 
         if (existingUser) {
-            return NextResponse.json({ error: 'User with this email already exists' }, { status: 400 });
+            return NextResponse.json(
+                { error: "User with this email already exists" },
+                { status: 400 },
+            );
         }
 
         // Hash password
@@ -35,12 +36,12 @@ export async function POST(request: Request) {
                 settings: {
                     create: {
                         // Wszystkie pola opcjonalne - użytkownik wypełni później
-                    }
-                }
+                    },
+                },
             },
             include: {
-                settings: true
-            }
+                settings: true,
+            },
         });
 
         // Return user without password
@@ -48,8 +49,8 @@ export async function POST(request: Request) {
 
         return NextResponse.json({ user: userWithoutPassword }, { status: 201 });
     } catch (error) {
-        console.error('Registration error:', error);
+        console.error("Registration error:", error);
 
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }

@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { StravaLoginButton } from '@/components/StravaLoginButton';
-import { useStravaAuth } from '@/hooks/use-strava-auth';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ThemeSwitch } from '@/components/ui/theme-switch';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useEffect } from "react";
+import { StravaLoginButton } from "@/components/StravaLoginButton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ThemeSwitch } from "@/components/ui/theme-switch";
+import { useStravaAuth } from "@/hooks/use-strava-auth";
+import { useRouter } from "next/navigation";
 
 export default function StravaAuthPage() {
     const { data, isLoading, error } = useStravaAuth();
@@ -14,24 +14,24 @@ export default function StravaAuthPage() {
 
     useEffect(() => {
         if (data?.isAuthenticated) {
-            router.push('/');
+            router.push("/");
         }
     }, [data?.isAuthenticated, router]);
 
     if (isLoading) {
         return (
-            <div className='flex min-h-screen flex-col'>
-                <div className='flex w-full items-center justify-end gap-4 border-b px-8 py-4'>
+            <div className="flex min-h-screen flex-col">
+                <div className="flex w-full items-center justify-end gap-4 border-b px-8 py-4">
                     <ThemeSwitch />
                 </div>
-                
-                <div className='flex flex-1 flex-col items-center justify-center p-24'>
-                    <div className='w-full max-w-md space-y-8'>
-                        <div className='text-center'>
-                            <Skeleton className="h-8 w-48 mx-auto mb-4" />
-                            <Skeleton className="h-4 w-64 mx-auto" />
+
+                <div className="flex flex-1 flex-col items-center justify-center p-24">
+                    <div className="w-full max-w-md space-y-8">
+                        <div className="text-center">
+                            <Skeleton className="mx-auto mb-4 h-8 w-48" />
+                            <Skeleton className="mx-auto h-4 w-64" />
                         </div>
-                        <div className='flex justify-center'>
+                        <div className="flex justify-center">
                             <Skeleton className="h-12 w-48" />
                         </div>
                     </div>
@@ -43,11 +43,11 @@ export default function StravaAuthPage() {
     // If authenticated, show loading state while redirecting
     if (data?.isAuthenticated) {
         return (
-            <div className='flex min-h-screen flex-col items-center justify-center p-24'>
-                <div className='text-center'>
-                    <h2 className='text-2xl font-semibold mb-4'>Redirecting to dashboard...</h2>
-                    <div className='animate-pulse'>
-                        <Skeleton className="h-4 w-32 mx-auto" />
+            <div className="flex min-h-screen flex-col items-center justify-center p-24">
+                <div className="text-center">
+                    <h2 className="mb-4 text-2xl font-semibold">Redirecting to dashboard...</h2>
+                    <div className="animate-pulse">
+                        <Skeleton className="mx-auto h-4 w-32" />
                     </div>
                 </div>
             </div>
@@ -55,13 +55,13 @@ export default function StravaAuthPage() {
     }
 
     return (
-        <div className='flex min-h-screen flex-col'>
-            <div className='flex w-full items-center justify-end gap-4 border-b px-8 py-4'>
+        <div className="flex min-h-screen flex-col">
+            <div className="flex w-full items-center justify-end gap-4 border-b px-8 py-4">
                 <ThemeSwitch />
             </div>
-            
-            <div className='flex flex-1 flex-col items-center justify-center p-24'>
-                <div className='w-full max-w-md space-y-8'>
+
+            <div className="flex flex-1 flex-col items-center justify-center p-24">
+                <div className="w-full max-w-md space-y-8">
                     {error && (
                         <Alert variant="destructive" className="mb-4">
                             <AlertDescription>
@@ -69,23 +69,24 @@ export default function StravaAuthPage() {
                             </AlertDescription>
                         </Alert>
                     )}
-                    
-                    <div className='text-center'>
-                        <h1 className='text-4xl font-bold mb-2'>Bike Stats</h1>
-                        <h2 className='text-2xl font-semibold mb-4'>Connect with Strava</h2>
-                        <p className='text-muted-foreground'>
-                            You need to connect your Strava account to access your cycling statistics and dashboard.
+
+                    <div className="text-center">
+                        <h1 className="mb-2 text-4xl font-bold">Bike Stats</h1>
+                        <h2 className="mb-4 text-2xl font-semibold">Connect with Strava</h2>
+                        <p className="text-muted-foreground">
+                            You need to connect your Strava account to access your cycling
+                            statistics and dashboard.
                         </p>
                     </div>
 
-                    <div className='flex justify-center'>
+                    <div className="flex justify-center">
                         <StravaLoginButton />
                     </div>
-                    
-                    <div className='text-center text-sm text-muted-foreground'>
+
+                    <div className="text-muted-foreground text-center text-sm">
                         <p>
-                            By connecting your Strava account, you'll be able to view your cycling metrics, 
-                            training history, and detailed analytics.
+                            By connecting your Strava account, you'll be able to view your cycling
+                            metrics, training history, and detailed analytics.
                         </p>
                     </div>
                 </div>

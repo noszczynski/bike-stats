@@ -1,4 +1,4 @@
-import { Training } from '@/types/training';
+import { Training } from "@/types/training";
 
 /**
  * Analyzes elevation gain metrics over time from training data
@@ -8,12 +8,14 @@ import { Training } from '@/types/training';
  */
 export const getElevationMetricsOverTime = (trainings: Training[]) => {
     // Sort by date to ensure chronological order
-    const sortedTrainings = [...trainings].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const sortedTrainings = [...trainings].sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+    );
 
-    return sortedTrainings.map((training) => {
+    return sortedTrainings.map(training => {
         return {
             date: training.date,
-            elevation: training.elevation_gain_m
+            elevation: training.elevation_gain_m,
         };
     });
 };

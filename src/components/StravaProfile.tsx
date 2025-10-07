@@ -1,12 +1,11 @@
-import { cookies } from 'next/headers';
-
-import { getAthlete } from '@/lib/api/strava';
-import { LogoutButton } from '@/components/LogoutButton';
+import { LogoutButton } from "@/components/LogoutButton";
+import { getAthlete } from "@/lib/api/strava";
+import { cookies } from "next/headers";
 
 export async function StravaProfile() {
     const cookieStore = await cookies();
-    const accessToken = cookieStore.get('strava_access_token')?.value;
-    const refreshToken = cookieStore.get('strava_refresh_token')?.value;
+    const accessToken = cookieStore.get("strava_access_token")?.value;
+    const refreshToken = cookieStore.get("strava_refresh_token")?.value;
 
     if (!accessToken) {
         return null;
@@ -16,13 +15,13 @@ export async function StravaProfile() {
         const athlete = await getAthlete(accessToken, refreshToken);
 
         return (
-            <div className='flex items-center gap-3'>
+            <div className="flex items-center gap-3">
                 <img
                     src={athlete.profile}
                     alt={`${athlete.firstname} ${athlete.lastname}`}
-                    className='h-8 w-8 rounded-full'
+                    className="h-8 w-8 rounded-full"
                 />
-                <span className='text-sm font-medium'>
+                <span className="text-sm font-medium">
                     {athlete.firstname} {athlete.lastname}
                 </span>
                 <LogoutButton />

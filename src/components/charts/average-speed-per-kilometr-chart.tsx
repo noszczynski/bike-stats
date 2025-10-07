@@ -1,18 +1,24 @@
-'use client';
+"use client";
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import date from '@/lib/date';
-import { Training } from '@/types/training';
-
-import { TrendingDownIcon, TrendingUpIcon } from 'lucide-react';
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import date from "@/lib/date";
+import { Training } from "@/types/training";
+import { TrendingDownIcon, TrendingUpIcon } from "lucide-react";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 const chartConfig = {
     speed: {
-        label: 'Średnia prędkość',
-        color: '#F44336'
-    }
+        label: "Średnia prędkość",
+        color: "#F44336",
+    },
 };
 
 interface AverageSpeedPerKilometrChartProps {
@@ -21,7 +27,9 @@ interface AverageSpeedPerKilometrChartProps {
 
 export function AverageSpeedPerKilometrChart({ trainings }: AverageSpeedPerKilometrChartProps) {
     // Sort trainings by date
-    const sortedTrainings = [...trainings].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const sortedTrainings = [...trainings].sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+    );
 
     // Calculate moving average
     const data = sortedTrainings.map((training, index) => {
@@ -29,12 +37,14 @@ export function AverageSpeedPerKilometrChart({ trainings }: AverageSpeedPerKilom
         const trainingsToAverage = sortedTrainings.slice(0, index + 1);
 
         // Calculate average speed per kilometer
-        const avgSpeed = trainingsToAverage.reduce((sum, t) => sum + t.avg_speed_kmh, 0) / trainingsToAverage.length;
+        const avgSpeed =
+            trainingsToAverage.reduce((sum, t) => sum + t.avg_speed_kmh, 0) /
+            trainingsToAverage.length;
 
         return {
             date: training.date,
-            formattedDate: date(training.date).format('LL'),
-            speed: Number(avgSpeed.toFixed(1))
+            formattedDate: date(training.date).format("LL"),
+            speed: Number(avgSpeed.toFixed(1)),
         };
     });
 
@@ -49,18 +59,24 @@ export function AverageSpeedPerKilometrChart({ trainings }: AverageSpeedPerKilom
         <Card>
             <CardHeader>
                 <CardTitle>Średnia prędkość w czasie</CardTitle>
-                <CardDescription>Średnia krocząca prędkości dla wszystkich treningów</CardDescription>
+                <CardDescription>
+                    Średnia krocząca prędkości dla wszystkich treningów
+                </CardDescription>
             </CardHeader>
             <CardContent>
-                <ChartContainer config={chartConfig} className='aspect-auto h-80'>
+                <ChartContainer config={chartConfig} className="aspect-auto h-80">
                     <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray='3 3' vertical={false} />
-                        <XAxis dataKey='formattedDate' tickLine={true} axisLine={false} />
-                        <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => `${value} km/h`} />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="formattedDate" tickLine={true} axisLine={false} />
+                        <YAxis
+                            tickLine={false}
+                            axisLine={false}
+                            tickFormatter={value => `${value} km/h`}
+                        />
                         <Area
-                            name='speed'
-                            type='monotone'
-                            dataKey='speed'
+                            name="speed"
+                            type="monotone"
+                            dataKey="speed"
                             fill={chartConfig.speed.color}
                             stroke={chartConfig.speed.color}
                             fillOpacity={0.3}
@@ -71,11 +87,11 @@ export function AverageSpeedPerKilometrChart({ trainings }: AverageSpeedPerKilom
 
                                 return (
                                     <ChartTooltipContent
-                                        className='w-[250px]'
-                                        payload={payload.map((p) => ({
+                                        className="w-[250px]"
+                                        payload={payload.map(p => ({
                                             ...p,
                                             value: `${p.value} km/h`,
-                                            name: chartConfig.speed.label
+                                            name: chartConfig.speed.label,
                                         }))}
                                         active={active}
                                     />
@@ -85,12 +101,12 @@ export function AverageSpeedPerKilometrChart({ trainings }: AverageSpeedPerKilom
                     </AreaChart>
                 </ChartContainer>
             </CardContent>
-            <CardFooter className='flex-col items-start gap-2 text-sm'>
-                <div className='flex gap-2 leading-none font-medium'>
-                    {Math.abs(speedProgress).toFixed(1)}% {speedProgress > 0 ? 'wzrost' : 'spadek'} średniej prędkości
-                    od pierwszego treningu <TrendIcon className='h-4 w-4' />
+            <CardFooter className="flex-col items-start gap-2 text-sm">
+                <div className="flex gap-2 leading-none font-medium">
+                    {Math.abs(speedProgress).toFixed(1)}% {speedProgress > 0 ? "wzrost" : "spadek"}{" "}
+                    średniej prędkości od pierwszego treningu <TrendIcon className="h-4 w-4" />
                 </div>
-                <div className='text-muted-foreground leading-none'>
+                <div className="text-muted-foreground leading-none">
                     Pokazuje średnią kroczącą prędkość dla wszystkich treningów do danego momentu
                 </div>
             </CardFooter>

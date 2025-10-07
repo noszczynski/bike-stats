@@ -1,24 +1,28 @@
-'use client';
+"use client";
 
-import React from 'react';
-
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 import {
     ChartContainer,
     ChartLegend,
     ChartLegendContent,
     ChartTooltip,
-    ChartTooltipContent
-} from '@/components/ui/chart';
-import { Training } from '@/types/training';
-
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+    ChartTooltipContent,
+} from "@/components/ui/chart";
+import { Training } from "@/types/training";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 const chartConfig = {
     yearlyDistance: {
-        label: 'Łączny dystans (km)',
-        color: '#ef4444' // Using the red color from other charts
-    }
+        label: "Łączny dystans (km)",
+        color: "#ef4444", // Using the red color from other charts
+    },
 };
 
 export function YearlyDistanceChart({ trainings }: { trainings: Training[] }) {
@@ -34,7 +38,7 @@ export function YearlyDistanceChart({ trainings }: { trainings: Training[] }) {
     const data = Object.entries(yearlyData)
         .map(([year, distance]) => ({
             year,
-            yearlyDistance: Number(distance.toFixed(1))
+            yearlyDistance: Number(distance.toFixed(1)),
         }))
         .sort((a, b) => Number(a.year) - Number(b.year));
 
@@ -44,8 +48,9 @@ export function YearlyDistanceChart({ trainings }: { trainings: Training[] }) {
     // Calculate year with the highest distance
     const maxDistanceYear =
         data.length > 0
-            ? data.reduce((max, item) => (item.yearlyDistance > max.yearlyDistance ? item : max)).year
-            : 'N/A';
+            ? data.reduce((max, item) => (item.yearlyDistance > max.yearlyDistance ? item : max))
+                  .year
+            : "N/A";
 
     return (
         <Card>
@@ -54,12 +59,12 @@ export function YearlyDistanceChart({ trainings }: { trainings: Training[] }) {
                 <CardDescription>Łączny przejechany dystans w każdym roku</CardDescription>
             </CardHeader>
             <CardContent>
-                <ChartContainer config={chartConfig} className='aspect-auto h-80'>
+                <ChartContainer config={chartConfig} className="aspect-auto h-80">
                     <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray='3 3' />
-                        <XAxis dataKey='year' tickLine={false} axisLine={false} />
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="year" tickLine={false} axisLine={false} />
                         <YAxis
-                            label={{ value: 'Dystans (km)', angle: -90, position: 'insideLeft' }}
+                            label={{ value: "Dystans (km)", angle: -90, position: "insideLeft" }}
                             tickLine={false}
                             axisLine={false}
                         />
@@ -69,11 +74,11 @@ export function YearlyDistanceChart({ trainings }: { trainings: Training[] }) {
 
                                 return (
                                     <ChartTooltipContent
-                                        className='w-[200px]'
-                                        payload={payload.map((p) => ({
+                                        className="w-[200px]"
+                                        payload={payload.map(p => ({
                                             ...p,
                                             value: `${p.value} km`,
-                                            name: chartConfig.yearlyDistance.label
+                                            name: chartConfig.yearlyDistance.label,
                                         }))}
                                         active={active}
                                     />
@@ -81,8 +86,8 @@ export function YearlyDistanceChart({ trainings }: { trainings: Training[] }) {
                             }}
                         />
                         <Bar
-                            name='yearlyDistance'
-                            dataKey='yearlyDistance'
+                            name="yearlyDistance"
+                            dataKey="yearlyDistance"
                             fill={chartConfig.yearlyDistance.color}
                             radius={[4, 4, 0, 0]}
                         />
@@ -98,11 +103,13 @@ export function YearlyDistanceChart({ trainings }: { trainings: Training[] }) {
                     </BarChart>
                 </ChartContainer>
             </CardContent>
-            <CardFooter className='flex-col items-start gap-2 text-sm'>
-                <div className='flex gap-2 leading-none font-medium'>Łączny dystans: {totalDistance.toFixed(1)} km</div>
-                <div className='text-muted-foreground leading-none'>
+            <CardFooter className="flex-col items-start gap-2 text-sm">
+                <div className="flex gap-2 leading-none font-medium">
+                    Łączny dystans: {totalDistance.toFixed(1)} km
+                </div>
+                <div className="text-muted-foreground leading-none">
                     Rok z największym dystansem: {maxDistanceYear} (
-                    {data.find((d) => d.year === maxDistanceYear)?.yearlyDistance.toFixed(1) || 0} km)
+                    {data.find(d => d.year === maxDistanceYear)?.yearlyDistance.toFixed(1) || 0} km)
                 </div>
             </CardFooter>
         </Card>

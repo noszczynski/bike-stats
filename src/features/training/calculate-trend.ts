@@ -1,6 +1,6 @@
-import date from '@/lib/date';
+import date from "@/lib/date";
 
-import { Training } from '../../types/training';
+import { Training } from "../../types/training";
 
 /**
  * Calculates the trend percentage between recent and older period values
@@ -17,26 +17,28 @@ export const calculateTrend = (
     valueFn: (training: Training) => number,
     recentPeriodMonths = 3,
     olderPeriodMonths = 3,
-    customCalculator?: (recentTrainings: Training[], olderTrainings: Training[]) => number
+    customCalculator?: (recentTrainings: Training[], olderTrainings: Training[]) => number,
 ): number => {
     if (trainings.length === 0) return 0;
 
     // Sort trainings by date
-    const sortedTrainings = [...trainings].sort((a, b) => date(b.date).valueOf() - date(a.date).valueOf());
+    const sortedTrainings = [...trainings].sort(
+        (a, b) => date(b.date).valueOf() - date(a.date).valueOf(),
+    );
 
     const now = date();
-    const recentPeriodStart = now.subtract(recentPeriodMonths, 'month');
-    const olderPeriodStart = recentPeriodStart.subtract(olderPeriodMonths, 'month');
+    const recentPeriodStart = now.subtract(recentPeriodMonths, "month");
+    const olderPeriodStart = recentPeriodStart.subtract(olderPeriodMonths, "month");
 
     // Filter trainings for recent and older periods
     const recentTrainings = sortedTrainings.filter(
-        (t) => date(t.date).isAfter(recentPeriodStart) || date(t.date).isSame(recentPeriodStart)
+        t => date(t.date).isAfter(recentPeriodStart) || date(t.date).isSame(recentPeriodStart),
     );
 
     const olderTrainings = sortedTrainings.filter(
-        (t) =>
+        t =>
             (date(t.date).isAfter(olderPeriodStart) || date(t.date).isSame(olderPeriodStart)) &&
-            date(t.date).isBefore(recentPeriodStart)
+            date(t.date).isBefore(recentPeriodStart),
     );
 
     // If a custom calculator was provided, use it
@@ -73,15 +75,15 @@ export const getTrendMessage = (trend: number, positiveIsBetter = true): string 
     const isPositive = trend > 0;
     const isImprovement = (positiveIsBetter && isPositive) || (!positiveIsBetter && !isPositive);
 
-    if (absValue === 0) return 'Bez zmian';
+    if (absValue === 0) return "Bez zmian";
 
     if (absValue < 2) {
-        return isImprovement ? 'Niewielka poprawa' : 'Niewielki spadek';
+        return isImprovement ? "Niewielka poprawa" : "Niewielki spadek";
     } else if (absValue < 5) {
-        return isImprovement ? 'Umiarkowana poprawa' : 'Umiarkowany spadek';
+        return isImprovement ? "Umiarkowana poprawa" : "Umiarkowany spadek";
     } else if (absValue < 10) {
-        return isImprovement ? 'Znaczna poprawa' : 'Znaczny spadek';
+        return isImprovement ? "Znaczna poprawa" : "Znaczny spadek";
     } else {
-        return isImprovement ? 'Wyraźny postęp' : 'Wyraźny regres';
+        return isImprovement ? "Wyraźny postęp" : "Wyraźny regres";
     }
 };

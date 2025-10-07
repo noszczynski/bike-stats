@@ -1,19 +1,22 @@
-import { NextResponse } from 'next/server';
-
-import { exchangeCodeForToken } from '@/lib/api/strava';
+import { exchangeCodeForToken } from "@/lib/api/strava";
+import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
 
-    const code = searchParams.get('code');
-    const error = searchParams.get('error');
+    const code = searchParams.get("code");
+    const error = searchParams.get("error");
 
     if (error) {
-        return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/auth/strava?error=${error}`);
+        return NextResponse.redirect(
+            `${process.env.NEXT_PUBLIC_APP_URL}/auth/strava?error=${error}`,
+        );
     }
 
     if (!code) {
-        return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/auth/strava?error=missing_code`);
+        return NextResponse.redirect(
+            `${process.env.NEXT_PUBLIC_APP_URL}/auth/strava?error=missing_code`,
+        );
     }
 
     try {
@@ -21,24 +24,26 @@ export async function GET(request: Request) {
         const response = NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/?auth=success`);
 
         // Set cookies in the response
-        response.cookies.set('strava_access_token', tokenData.access_token, {
+        response.cookies.set("strava_access_token", tokenData.access_token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 60 * 60 * 24 * 7 // 1 week
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            maxAge: 60 * 60 * 24 * 7, // 1 week
         });
 
-        response.cookies.set('strava_refresh_token', tokenData.refresh_token, {
+        response.cookies.set("strava_refresh_token", tokenData.refresh_token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 60 * 60 * 24 * 30 // 30 days
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            maxAge: 60 * 60 * 24 * 30, // 30 days
         });
 
         return response;
     } catch (error) {
-        console.error('Error exchanging code for token:', error);
+        console.error("Error exchanging code for token:", error);
 
-        return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/auth/strava?error=token_exchange_failed`);
+        return NextResponse.redirect(
+            `${process.env.NEXT_PUBLIC_APP_URL}/auth/strava?error=token_exchange_failed`,
+        );
     }
 }

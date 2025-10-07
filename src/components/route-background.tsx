@@ -1,4 +1,4 @@
-import polyline from 'polyline';
+import polyline from "polyline";
 
 interface RouteBackgroundProps {
     summaryPolyline: string;
@@ -13,11 +13,13 @@ export function RouteBackground({ summaryPolyline }: RouteBackgroundProps) {
         // If already decoded, ignore
     }
     // Then, unescape any double backslashes (\\ -> \)
-    cleanPolyline = cleanPolyline.replace(/\\/g, '\\');
+    cleanPolyline = cleanPolyline.replace(/\\/g, "\\");
     // Decode the polyline to an array of [lat, lng] pairs
     const positionsRaw = polyline.decode(cleanPolyline);
     // Filter to ensure only [number, number] pairs
-    const positions: [number, number][] = positionsRaw.filter((pt: number[]) => pt.length === 2) as [number, number][];
+    const positions: [number, number][] = positionsRaw.filter(
+        (pt: number[]) => pt.length === 2,
+    ) as [number, number][];
 
     // Calculate bounds
     const maxLat = Math.max(...positions.map(([lat]) => lat));
@@ -43,19 +45,20 @@ export function RouteBackground({ summaryPolyline }: RouteBackgroundProps) {
     });
 
     return (
-        <div className='absolute inset-0 z-0 flex items-center justify-center opacity-5'>
+        <div className="absolute inset-0 z-0 flex items-center justify-center opacity-5">
             <svg
                 viewBox={`0 0 ${viewportWidth} ${viewportHeight}`}
-                preserveAspectRatio='xMidYMid meet'
-                className='h-[90%] w-[90%]'>
+                preserveAspectRatio="xMidYMid meet"
+                className="h-[90%] w-[90%]"
+            >
                 <polyline
-                    points={scaledPoints.join(' ')}
-                    fill='none'
-                    stroke='currentColor'
-                    strokeWidth='3'
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    vectorEffect='non-scaling-stroke'
+                    points={scaledPoints.join(" ")}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    vectorEffect="non-scaling-stroke"
                 />
             </svg>
         </div>

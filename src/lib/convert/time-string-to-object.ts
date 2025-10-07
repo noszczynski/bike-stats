@@ -5,12 +5,12 @@ export function timeStringToObject(str: string): {
     seconds: number;
     label: string;
 } {
-    const [hours, minutes, seconds] = str.split(':').map(Number);
+    const [hours, minutes, seconds] = str.split(":").map(Number);
 
     return {
         hours,
         minutes,
         seconds,
-        label: `${hours}h ${minutes}min ${seconds}s`
+        label: `${hours}h ${minutes}min ${seconds}s`,
     };
 }

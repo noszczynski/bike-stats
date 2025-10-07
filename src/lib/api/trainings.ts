@@ -1,26 +1,27 @@
-import { getAllStravaRideActivities } from '@/lib/api/strava';
-import { meterPerSecondToKmph } from '@/lib/convert/meter-per-second-to-kmph';
-import { Training, TrainingSchema } from '@/types/training';
-import { secondsToTimeString } from '@/utils/time';
-import type { Activity, StravaActivity } from '@prisma/client';
-import { ActivityType } from '@prisma/client';
+import { getAllStravaRideActivities } from "@/lib/api/strava";
+import { meterPerSecondToKmph } from "@/lib/convert/meter-per-second-to-kmph";
+import { Training, TrainingSchema } from "@/types/training";
+import { secondsToTimeString } from "@/utils/time";
+import { ActivityType, type Activity, type StravaActivity } from "@prisma/client";
+import dayjs from "dayjs";
+import { Decimal } from "decimal.js";
+import { z } from "zod";
 
-import { getActivityById, getActivityByStravaId } from '../db';
-import { prisma } from '../prisma';
-import dayjs from 'dayjs';
-import { Decimal } from 'decimal.js';
-import { z } from 'zod';
+import { getActivityById, getActivityByStravaId } from "../db";
+import { prisma } from "../prisma";
 
-function formatActivityToTraining(activity: Activity & { strava_activity: StravaActivity | null }): Training {
+function formatActivityToTraining(
+    activity: Activity & { strava_activity: StravaActivity | null },
+): Training {
     if (!activity.strava_activity) {
-        throw new Error('Activity must have strava_activity to be formatted as Training');
+        throw new Error("Activity must have strava_activity to be formatted as Training");
     }
-    
+
     return {
         id: activity.id,
         strava_activity_id: Number(activity.strava_activity.id),
         name: activity.strava_activity.name,
-        date: dayjs(activity.strava_activity.date).format('YYYY-MM-DD'),
+        date: dayjs(activity.strava_activity.date).format("YYYY-MM-DD"),
         distance_km: activity.strava_activity.distance_m / 1000,
         elevation_gain_m: activity.strava_activity.elevation_gain_m,
         moving_time: secondsToTimeString(activity.strava_activity.moving_time_s),
@@ -40,7 +41,7 @@ function formatActivityToTraining(activity: Activity & { strava_activity: Strava
                       zone_2: activity.heart_rate_zone_2,
                       zone_3: activity.heart_rate_zone_3,
                       zone_4: activity.heart_rate_zone_4,
-                      zone_5: activity.heart_rate_zone_5
+                      zone_5: activity.heart_rate_zone_5,
                   }
                 : null,
         summary: activity.summary ?? null,
@@ -50,10 +51,10 @@ function formatActivityToTraining(activity: Activity & { strava_activity: Strava
         map: activity.strava_activity.map_summary_polyline
             ? {
                   id: activity.strava_activity.map_summary_id,
-                  summary_polyline: activity.strava_activity.map_summary_polyline
+                  summary_polyline: activity.strava_activity.map_summary_polyline,
               }
             : null,
-        fit_processed: activity.fit_processed
+        fit_processed: activity.fit_processed,
     } satisfies Training;
 }
 
@@ -95,13 +96,13 @@ export type TrainingsResponse = {
  */
 export async function getAllTrainings(
     filters: TrainingFilters = {},
-    pagination: PaginationOptions = { page: 1, pageSize: 200 }
+    pagination: PaginationOptions = { page: 1, pageSize: 200 },
 ): Promise<TrainingsResponse> {
-    const { 
-        startDate, 
-        endDate, 
-        type, 
-        minDistance, 
+    const {
+        startDate,
+        endDate,
+        type,
+        minDistance,
         maxDistance,
         minHeartRate,
         maxHeartRate,
@@ -113,7 +114,7 @@ export async function getAllTrainings(
         maxTime,
         tagIds,
         hasHeartRateData,
-        hasFitData
+        hasFitData,
     } = filters;
     const { page = 1, pageSize = 200 } = pagination;
 
@@ -121,11 +122,24 @@ export async function getAllTrainings(
 
     // Build where clause based on filters
     const where: any = {
-        type: type || 'ride'
+        type: type || "ride",
     };
 
     // Initialize strava_activity filter object
-    if (startDate || endDate || minDistance || maxDistance || minHeartRate || maxHeartRate || minSpeed || maxSpeed || minElevation || maxElevation || minTime || maxTime) {
+    if (
+        startDate ||
+        endDate ||
+        minDistance ||
+        maxDistance ||
+        minHeartRate ||
+        maxHeartRate ||
+        minSpeed ||
+        maxSpeed ||
+        minElevation ||
+        maxElevation ||
+        minTime ||
+        maxTime
+    ) {
         where.strava_activity = {};
     }
 
@@ -214,9 +228,9 @@ export async function getAllTrainings(
         where.activity_tags = {
             some: {
                 tag_id: {
-                    in: tagIds
-                }
-            }
+                    in: tagIds,
+                },
+            },
         };
     }
 
@@ -230,40 +244,44 @@ export async function getAllTrainings(
             strava_activity: true,
             activity_tags: {
                 include: {
-                    tag: true
-                }
-            }
+                    tag: true,
+                },
+            },
         },
         orderBy: {
             strava_activity: {
-                date: 'desc'
-            }
+                date: "desc",
+            },
         },
         skip,
-        take: pageSize
+        take: pageSize,
     });
 
-    const trainings = z.array(TrainingSchema).parse(importedActivities.map(formatActivityToTraining));
+    const trainings = z
+        .array(TrainingSchema)
+        .parse(importedActivities.map(formatActivityToTraining));
 
     return {
         trainings,
         totalCount,
         page,
         pageSize,
-        totalPages: Math.ceil(totalCount / pageSize)
+        totalPages: Math.ceil(totalCount / pageSize),
     };
 }
 
 export async function getTrainingsToImport(accessToken: string, refreshToken: string) {
     const stravaActivities = await prisma.stravaActivity.findMany({
         orderBy: {
-            created_at: 'desc'
-        }
+            created_at: "desc",
+        },
     });
     const stravaRides = await getAllStravaRideActivities(accessToken, refreshToken);
 
     /** Filter out activities that are already imported to database */
-    return stravaRides.filter((ride) => !stravaActivities.some((activity) => activity.id === BigInt(ride.id)));
+    return stravaRides.filter(
+        ride => !stravaActivities.some(activity => activity.id === BigInt(ride.id)),
+    );
 }
 
 export async function updateTrainings(accessToken: string, refreshToken: string) {
@@ -271,7 +289,7 @@ export async function updateTrainings(accessToken: string, refreshToken: string)
 
     const activityIds: string[] = [];
 
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async tx => {
         for await (const training of trainingsToImport) {
             const stravaActivity = await tx.stravaActivity.create({
                 data: {
@@ -287,15 +305,15 @@ export async function updateTrainings(accessToken: string, refreshToken: string)
                     max_heart_rate_bpm: Number(training.max_heartrate),
                     activity: {
                         create: {
-                            type: 'ride',
+                            type: "ride",
                             device: training.device_name,
-                            user_id: 'b3c8fc32-b5e8-4f90-8048-b8663d3bf02b' // todo: get user id from auth
-                        }
-                    }
+                            user_id: "b3c8fc32-b5e8-4f90-8048-b8663d3bf02b", // todo: get user id from auth
+                        },
+                    },
                 },
                 include: {
-                    activity: true
-                }
+                    activity: true,
+                },
             });
 
             if (stravaActivity.activity) {
@@ -307,7 +325,7 @@ export async function updateTrainings(accessToken: string, refreshToken: string)
     // Apply auto-tagging for all imported activities (outside transaction)
     for (const activityId of activityIds) {
         try {
-            const { applyAutoTagging } = await import('@/features/training/auto-tagging-rules');
+            const { applyAutoTagging } = await import("@/features/training/auto-tagging-rules");
             await applyAutoTagging(activityId);
         } catch (error) {
             console.error(`Error applying auto-tagging for activity ${activityId}:`, error);
@@ -332,7 +350,7 @@ export async function getTrainingById(trainingId: string): Promise<Training | nu
 
         return formatActivityToTraining(importedActivity);
     } catch (error) {
-        console.error('Error fetching training:', error);
+        console.error("Error fetching training:", error);
 
         return null;
     }
@@ -355,12 +373,12 @@ export async function importActivity(
         device?: string | undefined;
         battery_percent_usage?: number | undefined;
         effort?: number | undefined;
-    }
+    },
 ) {
     const existingActivity = await getActivityByStravaId(BigInt(stravaActivityId));
 
     if (existingActivity) {
-        throw new Error('Activity already imported');
+        throw new Error("Activity already imported");
     }
 
     const activity = await prisma.activity.create({
@@ -376,16 +394,16 @@ export async function importActivity(
             device: additionalData.device ?? null,
             battery_percent_usage: additionalData.battery_percent_usage ?? null,
             effort: additionalData.effort ?? null,
-            user_id: 'b3c8fc32-b5e8-4f90-8048-b8663d3bf02b' // todo: get user id from auth
-        }
+            user_id: "b3c8fc32-b5e8-4f90-8048-b8663d3bf02b", // todo: get user id from auth
+        },
     });
 
     // Apply auto-tagging after activity creation
     try {
-        const { applyAutoTagging } = await import('@/features/training/auto-tagging-rules');
+        const { applyAutoTagging } = await import("@/features/training/auto-tagging-rules");
         await applyAutoTagging(activity.id);
     } catch (error) {
-        console.error('Error applying auto-tagging:', error);
+        console.error("Error applying auto-tagging:", error);
         // Don't fail the import if auto-tagging fails
     }
 
@@ -409,11 +427,11 @@ export async function updateTraining(
         device?: string;
         battery_percent_usage?: number;
         effort?: number;
-    }
+    },
 ): Promise<Training> {
     const activity = await prisma.activity.update({
         where: {
-            id: trainingId
+            id: trainingId,
         },
         data: {
             heart_rate_zone_1: data.heart_rate_zones?.zone_1 ?? undefined,
@@ -424,15 +442,15 @@ export async function updateTraining(
             summary: data.summary ?? undefined,
             device: data.device ?? undefined,
             battery_percent_usage: data.battery_percent_usage ?? undefined,
-            effort: data.effort ?? undefined
+            effort: data.effort ?? undefined,
         },
         include: {
-            strava_activity: true
-        }
+            strava_activity: true,
+        },
     });
 
     if (!activity || !activity.strava_activity) {
-        throw new Error('Activity not found');
+        throw new Error("Activity not found");
     }
 
     return formatActivityToTraining(activity);
@@ -440,17 +458,17 @@ export async function updateTraining(
 
 // Client-side version of updateTrainings that calls the API route instead of using Prisma directly
 export async function updateTrainingsClient(accessToken: string, refreshToken: string) {
-    const response = await fetch('/api/trainings/update', {
-        method: 'POST',
+    const response = await fetch("/api/trainings/update", {
+        method: "POST",
         headers: {
-            'Content-Type': 'application/json'
+            "Content-Type": "application/json",
         },
-        body: JSON.stringify({ accessToken, refreshToken })
+        body: JSON.stringify({ accessToken, refreshToken }),
     });
 
     if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to update trainings');
+        throw new Error(error.error || "Failed to update trainings");
     }
 
     return response.json();

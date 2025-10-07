@@ -1,15 +1,15 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 export const TimeSchema = z
     .string()
-    .regex(/^(?:(?:([01]?\d|2[0-3]):)?([0-5]?\d):)?([0-5]?\d)$/, 'Time must be in hh:mm:ss format');
+    .regex(/^(?:(?:([01]?\d|2[0-3]):)?([0-5]?\d):)?([0-5]?\d)$/, "Time must be in hh:mm:ss format");
 
 export const HeartRateZonesSchema = z.object({
     zone_1: TimeSchema,
     zone_2: TimeSchema,
     zone_3: TimeSchema,
     zone_4: TimeSchema,
-    zone_5: TimeSchema
+    zone_5: TimeSchema,
 });
 
 export const TrainingSchema = z.object({
@@ -19,7 +19,7 @@ export const TrainingSchema = z.object({
     /** Name of the training */
     name: z.string(),
     /** Date of the training */
-    date: z.string().regex(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/, 'Date must be in YYYY-MM-DD format'),
+    date: z.string().regex(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/, "Date must be in YYYY-MM-DD format"),
     /** Distance of the training in km */
     distance_km: z.number(),
     /** Elevation gain of the training in m */
@@ -52,16 +52,16 @@ export const TrainingSchema = z.object({
         .number()
         .int()
         .nullish()
-        .refine((value) => !value || (value >= 1 && value <= 10), {
-            message: 'Effort must be between 1 and 10'
+        .refine(value => !value || (value >= 1 && value <= 10), {
+            message: "Effort must be between 1 and 10",
         }),
     /** Strava map data (optional) */
     map: z
         .object({
             id: z.string().nullish(),
-            summary_polyline: z.string().nullish()
+            summary_polyline: z.string().nullish(),
         })
-        .nullish()
+        .nullish(),
 });
 
 export type Training = z.infer<typeof TrainingSchema>;

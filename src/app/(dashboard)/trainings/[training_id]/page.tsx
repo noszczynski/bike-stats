@@ -1,10 +1,9 @@
-import { cookies } from 'next/headers';
-import { notFound } from 'next/navigation';
+import { TrainingOverview } from "@/components/training-overview";
+import { getAllTrainings, getTrainingById } from "@/lib/api/trainings";
+import { cookies } from "next/headers";
+import { notFound } from "next/navigation";
 
-import { TrainingOverview } from '@/components/training-overview';
-import { getAllTrainings, getTrainingById } from '@/lib/api/trainings';
-
-type CompareToType = 'all' | 'earlier' | 'other';
+type CompareToType = "all" | "earlier" | "other";
 
 interface TrainingPageProps {
     params: {
@@ -17,8 +16,8 @@ interface TrainingPageProps {
 
 export default async function TrainingPage({ params, searchParams }: TrainingPageProps) {
     const cookieStore = await cookies();
-    const accessToken = cookieStore.get('strava_access_token')?.value;
-    const refreshToken = cookieStore.get('strava_refresh_token')?.value;
+    const accessToken = cookieStore.get("strava_access_token")?.value;
+    const refreshToken = cookieStore.get("strava_refresh_token")?.value;
 
     if (!accessToken || !refreshToken) {
         return <div>No access token or refresh token found</div>;
@@ -36,19 +35,23 @@ export default async function TrainingPage({ params, searchParams }: TrainingPag
 
     // Get compareTo from searchParams or default to 'other'
     // Ensure it's one of the valid values
-    const validCompareToValues: CompareToType[] = ['all', 'earlier', 'other'];
+    const validCompareToValues: CompareToType[] = ["all", "earlier", "other"];
 
     const compareTo = validCompareToValues.includes(searchParams.compareTo as CompareToType)
         ? (searchParams.compareTo as CompareToType)
-        : 'other';
+        : "other";
 
     if (!validCompareToValues.includes(compareTo)) {
         return null;
     }
 
     return (
-        <div className='container py-8'>
-            <TrainingOverview training={training} compareTo={compareTo} allTrainings={allTrainings.trainings} />
+        <div className="container py-8">
+            <TrainingOverview
+                training={training}
+                compareTo={compareTo}
+                allTrainings={allTrainings.trainings}
+            />
         </div>
     );
 }

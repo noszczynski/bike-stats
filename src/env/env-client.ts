@@ -1,11 +1,11 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 /**
  * Client-side environment variables schema
  */
 export const clientEnvSchema = z.object({
     NEXT_PUBLIC_APP_URL: z.string().url(),
-    NEXT_PUBLIC_API_URL: z.string().url()
+    NEXT_PUBLIC_API_URL: z.string().url(),
 });
 
 /**
@@ -13,7 +13,7 @@ export const clientEnvSchema = z.object({
  */
 export const clientEnv = clientEnvSchema.parse({
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
 });
 
 /**

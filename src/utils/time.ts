@@ -1,11 +1,11 @@
 export const timeStringToMinutes = (timeStr: string): number => {
-    const [hours, minutes, seconds] = timeStr.split(':').map(Number);
+    const [hours, minutes, seconds] = timeStr.split(":").map(Number);
 
     return hours * 60 + minutes + seconds / 60;
 };
 
 export const secondsToTimeString = (seconds: number): string => {
-    return minutesToTimeString(seconds / 60)
+    return minutesToTimeString(seconds / 60);
 };
 
 export const minutesToTimeString = (minutes: number): string => {
@@ -13,5 +13,5 @@ export const minutesToTimeString = (minutes: number): string => {
     const remainingMinutes = Math.floor(minutes % 60);
     const seconds = Math.round((minutes % 1) * 60);
 
-    return `${hours}:${remainingMinutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    return `${hours}:${remainingMinutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 };

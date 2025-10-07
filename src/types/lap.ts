@@ -36,4 +36,4 @@ export interface FitStatusResponse {
     fit_processed: boolean;
     trackpoints_count: number;
     laps_count: number;
-} 
+}

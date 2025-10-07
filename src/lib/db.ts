@@ -1,4 +1,4 @@
-import { prisma } from './prisma';
+import { prisma } from "./prisma";
 
 /**
  * Get an activity by Strava activity ID
@@ -6,8 +6,8 @@ import { prisma } from './prisma';
 export async function getActivityByStravaId(stravaActivityId: bigint) {
     return prisma.activity.findUnique({
         where: {
-            strava_activity_id: stravaActivityId
-        }
+            strava_activity_id: stravaActivityId,
+        },
     });
 }
 
@@ -17,11 +17,10 @@ export async function getActivityByStravaId(stravaActivityId: bigint) {
 export async function getActivityById(id: string) {
     return prisma.activity.findUnique({
         where: {
-            id
+            id,
         },
         include: {
             strava_activity: true,
-        }
+        },
     });
 }
-

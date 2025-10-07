@@ -1,24 +1,23 @@
-import { cookies } from 'next/headers';
-import { NextResponse } from 'next/server';
-import dayjs from 'dayjs';
-
-import { calculateAverageHeartRate } from '@/features/training/calculate-average-heart-rate';
-import { calculateAverageSpeed } from '@/features/training/calculate-average-speed';
-import { calculateAverageTimePerKm } from '@/features/training/calculate-average-time-per-km';
-import { calculateElevationGainPerKm } from '@/features/training/calculate-elevation-gain-per-km';
-import { calculateHighestAverageHeartRate } from '@/features/training/calculate-highest-average-heart-rate';
-import { calculateHighestAverageSpeed } from '@/features/training/calculate-highest-average-speed';
-import { calculateHighestDistance } from '@/features/training/calculate-highest-distance';
-import { calculateMaxSpeed } from '@/features/training/calculate-max-speed';
-import { calculateShortestTimePerKm } from '@/features/training/calculate-shortest-time-per-km';
-import { calculateTotalDistance } from '@/features/training/calculate-total-distance';
-import { calculateTotalElevationGain } from '@/features/training/calculate-total-elevation-gain';
-import { completion } from '@/lib/api/openai';
-import { getActivity } from '@/lib/api/strava';
-import { getAllTrainings, updateTraining } from '@/lib/api/trainings';
-import { getAuthenticatedUser } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
-import date from '@/lib/date';
+import { calculateAverageHeartRate } from "@/features/training/calculate-average-heart-rate";
+import { calculateAverageSpeed } from "@/features/training/calculate-average-speed";
+import { calculateAverageTimePerKm } from "@/features/training/calculate-average-time-per-km";
+import { calculateElevationGainPerKm } from "@/features/training/calculate-elevation-gain-per-km";
+import { calculateHighestAverageHeartRate } from "@/features/training/calculate-highest-average-heart-rate";
+import { calculateHighestAverageSpeed } from "@/features/training/calculate-highest-average-speed";
+import { calculateHighestDistance } from "@/features/training/calculate-highest-distance";
+import { calculateMaxSpeed } from "@/features/training/calculate-max-speed";
+import { calculateShortestTimePerKm } from "@/features/training/calculate-shortest-time-per-km";
+import { calculateTotalDistance } from "@/features/training/calculate-total-distance";
+import { calculateTotalElevationGain } from "@/features/training/calculate-total-elevation-gain";
+import { completion } from "@/lib/api/openai";
+import { getActivity } from "@/lib/api/strava";
+import { getAllTrainings, updateTraining } from "@/lib/api/trainings";
+import { getAuthenticatedUser } from "@/lib/auth";
+import date from "@/lib/date";
+import { prisma } from "@/lib/prisma";
+import dayjs from "dayjs";
+import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 
 // Helper function to get training with laps and trackpoints
 async function getTrainingWithDetails(trainingId: string) {
@@ -46,7 +45,7 @@ async function getTrainingWithDetails(trainingId: string) {
                     start_longitude: true,
                     end_latitude: true,
                     end_longitude: true,
-                }
+                },
             },
             trackpoints: {
                 select: {
@@ -63,10 +62,10 @@ async function getTrainingWithDetails(trainingId: string) {
                 },
                 // Order by timestamp to get chronological data
                 orderBy: {
-                    timestamp: 'asc'
-                }
-            }
-        }
+                    timestamp: "asc",
+                },
+            },
+        },
     });
 
     if (!activity) {
@@ -76,9 +75,9 @@ async function getTrainingWithDetails(trainingId: string) {
     return {
         ...activity,
         // Filter out trackpoints with null values for HR and cadence if they're consistently null
-        trackpoints: activity.trackpoints.filter(tp =>
-            tp.heart_rate_bpm !== null || tp.cadence_rpm !== null || tp.speed_ms !== null
-        )
+        trackpoints: activity.trackpoints.filter(
+            tp => tp.heart_rate_bpm !== null || tp.cadence_rpm !== null || tp.speed_ms !== null,
+        ),
     };
 }
 
@@ -91,47 +90,54 @@ export async function POST(request: Request, { params }: { params: { training_id
                 select: {
                     weight_kg: true,
                     height_cm: true,
-                }
-            }
+                },
+            },
         });
 
         if (!user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
         const training = await getTrainingWithDetails(params.training_id);
 
         if (!training || !training.strava_activity) {
-            return NextResponse.json({ error: 'Training not found' }, { status: 404 });
+            return NextResponse.json({ error: "Training not found" }, { status: 404 });
         }
 
         const cookieStore = await cookies();
 
-        const accessToken = cookieStore.get('strava_access_token')?.value;
-        const refreshToken = cookieStore.get('strava_refresh_token')?.value;
+        const accessToken = cookieStore.get("strava_access_token")?.value;
+        const refreshToken = cookieStore.get("strava_refresh_token")?.value;
 
         if (!accessToken || !refreshToken) {
-            return NextResponse.json({ error: 'No access token or refresh token found' }, { status: 401 });
+            return NextResponse.json(
+                { error: "No access token or refresh token found" },
+                { status: 401 },
+            );
         }
 
         // Calculate date range for last two months
         const currentTrainingDate = dayjs(training.strava_activity.date);
-        const twoMonthsAgo = currentTrainingDate.subtract(2, 'month').startOf('day');
-        const currentTrainingEndOfDay = currentTrainingDate.endOf('day');
+        const twoMonthsAgo = currentTrainingDate.subtract(2, "month").startOf("day");
+        const currentTrainingEndOfDay = currentTrainingDate.endOf("day");
 
         // Get all trainings for metrics calculation (previous trainings before current one)
         const { trainings: allPreviousTrainings } = await getAllTrainings({
-            startDate: '2020-01-01', // Get all trainings from a reasonable past date
-            endDate: currentTrainingDate.subtract(1, 'day').format('YYYY-MM-DD') // All trainings before current training
+            startDate: "2020-01-01", // Get all trainings from a reasonable past date
+            endDate: currentTrainingDate.subtract(1, "day").format("YYYY-MM-DD"), // All trainings before current training
         });
 
         // Get trainings from last two months for comparison
         const { trainings: lastTwoMonthsTrainings } = await getAllTrainings({
-            startDate: twoMonthsAgo.format('YYYY-MM-DD'),
-            endDate: currentTrainingEndOfDay.format('YYYY-MM-DD')
+            startDate: twoMonthsAgo.format("YYYY-MM-DD"),
+            endDate: currentTrainingEndOfDay.format("YYYY-MM-DD"),
         });
 
-        const stravaActivity = await getActivity(Number(training.strava_activity_id), accessToken, refreshToken);
+        const stravaActivity = await getActivity(
+            Number(training.strava_activity_id),
+            accessToken,
+            refreshToken,
+        );
 
         const averageSpeed = calculateAverageSpeed(lastTwoMonthsTrainings);
         const highestAverageSpeed = calculateHighestAverageSpeed(lastTwoMonthsTrainings);
@@ -145,7 +151,9 @@ export async function POST(request: Request, { params }: { params: { training_id
         const averageTimePerKm = calculateAverageTimePerKm(lastTwoMonthsTrainings);
         const shortestTimePerKm = calculateShortestTimePerKm(lastTwoMonthsTrainings);
 
-        const currentElevationPerKm = training.strava_activity.elevation_gain_m / (training.strava_activity.distance_m / 1000);
+        const currentElevationPerKm =
+            training.strava_activity.elevation_gain_m /
+            (training.strava_activity.distance_m / 1000);
 
         // Format laps data for prompt
         const lapsData = training.laps.map(lap => ({
@@ -156,17 +164,21 @@ export async function POST(request: Request, { params }: { params: { training_id
             max_speed_kmh: lap.max_speed_ms ? (lap.max_speed_ms * 3.6).toFixed(1) : null,
             avg_heart_rate_bpm: lap.avg_heart_rate_bpm,
             max_heart_rate_bpm: lap.max_heart_rate_bpm,
-            elevation_gain_m: lap.total_elevation_gain_m ? lap.total_elevation_gain_m.toFixed(1) : null,
+            elevation_gain_m: lap.total_elevation_gain_m
+                ? lap.total_elevation_gain_m.toFixed(1)
+                : null,
         }));
 
         // Format trackpoints data for prompt - sample every 100th point to reduce size
-        const sampledTrackpoints = training.trackpoints.filter((_, index) => index % 100 === 0).map(tp => ({
-            timestamp: tp.timestamp,
-            distance_m: tp.distance_m,
-            speed_kmh: tp.speed_ms ? (tp.speed_ms * 3.6).toFixed(1) : null,
-            heart_rate_bpm: tp.heart_rate_bpm,
-            altitude_m: tp.altitude_m ? tp.altitude_m.toFixed(1) : null,
-        }));
+        const sampledTrackpoints = training.trackpoints
+            .filter((_, index) => index % 100 === 0)
+            .map(tp => ({
+                timestamp: tp.timestamp,
+                distance_m: tp.distance_m,
+                speed_kmh: tp.speed_ms ? (tp.speed_ms * 3.6).toFixed(1) : null,
+                heart_rate_bpm: tp.heart_rate_bpm,
+                altitude_m: tp.altitude_m ? tp.altitude_m.toFixed(1) : null,
+            }));
 
         const userWeight = user.settings?.weight_kg || 71;
         const userHeight = user.settings?.height_cm || 185;
@@ -190,36 +202,46 @@ Height: ${userHeight}cm;
 Sex: Male;
 Age: ${date().year() - 1999};
 Date: ${training.strava_activity.date};
-Distance: ${(training.strava_activity.distance_m / 1000).toFixed(2) || 'N/A'} km;
-Moving Time (seconds): ${training.strava_activity.moving_time_s || 'N/A'};
-Moving Time (hours): ${(training.strava_activity.moving_time_s / 3600).toFixed(2) || 'N/A'};
-Average Speed: ${training.strava_activity.avg_speed_kmh || 'N/A'} km/h;
-Max Speed: ${training.strava_activity.max_speed_kmh || 'N/A'} km/h;
-Elevation Gain: ${training.strava_activity.elevation_gain_m || 'N/A'} m;
-Elevation per km: ${currentElevationPerKm.toFixed(1) || 'N/A'} m/km;
-Average Heart Rate: ${training.strava_activity.avg_heart_rate_bpm || 'N/A'} bpm;
-Max Heart Rate: ${training.strava_activity.max_heart_rate_bpm || 'N/A'} bpm;
+Distance: ${(training.strava_activity.distance_m / 1000).toFixed(2) || "N/A"} km;
+Moving Time (seconds): ${training.strava_activity.moving_time_s || "N/A"};
+Moving Time (hours): ${(training.strava_activity.moving_time_s / 3600).toFixed(2) || "N/A"};
+Average Speed: ${training.strava_activity.avg_speed_kmh || "N/A"} km/h;
+Max Speed: ${training.strava_activity.max_speed_kmh || "N/A"} km/h;
+Elevation Gain: ${training.strava_activity.elevation_gain_m || "N/A"} m;
+Elevation per km: ${currentElevationPerKm.toFixed(1) || "N/A"} m/km;
+Average Heart Rate: ${training.strava_activity.avg_heart_rate_bpm || "N/A"} bpm;
+Max Heart Rate: ${training.strava_activity.max_heart_rate_bpm || "N/A"} bpm;
 Heart Rate Zones: ${JSON.stringify(heartRateZones)};
-Effort Level (subjective assessment): ${training.effort || 'N/A'}/10;
+Effort Level (subjective assessment): ${training.effort || "N/A"}/10;
 \`\`\`
 
 Laps Data:
 
 \`\`\`laps_data
-${lapsData.map(lap => `Lap ${lap.lap_number}:
+${lapsData
+    .map(
+        lap => `Lap ${lap.lap_number}:
 - Distance: ${lap.distance_km} km;
 - Moving Time: ${lap.moving_time_s}s;
-- Average Speed: ${lap.avg_speed_kmh || 'N/A'} km/h;
-- Max Speed: ${lap.max_speed_kmh || 'N/A'} km/h
-- Average Heart Rate: ${lap.avg_heart_rate_bpm || 'N/A'} bpm
-- Max Heart Rate: ${lap.max_heart_rate_bpm || 'N/A'} bpm;
-- Elevation Gain: ${lap.elevation_gain_m || 'N/A'} m`).join('; \n\n')}
+- Average Speed: ${lap.avg_speed_kmh || "N/A"} km/h;
+- Max Speed: ${lap.max_speed_kmh || "N/A"} km/h
+- Average Heart Rate: ${lap.avg_heart_rate_bpm || "N/A"} bpm
+- Max Heart Rate: ${lap.max_heart_rate_bpm || "N/A"} bpm;
+- Elevation Gain: ${lap.elevation_gain_m || "N/A"} m`,
+    )
+    .join("; \n\n")}
 \`\`\`
 
 Trackpoints Sample (every 10th point):
 
 \`\`\`trackpoints_sample
-${sampledTrackpoints.slice(0, 100).map(tp => `Time: ${date(tp.timestamp).format('YYYY-MM-DD HH:mm:ss')} | Distance: ${tp.distance_m || 'N/A'}m | Speed: ${tp.speed_kmh || 'N/A'} km/h | HR: ${tp.heart_rate_bpm || 'N/A'} bpm | Altitude: ${tp.altitude_m || 'N/A'}m`).join(';\n')}
+${sampledTrackpoints
+    .slice(0, 100)
+    .map(
+        tp =>
+            `Time: ${date(tp.timestamp).format("YYYY-MM-DD HH:mm:ss")} | Distance: ${tp.distance_m || "N/A"}m | Speed: ${tp.speed_kmh || "N/A"} km/h | HR: ${tp.heart_rate_bpm || "N/A"} bpm | Altitude: ${tp.altitude_m || "N/A"}m`,
+    )
+    .join(";\n")}
 \`\`\`
 
 Strava source data for this training:
@@ -229,9 +251,9 @@ Name: "${stravaActivity.name}";
 Type: ${stravaActivity.type};
 Achievement Count: ${stravaActivity.achievement_count || 0};
 Athlete Count: ${stravaActivity.athlete_count || 1};
-Workout Type: ${stravaActivity.workout_type || 'N/A'};
-Calories: ${stravaActivity.calories || 'N/A'};
-Weather Conditions: ${stravaActivity.weather_report ? JSON.stringify(stravaActivity.weather_report) : 'N/A'};
+Workout Type: ${stravaActivity.workout_type || "N/A"};
+Calories: ${stravaActivity.calories || "N/A"};
+Weather Conditions: ${stravaActivity.weather_report ? JSON.stringify(stravaActivity.weather_report) : "N/A"};
 \`\`\`
 
 Historical Metrics (Last 2 months):
@@ -256,16 +278,16 @@ Recent trainings from last 2 months:
 ${lastTwoMonthsTrainings
     .slice(0, 15) // Limit to 15 most recent trainings
     .map(
-        (t) => `Training "${t.name}" (${date(t.date).format('YYYY-MM-DD')}):
+        t => `Training "${t.name}" (${date(t.date).format("YYYY-MM-DD")}):
 - Distance: ${t.distance_km} km;
 - Moving Time: ${t.moving_time}s;
 - Average Speed: ${t.avg_speed_kmh} km/h;
 - Max Speed: ${t.max_speed_kmh} km/h;
 - Elevation Gain: ${t.elevation_gain_m} m;
-- Average Heart Rate: ${t.avg_heart_rate_bpm || 'N/A'} bpm;
-- Effort Level: ${t.effort || 'N/A'}/10`
+- Average Heart Rate: ${t.avg_heart_rate_bpm || "N/A"} bpm;
+- Effort Level: ${t.effort || "N/A"}/10`,
     )
-    .join('; \n\n')}
+    .join("; \n\n")}
 \`\`\`
 
 Example Response in Markdown Format:
@@ -335,12 +357,15 @@ Deeply focus on the training data and the laps (sections) data. Compare the trai
 
         return NextResponse.json({ training: updatedTraining });
     } catch (error) {
-        console.error('Generate summary error:', error);
+        console.error("Generate summary error:", error);
 
         if (error instanceof Error) {
-            return NextResponse.json({ error: 'Internal server error', details: error.message }, { status: 500 });
+            return NextResponse.json(
+                { error: "Internal server error", details: error.message },
+                { status: 500 },
+            );
         }
 
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }

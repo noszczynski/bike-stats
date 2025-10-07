@@ -1,5 +1,5 @@
-import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query';
-import StravaProfileClient from '@/components/strava-profile-client';
+import StravaProfileClient from "@/components/strava-profile-client";
+import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
 
 interface StravaProfilePageProps {
     searchParams: {
