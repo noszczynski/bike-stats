@@ -10,12 +10,22 @@ import { PaceChart } from "@/components/charts/pace-chart";
 import { YearlyDistanceChart } from "@/components/charts/yearly-distance-chart";
 import { useGetTrainings } from "@/hooks/use-get-trainings";
 import { TrainingFilters } from "@/lib/api/trainings";
+import dayjs from "dayjs";
 
 import { AverageSpeedPerKilometrChart } from "./charts/average-speed-per-kilometr-chart";
+import { EfficiencyChart } from "./charts/efficiency-chart";
+import { ProgressionTrendsChart } from "./charts/progression-trends-chart";
+import { RecoveryChart } from "./charts/recovery-chart";
+import { TrainingFrequencyChart } from "./charts/training-frequency-chart";
+import { TrainingLoadChart } from "./charts/training-load-chart";
+import { VolumeIntensityChart } from "./charts/volume-intensity-chart";
 import { TrainingFiltersComponent } from "./training-filters";
 
 export function DashboardMetricsTabContent() {
-    const [filters, setFilters] = useState<TrainingFilters>({});
+    const [filters, setFilters] = useState<TrainingFilters>({
+        startDate: dayjs().subtract(3, "months").format("YYYY-MM-DD"),
+        endDate: dayjs().format("YYYY-MM-DD"),
+    });
 
     const { data: trainingsResponse, error } = useGetTrainings(filters, {
         page: 1,
@@ -24,10 +34,6 @@ export function DashboardMetricsTabContent() {
 
     const handleFiltersChange = (newFilters: TrainingFilters) => {
         setFilters(newFilters);
-    };
-
-    const handleFiltersReset = () => {
-        setFilters({});
     };
 
     if (error) {
@@ -49,11 +55,7 @@ export function DashboardMetricsTabContent() {
         <div className="space-y-6">
             {/* Filters */}
             <div className="w-full">
-                <TrainingFiltersComponent
-                    filters={filters}
-                    onFiltersChange={handleFiltersChange}
-                    onReset={handleFiltersReset}
-                />
+                <TrainingFiltersComponent filters={filters} onFiltersChange={handleFiltersChange} />
             </div>
 
             {/* Results Summary */}
@@ -73,12 +75,31 @@ export function DashboardMetricsTabContent() {
             {/* Charts */}
             {trainings.length > 0 ? (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+                    {/* Training Load & Performance */}
+                    <TrainingLoadChart trainings={trainings} />
+                    <ProgressionTrendsChart trainings={trainings} />
+
+                    {/* Frequency & Recovery */}
+                    <TrainingFrequencyChart trainings={trainings} />
+                    <RecoveryChart trainings={trainings} />
+
+                    {/* Volume & Efficiency */}
+                    <VolumeIntensityChart trainings={trainings} />
+                    <EfficiencyChart trainings={trainings} />
+
+                    {/* Heart Rate Analysis */}
                     <HeartRateChart trainings={trainings} />
                     <HeartRateTimeChart trainings={trainings} />
+
+                    {/* Speed & Pace */}
                     <AverageSpeedPerKilometrChart trainings={trainings} />
                     <PaceChart trainings={trainings} />
+
+                    {/* Distance & Elevation */}
                     <DistanceChart trainings={trainings} />
                     <ElevationChart trainings={trainings} />
+
+                    {/* General Metrics */}
                     <IntensityChart trainings={trainings} />
                     <YearlyDistanceChart trainings={trainings} />
                 </div>

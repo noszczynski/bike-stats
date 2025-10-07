@@ -13,21 +13,11 @@ import { Filter } from "lucide-react";
 interface TrainingFiltersProps {
     filters: TrainingFilters;
     onFiltersChange: (filters: TrainingFilters) => void;
-    onReset: () => void;
 }
 
-export function TrainingFiltersComponent({
-    filters,
-    onFiltersChange,
-    onReset,
-}: TrainingFiltersProps) {
-    const [localFilters, setLocalFilters] = useState<TrainingFilters>(filters);
-    const [pendingFilters, setPendingFilters] = useState<TrainingFilters>(filters);
-    const [expandedSections, setExpandedSections] = useState({
-        basic: true,
-        ranges: false,
-        data: false,
-    });
+export function TrainingFiltersComponent({ filters, onFiltersChange }: TrainingFiltersProps) {
+    const [localFilters, setLocalFilters] = useState<TrainingFilters>({ ...filters });
+    const [pendingFilters, setPendingFilters] = useState<TrainingFilters>({ ...filters });
 
     // Debounced function to update filters (for sliders and inputs)
     const debouncedUpdateFilters = useCallback(
@@ -52,13 +42,6 @@ export function TrainingFiltersComponent({
         onFiltersChange(newFilters);
     };
 
-    // Debounced update for slider filters
-    const updateFilterDebounced = (key: keyof TrainingFilters, value: any) => {
-        const newFilters = { ...pendingFilters, [key]: value };
-        setPendingFilters(newFilters);
-        debouncedUpdateFilters(newFilters);
-    };
-
     // Update range filters (min/max pairs) together
     const updateRangeFilter = (
         minKey: keyof TrainingFilters,
@@ -77,21 +60,6 @@ export function TrainingFiltersComponent({
         debouncedUpdateFilters(newFilters);
     };
 
-    const hasActiveFilters = Object.keys(localFilters).some(
-        key => localFilters[key as keyof TrainingFilters] !== undefined,
-    );
-
-    const hasPendingChanges = JSON.stringify(localFilters) !== JSON.stringify(pendingFilters);
-
-    const toggleSection = (section: keyof typeof expandedSections) => {
-        setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
-    };
-
-    const applyPendingFilters = () => {
-        onFiltersChange(pendingFilters);
-        setLocalFilters(pendingFilters);
-    };
-
     return (
         <Card className="w-full">
             <CardHeader className="pb-3">
@@ -107,9 +75,10 @@ export function TrainingFiltersComponent({
                     <Input
                         type="date"
                         value={localFilters.startDate || ""}
-                        onChange={e =>
-                            updateFilterImmediate("startDate", e.target.value || undefined)
-                        }
+                        onChange={e => {
+                            console.log("e.target.value", e.target.value);
+                            updateFilterImmediate("startDate", e.target.value || undefined);
+                        }}
                         className="h-8"
                     />
                 </div>
@@ -119,9 +88,9 @@ export function TrainingFiltersComponent({
                     <Input
                         type="date"
                         value={localFilters.endDate || ""}
-                        onChange={e =>
-                            updateFilterImmediate("endDate", e.target.value || undefined)
-                        }
+                        onChange={e => {
+                            updateFilterImmediate("endDate", e.target.value || undefined);
+                        }}
                         className="h-8"
                     />
                 </div>
