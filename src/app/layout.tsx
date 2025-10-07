@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
-import { ThemeProvider, ThemeProvider } from "next-themes";
+import { ThemeProvider } from "next-themes";
 import localFont from "next/font/local";
 
 import "@/app/globals.css";

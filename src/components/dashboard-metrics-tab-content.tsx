@@ -17,11 +17,7 @@ import { TrainingFiltersComponent } from "./training-filters";
 export function DashboardMetricsTabContent() {
     const [filters, setFilters] = useState<TrainingFilters>({});
 
-    const {
-        data: trainingsResponse,
-        isLoading,
-        error,
-    } = useGetTrainings(filters, {
+    const { data: trainingsResponse, error } = useGetTrainings(filters, {
         page: 1,
         pageSize: 1000, // Get all trainings for charts
     });

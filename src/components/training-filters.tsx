@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DualRangeSlider } from "@/components/ui/dual-range-slider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TrainingFilters } from "@/lib/api/trainings";
 import { debounce } from "lodash";
-import { Filter, Filter } from "lucide-react";
+import { Filter } from "lucide-react";
 
 interface TrainingFiltersProps {
     filters: TrainingFilters;
