@@ -1,19 +1,15 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-
+import { useLogout } from '@/hooks/use-auth-mutations';
 import { Button } from '@/components/ui/button';
-
 import { LogOut } from 'lucide-react';
 
 export function LogoutButton() {
-    const router = useRouter();
+    const logoutMutation = useLogout();
 
     const handleLogout = async () => {
         try {
-            await fetch('/api/auth/strava/logout', { method: 'POST' });
-            router.refresh();
-            router.push('/auth/strava');
+            await logoutMutation.mutateAsync();
         } catch (error) {
             console.error('Error logging out:', error);
         }
@@ -25,6 +21,7 @@ export function LogoutButton() {
             size='icon'
             onClick={handleLogout}
             title='Logout'
+            disabled={logoutMutation.isPending}
             className='text-muted-foreground hover:text-foreground'>
             <LogOut className='h-4 w-4' />
         </Button>

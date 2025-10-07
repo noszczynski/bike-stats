@@ -11,6 +11,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import { useRouter } from 'next/navigation';
+import { useLogin } from '@/hooks/use-auth-mutations';
 
 const loginSchema = z.object({
     email: z.string().email('Nieprawidłowy adres email'),
@@ -20,6 +22,9 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
+    const router = useRouter();
+    const loginMutation = useLogin();
+
     const form = useForm<LoginFormValues>({
         resolver: zodResolver(loginSchema),
         defaultValues: {
@@ -30,22 +35,9 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 
     async function onSubmit(data: LoginFormValues) {
         try {
-            const response = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error || 'Something went wrong');
-            }
-
+            await loginMutation.mutateAsync(data);
             // Redirect to dashboard or home page after successful login
-            window.location.href = '/dashboard';
+            router.push('/');
         } catch (error) {
             console.error('Login error:', error);
             // You might want to show an error message to the user here
@@ -95,8 +87,8 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
                                     </FormItem>
                                 )}
                             />
-                            <Button type='submit' className='w-full'>
-                                Zaloguj się
+                            <Button type='submit' className='w-full' disabled={loginMutation.isPending}>
+                                {loginMutation.isPending ? 'Logowanie...' : 'Zaloguj się'}
                             </Button>
                             <div className='mt-4 text-center text-sm'>
                                 Nie masz konta?{' '}

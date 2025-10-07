@@ -99,8 +99,8 @@ export function HeartRateChart({ trainings }: { trainings: Training[] }) {
         return (
             <Card>
                 <CardHeader>
-                    <CardTitle>Tętno w czasie</CardTitle>
-                    <CardDescription>Średni rozkład czasu w strefach tętna (w procentach)</CardDescription>
+                    <CardTitle>Tętno w czasie (w procentach)</CardTitle>
+                    <CardDescription>Średni rozkład czasu w strefach tętna</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className='text-muted-foreground flex h-80 items-center justify-center'>
@@ -119,13 +119,56 @@ export function HeartRateChart({ trainings }: { trainings: Training[] }) {
     const heartRateTrend = firstHeartRate > 0 ? ((lastHeartRate - firstHeartRate) / firstHeartRate) * 100 : 0;
     const TrendIcon = heartRateTrend > 0 ? TrendingUpIcon : TrendingDownIcon;
 
-    const formatToPercentage = (value: any) => {
+    /** example of payload
+     * [
+    "Strefa 4",
+    {
+        "name": "Strefa 4",
+        "fill": "#FF9800",
+        "stroke": "#FF9800",
+        "fillOpacity": 0.3,
+        "dataKey": "zone_4",
+        "color": "#FF9800",
+        "value": 0.105,
+        "payload": {
+            "date": "2025-04-13",
+            "formattedDate": "13 kwietnia 2025",
+            "zone_1": 0.266,
+            "zone_2": 0.256,
+            "zone_3": 0.371,
+            "zone_4": 0.105,
+            "zone_5": 0.002,
+            "avg_heart_rate": 152
+        },
+        "hide": false
+    },
+    3,
+    {
+        "date": "2025-04-13",
+        "formattedDate": "13 kwietnia 2025",
+        "zone_1": 0.266,
+        "zone_2": 0.256,
+        "zone_3": 0.371,
+        "zone_4": 0.105,
+        "zone_5": 0.002,
+        "avg_heart_rate": 152
+    }
+]
+     */
+    const formatToPercentage = (value: any, label: any, xAxis: any, index: any, yAxis: any) => {
         if (value === undefined || value === null) return '0%';
+
         if (Array.isArray(value)) {
             value = value[0];
         }
 
-        return `${(Number(value) * 100).toFixed(1)}%`;
+        return (
+            <div className='flex items-center gap-2'>
+                <div className='size-2.5 rounded-[2px]' style={{ backgroundColor: xAxis.color }} />
+                <span className='text-muted-foreground'>{label}</span>
+                <span>{(Number(value) * 100).toFixed(1)} %</span>
+            </div>
+        );
     };
 
     return (
@@ -145,10 +188,7 @@ export function HeartRateChart({ trainings }: { trainings: Training[] }) {
                             tickFormatter={(value) => `${(value * 100).toFixed(0)}%`}
                             domain={[0, 1]}
                         />
-                        <ChartTooltip
-                            cursor={false}
-                            content={<ChartTooltipContent indicator='line' formatter={formatToPercentage} />}
-                        />
+                        <ChartTooltip cursor={false} content={<ChartTooltipContent formatter={formatToPercentage} />} />
                         <Area
                             name={chartConfig.zone_1.label}
                             type='monotone'
@@ -199,7 +239,7 @@ export function HeartRateChart({ trainings }: { trainings: Training[] }) {
                                 if (payload && payload.length) {
                                     const legendPayload = payload.map((entry) => ({
                                         ...entry,
-                                        value: formatToPercentage(entry.value),
+                                        value: entry.value,
                                         name: chartConfig[entry.dataKey as keyof typeof chartConfig].label,
                                         color: chartConfig[entry.dataKey as keyof typeof chartConfig].color
                                     }));

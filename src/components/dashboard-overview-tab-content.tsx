@@ -1,7 +1,4 @@
-import { cookies } from 'next/headers';
-
 import { StatsCard } from '@/components/stats-card';
-import { TrainingHistoryTable } from '@/components/training-history-table';
 import { calculateAverageHeartRate } from '@/features/training/calculate-average-heart-rate';
 import { calculateAverageSpeed } from '@/features/training/calculate-average-speed';
 import { calculateHighestAverageSpeed } from '@/features/training/calculate-highest-average-speed';
@@ -9,85 +6,118 @@ import { calculateMaxSpeed } from '@/features/training/calculate-max-speed';
 import { getAllTrainings } from '@/lib/api/trainings';
 import date from '@/lib/date';
 
+import { TrendingDownIcon, TrendingUpIcon } from 'lucide-react';
+
 export async function DashboardOverviewTabContent() {
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('strava_access_token')?.value;
-    const refreshToken = cookieStore.get('strava_refresh_token')?.value;
-
-    if (!accessToken || !refreshToken) {
-        return <div>No access token or refresh token found</div>;
-    }
-
-    const trainings = await getAllTrainings(accessToken, refreshToken);
+    const { trainings } = await getAllTrainings();
 
     const avgSpeed = calculateAverageSpeed(trainings);
     const maxSpeed = calculateMaxSpeed(trainings);
     const avgHeartRate = calculateAverageHeartRate(trainings);
+    const highestAvgSpeed = calculateHighestAverageSpeed(trainings);
+
+    // Helper function to get the appropriate icon based on trend
+    const getTrendIcon = (trend: number, positiveIsBetter = true) => {
+        if (trend === 0) return undefined;
+        const isPositive = trend > 0;
+        const isImprovement = (positiveIsBetter && isPositive) || (!positiveIsBetter && !isPositive);
+
+        return isImprovement ? TrendingUpIcon : TrendingDownIcon;
+    };
+
+    // Helper function to get progress status based on trend
+    const getTrendProgress = (trend: number, positiveIsBetter = true): 'progress' | 'regress' | 'neutral' => {
+        if (trend === 0) return 'neutral';
+        const isPositive = trend > 0;
+        const isImprovement = (positiveIsBetter && isPositive) || (!positiveIsBetter && !isPositive);
+
+        return isImprovement ? 'progress' : 'regress';
+    };
+
+    // Helper function to format trend as string
+    const formatTrend = (trend: number) => {
+        return `${trend >= 0 ? '+' : ''}${trend.toFixed(1)}%`;
+    };
+
+    if (!trainings || trainings.length === 0) {
+        return <div>No trainings found</div>;
+    }
+
+    // Get trainings from the last 30 days and previous 30 days
+    const now = date();
+    const thirtyDaysAgo = now.subtract(30, 'day');
+    const sixtyDaysAgo = now.subtract(60, 'day');
+
+    const recentTrainings = trainings.filter((training) => date(training.date).isAfter(thirtyDaysAgo));
+    const previousTrainings = trainings.filter((training) => {
+        const trainingDate = date(training.date);
+        
+        return trainingDate.isAfter(sixtyDaysAgo) && trainingDate.isBefore(thirtyDaysAgo);
+    });
+
+    // Calculate trends
+    const calculateTrend = (recent: number, previous: number) => {
+        if (previous === 0) return 0;
+        
+        return ((recent - previous) / previous) * 100;
+    };
+
+    const recentAvgSpeed = recentTrainings.length > 0 
+        ? recentTrainings.reduce((acc, t) => acc + t.avg_speed_kmh, 0) / recentTrainings.length 
+        : 0;
+    const previousAvgSpeed = previousTrainings.length > 0 
+        ? previousTrainings.reduce((acc, t) => acc + t.avg_speed_kmh, 0) / previousTrainings.length 
+        : 0;
+    const speedTrend = calculateTrend(recentAvgSpeed, previousAvgSpeed);
 
     return (
         <div className='space-y-4'>
             <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5'>
                 <StatsCard
                     title='Średnia prędkość'
-                    value={avgSpeed}
+                    value={avgSpeed.toFixed(1)}
                     unit='km/h'
-                    infoText={`Na podstawie ${trainings.length} treningów`}
+                    description='Średnia prędkość ze wszystkich treningów'
                 />
-
                 <StatsCard
                     title='Maksymalna prędkość'
-                    value={maxSpeed}
+                    value={maxSpeed.toFixed(1)}
                     unit='km/h'
-                    infoText={`Na podstawie ${trainings.length} treningów`}
+                    description='Najwyższa prędkość osiągnięta w treningach'
                 />
-
                 <StatsCard
-                    title='Średni Heart Rate na trening'
-                    value={avgHeartRate}
+                    title='Średnie tętno'
+                    value={avgHeartRate.toFixed(0)}
                     unit='bpm'
-                    infoText={`Na podstawie ${trainings.length} treningów`}
-                    formatValue={(val) => val.toFixed(0)}
+                    description='Średnie tętno ze wszystkich treningów'
                 />
-
                 <StatsCard
-                    title='Średnie przewyższenie na trening'
-                    value={trainings.reduce((acc, training) => acc + training.elevation_gain_m, 0) / trainings.length}
-                    unit='m'
-                    infoText={`Na podstawie ${trainings.length} treningów`}
-                    formatValue={(val) => val.toFixed(0)}
+                    title='Liczba treningów'
+                    value={trainings.length.toString()}
+                    unit='treningi'
+                    description='Całkowita liczba treningów'
                 />
-
                 <StatsCard
-                    title='Średni czas jazdy na trening'
-                    value={
-                        trainings.reduce((acc, training) => {
-                            const [hours, minutes] = training.moving_time.split(':').map(Number);
-
-                            return acc + hours + minutes / 60;
-                        }, 0) / trainings.length
-                    }
-                    unit='h'
-                    infoText={`Na podstawie ${trainings.length} treningów`}
-                    formatValue={(val) => val.toFixed(1)}
+                    title='Najwyższa średnia prędkość'
+                    value={highestAvgSpeed.toFixed(1)}
+                    unit='km/h'
+                    description='Najwyższa średnia prędkość w pojedynczym treningu'
                 />
-
                 <StatsCard
-                    title='Średni czas na km'
-                    value={
-                        trainings.reduce((acc, training) => {
-                            const [hours, minutes] = training.moving_time.split(':').map(Number);
-                            const totalHours = hours + minutes / 60;
-
-                            return acc + totalHours / training.distance_km;
-                        }, 0) / trainings.length
-                    }
-                    unit='min/km'
-                    infoText='Średni czas na kilometr we wszystkich treningach'
-                    formatValue={(val) => (val * 60).toFixed(1)}
+                    title='Średnia prędkość (ostatnie 30 dni)'
+                    value={recentAvgSpeed.toFixed(1)}
+                    unit='km/h'
+                    description='Średnia prędkość z ostatnich 30 dni'
+                    trend={formatTrend(speedTrend)}
+                    trendIcon={getTrendIcon(speedTrend)}
+                    trendProgress={getTrendProgress(speedTrend)}
                 />
-            </div>
-            <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-7'>
-                <TrainingHistoryTable />
+                <StatsCard
+                    title='Treningi (ostatnie 30 dni)'
+                    value={recentTrainings.length.toString()}
+                    unit='treningi'
+                    description='Liczba treningów w ostatnich 30 dniach'
+                />
             </div>
         </div>
     );

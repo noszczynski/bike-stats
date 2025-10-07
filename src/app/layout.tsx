@@ -7,10 +7,9 @@ import Link from 'next/link';
 import { ThemeProvider } from 'next-themes';
 
 import '@/app/globals.css';
-import { StravaLoginButton } from '@/components/StravaLoginButton';
-import { StravaProfile } from '@/components/StravaProfile';
-import { Button } from '@/components/ui/button';
-import { ThemeSwitch } from '@/components/ui/theme-switch';
+import { Providers } from '@/app/providers';
+
+import { NuqsAdapter } from 'nuqs/adapters/next/app';
 
 const geistSans = localFont({
     src: './fonts/GeistVF.woff',
@@ -34,7 +33,9 @@ const Layout = ({ children }: Readonly<{ children: ReactNode }>) => {
             <body
                 className={`${geistSans.variable} ${geistMono.variable} bg-background text-foreground overscroll-none antialiased`}>
                 <ThemeProvider attribute='class' defaultTheme='system' enableSystem disableTransitionOnChange>
-                    {children}
+                    <NuqsAdapter>
+                        <Providers>{children}</Providers>
+                    </NuqsAdapter>
                 </ThemeProvider>
             </body>
         </html>

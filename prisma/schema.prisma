@@ -5,13 +5,13 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:../database.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 enum ActivityType {
@@ -27,11 +27,10 @@ enum ActivityType {
   workout
 }
 
-// Define models for bike activities data
 model Activity {
   id                    String       @id @default(uuid())
+  user_id               String
   type                  ActivityType
-  strava_activity_id    BigInt       @unique
   heart_rate_zone_1     String?
   heart_rate_zone_2     String?
   heart_rate_zone_3     String?
@@ -41,10 +40,89 @@ model Activity {
   battery_percent_usage Int?
   device                String?
   effort                Int?
+  fit_processed         Boolean      @default(false)
   created_at            DateTime     @default(now())
   updated_at            DateTime     @updatedAt
+  strava_activity_id    BigInt?      @unique
 
+  user            User            @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  strava_activity StravaActivity? @relation(fields: [strava_activity_id], references: [id])
+  trackpoints     Trackpoint[]
+  laps            Lap[]
+  activity_tags   ActivityTag[]
+
+  @@index([user_id])
   @@map("activities")
+}
+
+model Trackpoint {
+  id             String   @id @default(uuid())
+  activity_id    String
+  timestamp      DateTime
+  latitude       Float?
+  longitude      Float?
+  altitude_m     Float?
+  distance_m     Float?
+  speed_ms       Float?
+  heart_rate_bpm Int?
+  cadence_rpm    Int?
+  temperature_c  Float?
+  created_at     DateTime @default(now())
+
+  activity Activity @relation(fields: [activity_id], references: [id], onDelete: Cascade)
+
+  @@index([activity_id])
+  @@index([timestamp])
+  @@map("trackpoints")
+}
+
+model Lap {
+  id                     String   @id @default(uuid())
+  activity_id            String
+  lap_number             Int
+  start_time             DateTime
+  end_time               DateTime
+  distance_m             Float
+  moving_time_s          Int
+  elapsed_time_s         Int
+  avg_speed_ms           Float?
+  max_speed_ms           Float?
+  avg_heart_rate_bpm     Int?
+  max_heart_rate_bpm     Int?
+  avg_cadence_rpm        Int?
+  max_cadence_rpm        Int?
+  total_elevation_gain_m Float?
+  start_latitude         Float?
+  start_longitude        Float?
+  end_latitude           Float?
+  end_longitude          Float?
+  created_at             DateTime @default(now())
+  activity               Activity @relation(fields: [activity_id], references: [id], onDelete: Cascade)
+
+  @@unique([activity_id, lap_number])
+  @@index([activity_id])
+  @@map("laps")
+}
+
+model StravaActivity {
+  id                   BigInt   @id
+  name                 String
+  date                 DateTime
+  distance_m           Int
+  elevation_gain_m     Int
+  moving_time_s        Int
+  avg_speed_kmh        Decimal
+  max_speed_kmh        Decimal
+  avg_heart_rate_bpm   Int?
+  max_heart_rate_bpm   Int?
+  map_summary_polyline String?  @db.Text
+  map_summary_id       String?  @db.VarChar(256)
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  activity Activity?
+
+  @@map("strava_activities")
 }
 
 model User {
@@ -55,5 +133,56 @@ model User {
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
 
+  settings   UserSettings?
+  activities Activity[]
+
   @@map("users")
+}
+
+model UserSettings {
+  id                    String   @id @default(uuid())
+  user_id               String   @unique
+  heart_rate_zone_1_max Int? // bpm - strefa 1 (aktywny odpoczynek)
+  heart_rate_zone_2_max Int? // bpm - strefa 2 (podstawa)
+  heart_rate_zone_3_max Int? // bpm - strefa 3 (tempo)
+  heart_rate_zone_4_max Int? // bpm - strefa 4 (próg)
+  heart_rate_zone_5_max Int? // bpm - strefa 5 (VO2 max)
+  height_cm             Int? // wzrost w centymetrach
+  weight_kg             Int? // waga w kilogramach
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("user_settings")
+}
+
+model Tag {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  color       String   @default("#6b7280") // hex color code
+  icon        String   @default("tag") // lucide icon name
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  activity_tags ActivityTag[]
+
+  @@map("tags")
+}
+
+model ActivityTag {
+  id                String   @id @default(uuid())
+  activity_id       String
+  tag_id            String
+  is_auto_generated Boolean  @default(false)
+  created_at        DateTime @default(now())
+
+  activity Activity @relation(fields: [activity_id], references: [id], onDelete: Cascade)
+  tag      Tag      @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@unique([activity_id, tag_id])
+  @@index([activity_id])
+  @@index([tag_id])
+  @@map("activity_tags")
 }

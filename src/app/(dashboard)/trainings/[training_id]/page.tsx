@@ -24,10 +24,10 @@ export default async function TrainingPage({ params, searchParams }: TrainingPag
         return <div>No access token or refresh token found</div>;
     }
 
-    const allTrainings = await getAllTrainings(accessToken, refreshToken);
+    const allTrainings = await getAllTrainings();
 
     // Find the training with the given ID
-    const training = await getTrainingById(params.training_id, accessToken, refreshToken);
+    const training = await getTrainingById(params.training_id);
 
     // If no training found, return 404
     if (!training) {
@@ -48,8 +48,7 @@ export default async function TrainingPage({ params, searchParams }: TrainingPag
 
     return (
         <div className='container py-8'>
-            <h1 className='mb-6 text-3xl font-bold'>Szczegóły treningu</h1>
-            <TrainingOverview training={training} compareTo={compareTo} allTrainings={allTrainings} />
+            <TrainingOverview training={training} compareTo={compareTo} allTrainings={allTrainings.trainings} />
         </div>
     );
 }

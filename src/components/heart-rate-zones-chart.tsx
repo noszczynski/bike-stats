@@ -140,7 +140,7 @@ export function HeartRateZonesChart({ heartRateZones }: HeartRateZonesChartProps
                 <CardDescription>Rozkład czasu w strefach tętna</CardDescription>
             </CardHeader>
             <CardContent className='px-0'>
-                <ChartContainer config={chartConfig}>
+                <ChartContainer config={chartConfig} className='max-h-64 w-full'>
                     <BarChart accessibilityLayer data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 10 }}>
                         <CartesianGrid vertical={false} />
                         <XAxis

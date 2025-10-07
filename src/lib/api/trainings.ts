@@ -1,142 +1,457 @@
-import { getActivities, getActivity } from '@/app/api/_lib/strava';
-import { ActivityType, Prisma } from '@/generated/prisma';
+import { getAllStravaRideActivities } from '@/lib/api/strava';
+import { meterPerSecondToKmph } from '@/lib/convert/meter-per-second-to-kmph';
 import { Training, TrainingSchema } from '@/types/training';
+import { secondsToTimeString } from '@/utils/time';
+import type { Activity, StravaActivity } from '@prisma/client';
+import { ActivityType } from '@prisma/client';
 
-import { getActivitiesByType, getActivityById, getActivityByStravaId } from '../db';
+import { getActivityById, getActivityByStravaId } from '../db';
+import { prisma } from '../prisma';
 import dayjs from 'dayjs';
-import { v4 as uuidv4 } from 'uuid';
+import { Decimal } from 'decimal.js';
 import { z } from 'zod';
 
-function metersToKilometers(meters: number) {
-    return meters / 1000;
+function formatActivityToTraining(activity: Activity & { strava_activity: StravaActivity | null }): Training {
+    if (!activity.strava_activity) {
+        throw new Error('Activity must have strava_activity to be formatted as Training');
+    }
+    
+    return {
+        id: activity.id,
+        strava_activity_id: Number(activity.strava_activity.id),
+        name: activity.strava_activity.name,
+        date: dayjs(activity.strava_activity.date).format('YYYY-MM-DD'),
+        distance_km: activity.strava_activity.distance_m / 1000,
+        elevation_gain_m: activity.strava_activity.elevation_gain_m,
+        moving_time: secondsToTimeString(activity.strava_activity.moving_time_s),
+        avg_speed_kmh: new Decimal(activity.strava_activity.avg_speed_kmh).toNumber(),
+        max_speed_kmh: new Decimal(activity.strava_activity.max_speed_kmh).toNumber(),
+        avg_heart_rate_bpm: activity.strava_activity.avg_heart_rate_bpm,
+        max_heart_rate_bpm: activity.strava_activity.max_heart_rate_bpm,
+        heart_rate_zones:
+            activity &&
+            activity.heart_rate_zone_1 &&
+            activity.heart_rate_zone_2 &&
+            activity.heart_rate_zone_3 &&
+            activity.heart_rate_zone_4 &&
+            activity.heart_rate_zone_5
+                ? {
+                      zone_1: activity.heart_rate_zone_1,
+                      zone_2: activity.heart_rate_zone_2,
+                      zone_3: activity.heart_rate_zone_3,
+                      zone_4: activity.heart_rate_zone_4,
+                      zone_5: activity.heart_rate_zone_5
+                  }
+                : null,
+        summary: activity.summary ?? null,
+        device: activity.device ?? null,
+        battery_percent_usage: activity.battery_percent_usage ?? null,
+        effort: activity.effort ?? null,
+        map: activity.strava_activity.map_summary_polyline
+            ? {
+                  id: activity.strava_activity.map_summary_id,
+                  summary_polyline: activity.strava_activity.map_summary_polyline
+              }
+            : null,
+        fit_processed: activity.fit_processed
+    } satisfies Training;
+}
+
+// Define filter types
+export type TrainingFilters = {
+    startDate?: string;
+    endDate?: string;
+    type?: string;
+    minDistance?: number;
+    maxDistance?: number;
+    minHeartRate?: number;
+    maxHeartRate?: number;
+    minSpeed?: number;
+    maxSpeed?: number;
+    minElevation?: number;
+    maxElevation?: number;
+    minTime?: number; // in minutes
+    maxTime?: number; // in minutes
+    tagIds?: string[];
+    hasHeartRateData?: boolean;
+    hasFitData?: boolean;
+};
+
+export type PaginationOptions = {
+    page?: number;
+    pageSize?: number;
+};
+
+export type TrainingsResponse = {
+    trainings: Training[];
+    totalCount: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+};
+
+/**
+ * Fetch all imported trainings from the database
+ */
+export async function getAllTrainings(
+    filters: TrainingFilters = {},
+    pagination: PaginationOptions = { page: 1, pageSize: 200 }
+): Promise<TrainingsResponse> {
+    const { 
+        startDate, 
+        endDate, 
+        type, 
+        minDistance, 
+        maxDistance,
+        minHeartRate,
+        maxHeartRate,
+        minSpeed,
+        maxSpeed,
+        minElevation,
+        maxElevation,
+        minTime,
+        maxTime,
+        tagIds,
+        hasHeartRateData,
+        hasFitData
+    } = filters;
+    const { page = 1, pageSize = 200 } = pagination;
+
+    const skip = (page - 1) * pageSize;
+
+    // Build where clause based on filters
+    const where: any = {
+        type: type || 'ride'
+    };
+
+    // Initialize strava_activity filter object
+    if (startDate || endDate || minDistance || maxDistance || minHeartRate || maxHeartRate || minSpeed || maxSpeed || minElevation || maxElevation || minTime || maxTime) {
+        where.strava_activity = {};
+    }
+
+    // Add date range filter
+    if (startDate || endDate) {
+        where.strava_activity.date = {};
+        if (startDate) {
+            where.strava_activity.date.gte = new Date(startDate);
+        }
+        if (endDate) {
+            where.strava_activity.date.lte = new Date(endDate);
+        }
+    }
+
+    // Add distance filter (convert km to meters)
+    if (minDistance !== undefined || maxDistance !== undefined) {
+        where.strava_activity.distance_m = {};
+        if (minDistance !== undefined) {
+            where.strava_activity.distance_m.gte = minDistance * 1000;
+        }
+        if (maxDistance !== undefined) {
+            where.strava_activity.distance_m.lte = maxDistance * 1000;
+        }
+    }
+
+    // Add heart rate filter
+    if (minHeartRate !== undefined || maxHeartRate !== undefined) {
+        where.strava_activity.avg_heart_rate_bpm = {};
+        if (minHeartRate !== undefined) {
+            where.strava_activity.avg_heart_rate_bpm.gte = minHeartRate;
+        }
+        if (maxHeartRate !== undefined) {
+            where.strava_activity.avg_heart_rate_bpm.lte = maxHeartRate;
+        }
+    }
+
+    // Add speed filter (convert km/h to m/s for avg_speed_kmh)
+    if (minSpeed !== undefined || maxSpeed !== undefined) {
+        where.strava_activity.avg_speed_kmh = {};
+        if (minSpeed !== undefined) {
+            where.strava_activity.avg_speed_kmh.gte = minSpeed;
+        }
+        if (maxSpeed !== undefined) {
+            where.strava_activity.avg_speed_kmh.lte = maxSpeed;
+        }
+    }
+
+    // Add elevation filter
+    if (minElevation !== undefined || maxElevation !== undefined) {
+        where.strava_activity.elevation_gain_m = {};
+        if (minElevation !== undefined) {
+            where.strava_activity.elevation_gain_m.gte = minElevation;
+        }
+        if (maxElevation !== undefined) {
+            where.strava_activity.elevation_gain_m.lte = maxElevation;
+        }
+    }
+
+    // Add time filter (convert minutes to seconds)
+    if (minTime !== undefined || maxTime !== undefined) {
+        where.strava_activity.moving_time_s = {};
+        if (minTime !== undefined) {
+            where.strava_activity.moving_time_s.gte = minTime * 60;
+        }
+        if (maxTime !== undefined) {
+            where.strava_activity.moving_time_s.lte = maxTime * 60;
+        }
+    }
+
+    // Add heart rate data filter
+    if (hasHeartRateData !== undefined) {
+        if (hasHeartRateData) {
+            where.strava_activity.avg_heart_rate_bpm = { not: null };
+        } else {
+            where.strava_activity.avg_heart_rate_bpm = null;
+        }
+    }
+
+    // Add FIT data filter
+    if (hasFitData !== undefined) {
+        where.fit_processed = hasFitData;
+    }
+
+    // Add tags filter
+    if (tagIds && tagIds.length > 0) {
+        where.activity_tags = {
+            some: {
+                tag_id: {
+                    in: tagIds
+                }
+            }
+        };
+    }
+
+    // Query for total count first (without pagination)
+    const totalCount = await prisma.activity.count({ where });
+
+    // Then query for the actual data with pagination
+    const importedActivities = await prisma.activity.findMany({
+        where,
+        include: {
+            strava_activity: true,
+            activity_tags: {
+                include: {
+                    tag: true
+                }
+            }
+        },
+        orderBy: {
+            strava_activity: {
+                date: 'desc'
+            }
+        },
+        skip,
+        take: pageSize
+    });
+
+    const trainings = z.array(TrainingSchema).parse(importedActivities.map(formatActivityToTraining));
+
+    return {
+        trainings,
+        totalCount,
+        page,
+        pageSize,
+        totalPages: Math.ceil(totalCount / pageSize)
+    };
+}
+
+export async function getTrainingsToImport(accessToken: string, refreshToken: string) {
+    const stravaActivities = await prisma.stravaActivity.findMany({
+        orderBy: {
+            created_at: 'desc'
+        }
+    });
+    const stravaRides = await getAllStravaRideActivities(accessToken, refreshToken);
+
+    /** Filter out activities that are already imported to database */
+    return stravaRides.filter((ride) => !stravaActivities.some((activity) => activity.id === BigInt(ride.id)));
+}
+
+export async function updateTrainings(accessToken: string, refreshToken: string) {
+    const trainingsToImport = await getTrainingsToImport(accessToken, refreshToken);
+
+    const activityIds: string[] = [];
+
+    await prisma.$transaction(async (tx) => {
+        for await (const training of trainingsToImport) {
+            const stravaActivity = await tx.stravaActivity.create({
+                data: {
+                    id: Number(training.id),
+                    name: training.name,
+                    date: training.start_date,
+                    distance_m: Number(training.distance),
+                    elevation_gain_m: Number(training.total_elevation_gain),
+                    moving_time_s: Number(training.moving_time),
+                    avg_speed_kmh: new Decimal(meterPerSecondToKmph(training.average_speed)),
+                    max_speed_kmh: new Decimal(meterPerSecondToKmph(training.max_speed)),
+                    avg_heart_rate_bpm: Number(training.average_heartrate),
+                    max_heart_rate_bpm: Number(training.max_heartrate),
+                    activity: {
+                        create: {
+                            type: 'ride',
+                            device: training.device_name,
+                            user_id: 'b3c8fc32-b5e8-4f90-8048-b8663d3bf02b' // todo: get user id from auth
+                        }
+                    }
+                },
+                include: {
+                    activity: true
+                }
+            });
+
+            if (stravaActivity.activity) {
+                activityIds.push(stravaActivity.activity.id);
+            }
+        }
+    });
+
+    // Apply auto-tagging for all imported activities (outside transaction)
+    for (const activityId of activityIds) {
+        try {
+            const { applyAutoTagging } = await import('@/features/training/auto-tagging-rules');
+            await applyAutoTagging(activityId);
+        } catch (error) {
+            console.error(`Error applying auto-tagging for activity ${activityId}:`, error);
+            // Don't fail the import if auto-tagging fails
+        }
+    }
+
+    return { importedCount: activityIds.length };
 }
 
 /**
- * Fetch all trainings from the API
+ * Fetch a specific training by ID from Strava API and local database
  */
-export async function getAllTrainings(accessToken: string, refreshToken: string): Promise<Training[]> {
-    const stravaActivities = await getActivities(accessToken, refreshToken, { per_page: 100 });
-
-    if (!stravaActivities.length) {
-        return [];
-    }
-
-    const bikeActivities = stravaActivities.filter((activity) => activity.sport_type === 'Ride');
-
-    if (!bikeActivities.length) {
-        return [];
-    }
-
-    const trainings = await getActivitiesByType(ActivityType.ride);
-
-    const trainingsWithStravaData = bikeActivities
-        .map((activity) => {
-            const training = trainings.find((training) => training.strava_activity_id === BigInt(activity.id));
-
-            return { activity, training };
-        })
-        .map(({ activity, training }) => {
-            return {
-                id: training?.id ?? uuidv4(),
-                strava_activity_id: activity.id,
-                name: activity.name,
-                date: dayjs(activity.start_date).format('YYYY-MM-DD'),
-                distance_km: metersToKilometers(activity.distance),
-                elevation_gain_m: activity.total_elevation_gain,
-                moving_time: `${Math.floor(activity.moving_time / 3600)
-                    .toString()
-                    .padStart(2, '0')}:${Math.floor((activity.moving_time % 3600) / 60)
-                    .toString()
-                    .padStart(2, '0')}:${(activity.moving_time % 60).toString().padStart(2, '0')}`,
-                avg_speed_kmh: activity.average_speed,
-                max_speed_kmh: activity.max_speed,
-                avg_heart_rate_bpm: activity.average_heartrate,
-                max_heart_rate_bpm: activity.max_heartrate,
-                heart_rate_zones:
-                    training &&
-                    training.heart_rate_zone_1 &&
-                    training.heart_rate_zone_2 &&
-                    training.heart_rate_zone_3 &&
-                    training.heart_rate_zone_4 &&
-                    training.heart_rate_zone_5
-                        ? {
-                              zone_1: training.heart_rate_zone_1,
-                              zone_2: training.heart_rate_zone_2,
-                              zone_3: training.heart_rate_zone_3,
-                              zone_4: training.heart_rate_zone_4,
-                              zone_5: training.heart_rate_zone_5
-                          }
-                        : null,
-                summary: training?.summary ?? null,
-                device: training?.device ?? null,
-                battery_percent_usage: training?.battery_percent_usage ?? null,
-                effort: training?.effort ?? null
-            } satisfies Training;
-        });
-
-    return z.array(TrainingSchema).parse(trainingsWithStravaData);
-}
-
-/**
- * Fetch a specific training by ID from the API
- */
-export async function getTrainingById(
-    trainingId: string,
-    accessToken: string,
-    refreshToken: string
-): Promise<Training | null> {
+export async function getTrainingById(trainingId: string): Promise<Training | null> {
     try {
-        const training = await getActivityById(trainingId);
+        // First try to find the imported activity
+        const importedActivity = await getActivityById(trainingId);
 
-        if (!training) {
+        if (!importedActivity) {
             return null;
         }
 
-        const stravaActivity = await getActivity(Number(training.strava_activity_id), accessToken, refreshToken);
-
-        if (!stravaActivity) {
-            return null;
-        }
-
-        return {
-            id: training.id,
-            strava_activity_id: stravaActivity.id,
-            name: stravaActivity.name,
-            date: dayjs(stravaActivity.start_date).format('YYYY-MM-DD'),
-            distance_km: stravaActivity.distance,
-            elevation_gain_m: stravaActivity.total_elevation_gain,
-            moving_time: `${Math.floor(stravaActivity.moving_time / 3600)
-                .toString()
-                .padStart(2, '0')}:${Math.floor((stravaActivity.moving_time % 3600) / 60)
-                .toString()
-                .padStart(2, '0')}:${(stravaActivity.moving_time % 60).toString().padStart(2, '0')}`,
-            avg_speed_kmh: stravaActivity.average_speed,
-            max_speed_kmh: stravaActivity.max_speed,
-            avg_heart_rate_bpm: stravaActivity.average_heartrate,
-            max_heart_rate_bpm: stravaActivity.max_heartrate,
-            heart_rate_zones:
-                training &&
-                training.heart_rate_zone_1 &&
-                training.heart_rate_zone_2 &&
-                training.heart_rate_zone_3 &&
-                training.heart_rate_zone_4 &&
-                training.heart_rate_zone_5
-                    ? {
-                          zone_1: training.heart_rate_zone_1,
-                          zone_2: training.heart_rate_zone_2,
-                          zone_3: training.heart_rate_zone_3,
-                          zone_4: training.heart_rate_zone_4,
-                          zone_5: training.heart_rate_zone_5
-                      }
-                    : null,
-            summary: training.summary ?? null,
-            device: training.device ?? null,
-            battery_percent_usage: training.battery_percent_usage ?? null,
-            effort: training.effort ?? null
-        } satisfies Training;
+        return formatActivityToTraining(importedActivity);
     } catch (error) {
         console.error('Error fetching training:', error);
 
         return null;
     }
+}
+
+/**
+ * Import a Strava activity with additional data
+ */
+export async function importActivity(
+    stravaActivityId: number,
+    additionalData: {
+        heart_rate_zones: {
+            zone_1?: string | undefined;
+            zone_2?: string | undefined;
+            zone_3?: string | undefined;
+            zone_4?: string | undefined;
+            zone_5?: string | undefined;
+        };
+        summary?: string | undefined;
+        device?: string | undefined;
+        battery_percent_usage?: number | undefined;
+        effort?: number | undefined;
+    }
+) {
+    const existingActivity = await getActivityByStravaId(BigInt(stravaActivityId));
+
+    if (existingActivity) {
+        throw new Error('Activity already imported');
+    }
+
+    const activity = await prisma.activity.create({
+        data: {
+            type: ActivityType.ride,
+            strava_activity_id: BigInt(stravaActivityId),
+            heart_rate_zone_1: additionalData.heart_rate_zones?.zone_1 ?? null,
+            heart_rate_zone_2: additionalData.heart_rate_zones?.zone_2 ?? null,
+            heart_rate_zone_3: additionalData.heart_rate_zones?.zone_3 ?? null,
+            heart_rate_zone_4: additionalData.heart_rate_zones?.zone_4 ?? null,
+            heart_rate_zone_5: additionalData.heart_rate_zones?.zone_5 ?? null,
+            summary: additionalData.summary ?? null,
+            device: additionalData.device ?? null,
+            battery_percent_usage: additionalData.battery_percent_usage ?? null,
+            effort: additionalData.effort ?? null,
+            user_id: 'b3c8fc32-b5e8-4f90-8048-b8663d3bf02b' // todo: get user id from auth
+        }
+    });
+
+    // Apply auto-tagging after activity creation
+    try {
+        const { applyAutoTagging } = await import('@/features/training/auto-tagging-rules');
+        await applyAutoTagging(activity.id);
+    } catch (error) {
+        console.error('Error applying auto-tagging:', error);
+        // Don't fail the import if auto-tagging fails
+    }
+
+    return activity;
+}
+
+/**
+ * Update a training's details
+ */
+export async function updateTraining(
+    trainingId: string,
+    data: {
+        heart_rate_zones?: {
+            zone_1?: string;
+            zone_2?: string;
+            zone_3?: string;
+            zone_4?: string;
+            zone_5?: string;
+        };
+        summary?: string;
+        device?: string;
+        battery_percent_usage?: number;
+        effort?: number;
+    }
+): Promise<Training> {
+    const activity = await prisma.activity.update({
+        where: {
+            id: trainingId
+        },
+        data: {
+            heart_rate_zone_1: data.heart_rate_zones?.zone_1 ?? undefined,
+            heart_rate_zone_2: data.heart_rate_zones?.zone_2 ?? undefined,
+            heart_rate_zone_3: data.heart_rate_zones?.zone_3 ?? undefined,
+            heart_rate_zone_4: data.heart_rate_zones?.zone_4 ?? undefined,
+            heart_rate_zone_5: data.heart_rate_zones?.zone_5 ?? undefined,
+            summary: data.summary ?? undefined,
+            device: data.device ?? undefined,
+            battery_percent_usage: data.battery_percent_usage ?? undefined,
+            effort: data.effort ?? undefined
+        },
+        include: {
+            strava_activity: true
+        }
+    });
+
+    if (!activity || !activity.strava_activity) {
+        throw new Error('Activity not found');
+    }
+
+    return formatActivityToTraining(activity);
+}
+
+// Client-side version of updateTrainings that calls the API route instead of using Prisma directly
+export async function updateTrainingsClient(accessToken: string, refreshToken: string) {
+    const response = await fetch('/api/trainings/update', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ accessToken, refreshToken })
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update trainings');
+    }
+
+    return response.json();
 }

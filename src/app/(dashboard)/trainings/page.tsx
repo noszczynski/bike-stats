@@ -1,55 +1,30 @@
-import Link from 'next/link';
-
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { getAllTrainings } from '@/lib/api/trainings';
-import date from '@/lib/date';
-import { cookies } from 'next/headers';
+import { TrainingCardsContainer } from '@/components/training-cards-container';
+import { UpdateTrainingsButton } from '@/components/update-trainings-button';
+import { fetchTrainings } from '@/lib/api/trainings-client';
+import { HydrationBoundary, QueryClient, dehydrate } from '@tanstack/react-query';
 
 export default async function TrainingsPage() {
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('strava_access_token')?.value;
-    const refreshToken = cookieStore.get('strava_refresh_token')?.value;
+    // Create a new QueryClient for the server
+    const queryClient = new QueryClient();
 
-    if (!accessToken || !refreshToken) {
-        return <div>No access token or refresh token found</div>;
-    }
+    // Prefetch data on the server and put it in the query cache
+    await queryClient.prefetchQuery({
+        queryKey: ['trainings'],
+        queryFn: () => fetchTrainings()
+    });
 
-    const allTrainings = await getAllTrainings(accessToken, refreshToken);
-
-    // Sort trainings by date (newest first)
-    const sortedTrainings = [...allTrainings].sort((a, b) => date(b.date).valueOf() - date(a.date).valueOf());
+    // Dehydrate the query cache to send it to the client
+    const dehydratedState = dehydrate(queryClient);
 
     return (
         <div className='container py-8'>
-            <h1 className='mb-6 text-3xl font-bold'>Wszystkie treningi</h1>
-
-            <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
-                {sortedTrainings.map((training) => (
-                    <Link href={`/trainings/${training.id}`} key={training.id}>
-                        <Card className='hover:bg-muted/50 h-full transition-all'>
-                            <CardHeader className='pb-2'>
-                                <CardTitle>{date(training.date).format('LL')}</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className='space-y-2'>
-                                    <div className='flex justify-between'>
-                                        <span className='text-muted-foreground'>Dystans:</span>
-                                        <span className='font-medium'>{training.distance_km.toFixed(1)} km</span>
-                                    </div>
-                                    <div className='flex justify-between'>
-                                        <span className='text-muted-foreground'>Czas jazdy:</span>
-                                        <span className='font-medium'>{training.moving_time}</span>
-                                    </div>
-                                    <div className='flex justify-between'>
-                                        <span className='text-muted-foreground'>Średnia prędkość:</span>
-                                        <span className='font-medium'>{training.avg_speed_kmh.toFixed(1)} km/h</span>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </Link>
-                ))}
+            <div className='flex flex-row gap-2'>
+                <h1 className='mb-6 text-3xl font-bold'>Wszystkie treningi</h1>
+                <UpdateTrainingsButton />
             </div>
+            <HydrationBoundary state={dehydratedState}>
+                <TrainingCardsContainer />
+            </HydrationBoundary>
         </div>
     );
 }

@@ -81,6 +81,7 @@ export interface StravaActivity {
     max_speed: number;
     average_watts?: number;
     device_watts?: boolean;
+    device_name?: string;
     kilojoules?: number;
     has_heartrate?: boolean;
     average_heartrate?: number;
@@ -96,4 +97,32 @@ export interface StravaActivity {
     pr_count: number;
     total_photo_count: number;
     has_kudoed?: boolean;
+}
+
+export interface StravaRoute {
+    id: number | string;
+    id_str: string;
+    resource_state: number;
+    name: string;
+    description: string | null;
+    athlete: {
+        id: number;
+        resource_state: number;
+    };
+    distance: number;
+    elevation_gain: number;
+    map: {
+        id: string;
+        summary_polyline: string;
+        resource_state: number;
+    };
+    type: number; // 1: ride, 2: run
+    sub_type: number; // 1: road, 2: mtb, 3: cx, 4: trail, 5: mixed
+    private: boolean;
+    starred: boolean;
+    timestamp: number;
+    created_at: string;
+    updated_at: string;
+    estimated_moving_time: number;
+    segments?: any[];
 }
