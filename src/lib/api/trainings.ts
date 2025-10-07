@@ -45,6 +45,7 @@ function formatActivityToTraining(
                   }
                 : null,
         summary: activity.summary ?? null,
+        notes: activity.notes ?? null,
         device: activity.device ?? null,
         battery_percent_usage: activity.battery_percent_usage ?? null,
         effort: activity.effort ?? null,

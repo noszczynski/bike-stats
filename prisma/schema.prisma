@@ -37,6 +37,7 @@ model Activity {
   heart_rate_zone_4     String?
   heart_rate_zone_5     String?
   summary               String?
+  notes                 String?      @db.VarChar(2048)
   battery_percent_usage Int?
   device                String?
   effort                Int?

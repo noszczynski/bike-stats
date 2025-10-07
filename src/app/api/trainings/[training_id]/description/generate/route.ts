@@ -23,8 +23,16 @@ import { NextResponse } from "next/server";
 async function getTrainingWithDetails(trainingId: string) {
     const activity = await prisma.activity.findUnique({
         where: { id: trainingId },
-        include: {
+        select: {
             strava_activity: true,
+            strava_activity_id: true,
+            heart_rate_zone_1: true,
+            heart_rate_zone_2: true,
+            heart_rate_zone_3: true,
+            heart_rate_zone_4: true,
+            heart_rate_zone_5: true,
+            effort: true,
+            notes: true,
             laps: {
                 select: {
                     id: true,
@@ -121,12 +129,6 @@ export async function POST(request: Request, { params }: { params: { training_id
         const twoMonthsAgo = currentTrainingDate.subtract(2, "month").startOf("day");
         const currentTrainingEndOfDay = currentTrainingDate.endOf("day");
 
-        // Get all trainings for metrics calculation (previous trainings before current one)
-        const { trainings: allPreviousTrainings } = await getAllTrainings({
-            startDate: "2020-01-01", // Get all trainings from a reasonable past date
-            endDate: currentTrainingDate.subtract(1, "day").format("YYYY-MM-DD"), // All trainings before current training
-        });
-
         // Get trainings from last two months for comparison
         const { trainings: lastTwoMonthsTrainings } = await getAllTrainings({
             startDate: twoMonthsAgo.format("YYYY-MM-DD"),
@@ -213,6 +215,7 @@ Average Heart Rate: ${training.strava_activity.avg_heart_rate_bpm || "N/A"} bpm;
 Max Heart Rate: ${training.strava_activity.max_heart_rate_bpm || "N/A"} bpm;
 Heart Rate Zones: ${JSON.stringify(heartRateZones)};
 Effort Level (subjective assessment): ${training.effort || "N/A"}/10;
+${training.notes ? `Athlete Notes: ${training.notes};` : ""}
 \`\`\`
 
 Laps Data:

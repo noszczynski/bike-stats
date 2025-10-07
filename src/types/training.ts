@@ -38,6 +38,8 @@ export const TrainingSchema = z.object({
     heart_rate_zones: HeartRateZonesSchema.nullish(),
     /** Summary of the training */
     summary: z.string().nullish(),
+    /** Personal notes about the training */
+    notes: z.string().max(2048).nullish(),
     /** Device of the training */
     device: z.string().nullish(),
     /** Battery percent usage of the training (0-100) */

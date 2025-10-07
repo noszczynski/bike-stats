@@ -6,6 +6,7 @@ import { RideMap } from "@/components/ride-map";
 import { StatsCard } from "@/components/stats-card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { calculateTrainingLoad } from "@/features/training/calculate-training-load";
 import {
     formatTrend,
@@ -13,11 +14,22 @@ import {
     getTrendMessage,
     getTrendProgress,
 } from "@/features/training/trend-utils";
+import { useUpdateTrainingNotes } from "@/hooks/use-training-mutations";
 import { useTrainingNavigation } from "@/hooks/use-training-navigation";
 import date from "@/lib/date";
 import { Training } from "@/types/training";
 import isNil from "lodash/isNil";
-import { ChevronLeft, ChevronRight, Loader2, SparklesIcon } from "lucide-react";
+import {
+    ChevronLeft,
+    ChevronRight,
+    Clipboard,
+    FileIcon,
+    HeartPulseIcon,
+    Loader2,
+    Save,
+    SparklesIcon,
+    ZapIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQueryState } from "nuqs";
@@ -29,6 +41,17 @@ import { CompareToSelect } from "./compare-to-select";
 import { EffortLevelChart } from "./effort-level-chart";
 import { FitUpload } from "./fit-upload";
 import { TrainingEditTab } from "./training-edit-tab";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "./ui/alert-dialog";
+import { Textarea } from "./ui/textarea";
 
 type TrainingOverviewProps = {
     training: Training;
@@ -56,6 +79,93 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
     const router = useRouter();
     const [isGenerating, setIsGenerating] = useState(false);
     const [activeTab, setActiveTab] = useQueryState("tab", { defaultValue: "overview" });
+    const [notes, setNotes] = useState(training.notes || "");
+    const [showAlertDialog, setShowAlertDialog] = useState(false);
+    const [missingFieldsMessage, setMissingFieldsMessage] = useState("");
+
+    // Function to check missing fields and generate message
+    const checkMissingFields = () => {
+        const missingFields: string[] = [];
+
+        if (!training.notes || training.notes.trim() === "") {
+            missingFields.push("notatki");
+        }
+
+        if (
+            !training.heart_rate_zones ||
+            Object.values(training.heart_rate_zones).some(zone => zone === null)
+        ) {
+            missingFields.push("strefy tętna");
+        }
+
+        if (!training.effort) {
+            missingFields.push("poziom wysiłku");
+        }
+
+        return missingFields;
+    };
+
+    // Function to generate summary
+    const generateSummary = async () => {
+        setIsGenerating(true);
+        try {
+            const response = await fetch(`/api/trainings/${training.id}/description/generate`, {
+                method: "POST",
+            });
+
+            if (!response.ok) {
+                throw new Error("Nie udało się wygenerować podsumowania");
+            }
+
+            const data = await response.json();
+
+            toast("Podsumowanie wygenerowane pomyślnie", {
+                description: "Podsumowanie treningu zostało zaktualizowane.",
+            });
+
+            router.refresh();
+        } catch (error) {
+            toast("Nie udało się wygenerować podsumowania", {
+                description:
+                    error instanceof Error ? error.message : "Proszę spróbować ponownie później",
+            });
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    // Handler for generate button click
+    const handleGenerateClick = () => {
+        const missingFields = checkMissingFields();
+
+        if (missingFields.length > 0) {
+            // Build message based on missing fields
+            let message = "Ten trening nie ma wypełnionych następujących pól: ";
+            message += missingFields.join(", ");
+            message += ". Czy na pewno chcesz wygenerować podsumowanie?";
+
+            setMissingFieldsMessage(message);
+            setShowAlertDialog(true);
+        } else {
+            // All fields are present, generate directly
+            generateSummary();
+        }
+    };
+
+    const updateNotesMutation = useUpdateTrainingNotes({
+        onSuccess: () => {
+            toast("Notatki zostały zapisane", {
+                description: "Twoje notatki zostały pomyślnie zaktualizowane.",
+            });
+            router.refresh();
+        },
+        onError: error => {
+            toast("Nie udało się zapisać notatek", {
+                description:
+                    error instanceof Error ? error.message : "Proszę spróbować ponownie później",
+            });
+        },
+    });
 
     // Use React Query hooks for server-side data
     const { data: navigationData } = useTrainingNavigation(training.id);
@@ -189,7 +299,73 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
             <div className="border-b pb-4">
                 <div className="flex flex-col gap-4">
                     <div className="flex items-center justify-between">
-                        <h1 className="text-2xl font-bold">Szczegóły treningu</h1>
+                        <div className="flex items-center gap-4">
+                            <h1 className="text-2xl font-bold">Szczegóły treningu</h1>
+                            <div className="flex items-center gap-2">
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger>
+                                            <HeartPulseIcon
+                                                className={`h-5 w-5 ${training.heart_rate_zones ? "text-green-500" : "text-red-500"}`}
+                                            />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>
+                                                Strefy tętna:{" "}
+                                                {training.heart_rate_zones ? "Uzupełnione" : "Brak"}
+                                            </p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger>
+                                            <Clipboard
+                                                className={`h-5 w-5 ${training.summary ? "text-green-500" : "text-red-500"}`}
+                                            />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>
+                                                Podsumowanie:{" "}
+                                                {training.summary ? "Uzupełnione" : "Brak"}
+                                            </p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger>
+                                            <ZapIcon
+                                                className={`h-5 w-5 ${training.effort ? "text-green-500" : "text-red-500"}`}
+                                            />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>
+                                                Effort: {training.effort ? "Uzupełniony" : "Brak"}
+                                            </p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger>
+                                            <FileIcon
+                                                className={`h-5 w-5 ${training.fit_processed ? "text-green-500" : "text-red-500"}`}
+                                            />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>
+                                                Plik FIT:{" "}
+                                                {training.fit_processed ? "Przetworzony" : "Brak"}
+                                            </p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            </div>
+                        </div>
                         <div className="flex items-center gap-2">
                             {prevTraining ? (
                                 <Link
@@ -285,6 +461,52 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                         )} */}
                     </div>
 
+                    {/* Personal Notes Section */}
+                    <div className="mt-8 border-t pt-8">
+                        <h3 className="mb-4 text-xl font-semibold">Notatki osobiste</h3>
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Textarea
+                                    value={notes}
+                                    onChange={e => setNotes(e.target.value)}
+                                    placeholder="Dodaj swoje notatki o tym treningu..."
+                                    className="min-h-32 w-full"
+                                    maxLength={2048}
+                                />
+                                <div className="flex items-center justify-between">
+                                    <p className="text-muted-foreground text-sm">
+                                        {notes.length}/2048 znaków
+                                    </p>
+                                    <Button
+                                        onClick={async () => {
+                                            updateNotesMutation.mutate({
+                                                trainingId: training.id,
+                                                notes,
+                                            });
+                                        }}
+                                        disabled={
+                                            updateNotesMutation.isPending ||
+                                            notes === training.notes
+                                        }
+                                        className="gap-2"
+                                    >
+                                        {updateNotesMutation.isPending ? (
+                                            <>
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                Zapisywanie...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Save className="h-4 w-4" />
+                                                Zapisz
+                                            </>
+                                        )}
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* AI-Generated Summary Section */}
                     <div className="mt-8 border-t pt-8">
                         <h3 className="mb-4 text-xl font-semibold">Podsumowanie AI</h3>
@@ -331,41 +553,7 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
 
                             <div className="mt-4 flex justify-end">
                                 <Button
-                                    onClick={async () => {
-                                        setIsGenerating(true);
-                                        try {
-                                            const response = await fetch(
-                                                `/api/trainings/${training.id}/description/generate`,
-                                                {
-                                                    method: "POST",
-                                                },
-                                            );
-
-                                            if (!response.ok) {
-                                                throw new Error(
-                                                    "Nie udało się wygenerować podsumowania",
-                                                );
-                                            }
-
-                                            const data = await response.json();
-
-                                            toast("Podsumowanie wygenerowane pomyślnie", {
-                                                description:
-                                                    "Podsumowanie treningu zostało zaktualizowane.",
-                                            });
-
-                                            router.refresh();
-                                        } catch (error) {
-                                            toast("Nie udało się wygenerować podsumowania", {
-                                                description:
-                                                    error instanceof Error
-                                                        ? error.message
-                                                        : "Proszę spróbować ponownie później",
-                                            });
-                                        } finally {
-                                            setIsGenerating(false);
-                                        }
-                                    }}
+                                    onClick={handleGenerateClick}
                                     disabled={isGenerating}
                                     className="gap-2"
                                 >
@@ -514,6 +702,26 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                     </div>
                 </TabsContent>
             </Tabs>
+
+            <AlertDialog open={showAlertDialog} onOpenChange={setShowAlertDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Brakujące dane treningu</AlertDialogTitle>
+                        <AlertDialogDescription>{missingFieldsMessage}</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => {
+                                setShowAlertDialog(false);
+                                generateSummary();
+                            }}
+                        >
+                            Kontynuuj
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { MutationOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface ImportTrainingData {
     name: string;
@@ -225,6 +225,39 @@ export function useRemoveFitData() {
                 queryKey: ["heart-rate-zones-suggestion", trainingId],
             });
             queryClient.invalidateQueries({ queryKey: ["fit-file-exists", trainingId] });
+            queryClient.invalidateQueries({ queryKey: ["trainings"] });
+        },
+    });
+}
+
+async function updateTrainingNotes(trainingId: string, notes: string): Promise<{ training: any }> {
+    const response = await fetch(`/api/trainings/${trainingId}/notes`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ notes }),
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to update training notes");
+    }
+
+    return response.json();
+}
+
+export function useUpdateTrainingNotes(options: MutationOptions<any, Error, any> = {}) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        ...options,
+        mutationFn: ({ trainingId, notes }: { trainingId: string; notes: string }) =>
+            updateTrainingNotes(trainingId, notes),
+        onSuccess: (data, variables, context) => {
+            options.onSuccess?.(data, variables, context);
+            // Invalidate specific training to trigger refetch
+            queryClient.invalidateQueries({ queryKey: ["training", variables.trainingId] });
             queryClient.invalidateQueries({ queryKey: ["trainings"] });
         },
     });
