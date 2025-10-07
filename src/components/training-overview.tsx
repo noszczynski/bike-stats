@@ -26,7 +26,6 @@ import { EffortLevelChart } from './effort-level-chart';
 import { FitUpload } from './fit-upload';
 import { FitHeartRateChart } from './charts/fit-heart-rate-chart';
 import { TrainingEditTab } from './training-edit-tab';
-import { ActivityTagsManager } from './activity-tags-manager';
 import isNil from 'lodash/isNil';
 import { ChevronLeft, ChevronRight, Loader2, SparklesIcon } from 'lucide-react';
 import { useQueryState } from 'nuqs';
@@ -457,18 +456,8 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
 
                 <TabsContent value='management' className='mt-6'>
                     <div className='space-y-8'>
-                        {/* Tags Section */}
-                        <div>
-                            <h3 className='mb-4 text-lg font-semibold'>Zarządzanie tagami</h3>
-                                    <ActivityTagsManager 
-                                        activityId={training.id} 
-                                        showInline={false}
-                                        className='space-y-6'
-                                    />
-                        </div>
-
                         {/* Edit Section */}
-                        <div className='border-t pt-8'>
+                        <div>
                             <h3 className='mb-4 text-lg font-semibold'>Edycja treningu</h3>
                             <TrainingEditTab training={training} />
                         </div>

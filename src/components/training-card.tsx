@@ -8,8 +8,6 @@ import date from '@/lib/date';
 import type { Training } from '@/types/training';
 
 import { RouteBackground } from './route-background';
-import { ActivityTag } from './activity-tag';
-import { useGetActivityTags } from '@/hooks/use-tags-queries';
 import { Clipboard, HeartPulseIcon, ZapIcon, FileIcon } from 'lucide-react';
 
 interface TrainingCardsProps {
@@ -21,7 +19,6 @@ interface TrainingCardProps {
 }
 
 function TrainingCard({ training }: TrainingCardProps) {
-    const { data: activityTags = [] } = useGetActivityTags(training.id);
 
     return (
         <div>
@@ -109,28 +106,6 @@ function TrainingCard({ training }: TrainingCardProps) {
                                 <span className='text-muted-foreground'>Średnia prędkość:</span>
                                 <span className='font-medium'>{training.avg_speed_kmh.toFixed(1)} km/h</span>
                             </div>
-                            {activityTags.length > 0 && (
-                                <div className='pt-2'>
-                                    <div className='flex flex-wrap gap-1'>
-                                        {activityTags.slice(0, 3).map((activityTag) => (
-                                            <ActivityTag
-                                                key={activityTag.id}
-                                                activityTag={activityTag}
-                                                activityId={training.id}
-                                                showRemove={false}
-                                                size="sm"
-                                            />
-                                        ))}
-                                        {activityTags.length > 3 && (
-                                            <div className='flex items-center'>
-                                                <span className='text-xs text-muted-foreground'>
-                                                    +{activityTags.length - 3} więcej
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     </CardContent>
                 </Card>

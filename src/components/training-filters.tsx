@@ -13,7 +13,6 @@ import { DualRangeSlider } from '@/components/ui/dual-range-slider';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { X, Filter, RotateCcw, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { TrainingFilters } from '@/lib/api/trainings';
-import { useGetAllTags } from '@/hooks/use-tags-queries';
 import { debounce } from 'lodash';
 
 interface TrainingFiltersProps {
@@ -23,7 +22,6 @@ interface TrainingFiltersProps {
 }
 
 export function TrainingFiltersComponent({ filters, onFiltersChange, onReset }: TrainingFiltersProps) {
-  const { data: allTags = [] } = useGetAllTags();
   const [localFilters, setLocalFilters] = useState<TrainingFilters>(filters);
   const [pendingFilters, setPendingFilters] = useState<TrainingFilters>(filters);
   const [expandedSections, setExpandedSections] = useState({
@@ -74,21 +72,6 @@ export function TrainingFiltersComponent({ filters, onFiltersChange, onReset }: 
     debouncedUpdateFilters(newFilters);
   };
 
-  const removeTag = (tagIdToRemove: string) => {
-    const currentTags = localFilters.tagIds || [];
-    const newTags = currentTags.filter(id => id !== tagIdToRemove);
-    updateFilterImmediate('tagIds', newTags.length > 0 ? newTags : undefined);
-  };
-
-  const addTag = (tagId: string) => {
-    const currentTags = localFilters.tagIds || [];
-    if (!currentTags.includes(tagId)) {
-      updateFilterImmediate('tagIds', [...currentTags, tagId]);
-    }
-  };
-
-  const selectedTags = allTags.filter(tag => localFilters.tagIds?.includes(tag.id));
-  const availableTags = allTags.filter(tag => !localFilters.tagIds?.includes(tag.id));
 
   const hasActiveFilters = Object.keys(localFilters).some(key => 
     localFilters[key as keyof TrainingFilters] !== undefined
@@ -169,52 +152,6 @@ export function TrainingFiltersComponent({ filters, onFiltersChange, onReset }: 
               </div>
             </div>
 
-            {/* Tags */}
-            {selectedTags.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {selectedTags.map((tag) => (
-                  <Badge
-                    key={tag.id}
-                    variant="secondary"
-                    className="flex items-center gap-1 text-white text-xs h-6"
-                    style={{ backgroundColor: tag.color }}
-                  >
-                    <span className="text-xs">{tag.icon}</span>
-                    {tag.name}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-3 w-3 p-0 ml-1 hover:bg-white/20"
-                      onClick={() => removeTag(tag.id)}
-                    >
-                      <X className="h-2 w-2" />
-                    </Button>
-                  </Badge>
-                ))}
-              </div>
-            )}
-
-            {availableTags.length > 0 && (
-              <Select onValueChange={addTag}>
-                <SelectTrigger className="h-8">
-                  <SelectValue placeholder="Dodaj tag..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableTags.map((tag) => (
-                    <SelectItem key={tag.id} value={tag.id}>
-                      <div className="flex items-center gap-2">
-                        <span 
-                          className="w-2 h-2 rounded-full" 
-                          style={{ backgroundColor: tag.color }}
-                        />
-                        <span className="text-xs">{tag.icon}</span>
-                        <span className="text-sm">{tag.name}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
           </CollapsibleContent>
         </Collapsible>
 
