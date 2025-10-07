@@ -169,9 +169,9 @@ export async function POST(request: Request, { params }: { params: { training_id
                 : null,
         }));
 
-        // Format trackpoints data for prompt - sample every 100th point to reduce size
+        // Format trackpoints data for prompt - sample every 150th point to reduce size
         const sampledTrackpoints = training.trackpoints
-            .filter((_, index) => index % 100 === 0)
+            .filter((_, index) => index % 150 === 0)
             .map(tp => ({
                 timestamp: tp.timestamp,
                 distance_m: tp.distance_m,
@@ -192,7 +192,7 @@ export async function POST(request: Request, { params }: { params: { training_id
             zone_5: training.heart_rate_zone_5,
         };
 
-        const prompt = `Generate a concise training summary based on the following data.
+        const prompt = `Generate a concise, insightful training summary in Polish based on the following data. Focus on interesting findings and unique aspects of this specific ride.
 
 Training Data:
 
@@ -232,11 +232,11 @@ ${lapsData
     .join("; \n\n")}
 \`\`\`
 
-Trackpoints Sample (every 10th point):
+Trackpoints Sample:
 
 \`\`\`trackpoints_sample
 ${sampledTrackpoints
-    .slice(0, 100)
+    .slice(0, 50)
     .map(
         tp =>
             `Time: ${date(tp.timestamp).format("YYYY-MM-DD HH:mm:ss")} | Distance: ${tp.distance_m || "N/A"}m | Speed: ${tp.speed_kmh || "N/A"} km/h | HR: ${tp.heart_rate_bpm || "N/A"} bpm | Altitude: ${tp.altitude_m || "N/A"}m`,
@@ -244,16 +244,14 @@ ${sampledTrackpoints
     .join(";\n")}
 \`\`\`
 
-Strava source data for this training:
+Strava source data:
 
 \`\`\`strava_activity_data
 Name: "${stravaActivity.name}";
 Type: ${stravaActivity.type};
 Achievement Count: ${stravaActivity.achievement_count || 0};
-Athlete Count: ${stravaActivity.athlete_count || 1};
 Workout Type: ${stravaActivity.workout_type || "N/A"};
 Calories: ${stravaActivity.calories || "N/A"};
-Weather Conditions: ${stravaActivity.weather_report ? JSON.stringify(stravaActivity.weather_report) : "N/A"};
 \`\`\`
 
 Historical Metrics (Last 2 months):
@@ -276,7 +274,7 @@ Recent trainings from last 2 months:
 
 \`\`\`recent_trainings_last_2_months
 ${lastTwoMonthsTrainings
-    .slice(0, 15) // Limit to 15 most recent trainings
+    .slice(0, 8)
     .map(
         t => `Training "${t.name}" (${date(t.date).format("YYYY-MM-DD")}):
 - Distance: ${t.distance_km} km;
@@ -290,66 +288,52 @@ ${lastTwoMonthsTrainings
     .join("; \n\n")}
 \`\`\`
 
-Example Response in Markdown Format:
+CRITICAL GUIDELINES:
+- **Keep it SHORT**: Aim for 250-400 words maximum
+- **Find the story**: Look for interesting patterns, unusual data points, or notable achievements in the laps and trackpoints
+- **Vary your language**: Each summary should feel fresh and unique - avoid repetitive phrases
+- **Be specific**: Reference actual lap numbers, specific moments, or unusual heart rate/speed patterns
+- **Skip the obvious**: Don't just restate numbers - provide insights and context
+- **Conversational tone**: Write like a knowledgeable training buddy, not a robot
+
+Example Response Structure (adapt creatively, don't copy):
 
 \`\`\`example_response_markdown
-## Trening: "Popołudniowa jazda" - 15 maja 2025
+## "${stravaActivity.name}" - September 9, 2025
 
-Twój dzisiejszy 28-kilometrowy trening trwający 1 godzinę i 15 minut był solidną sesją o średniej prędkości 22.4 km/h, co przewyższa Twoją przeciętną (21.2 km/h). Pokonałeś 380 m przewyższenia (13.6 m/km), co stanowi wyzwanie powyżej Twojej średniej (11.2 m/km).
+Your **79.9 km** ride in **3h 14min** averaged **24.8 km/h** - noticeably faster than your recent 2-month average of 23.2 km/h. What's interesting is you managed this despite **606m elevation** (7.6 m/km), well above your usual 5.5 m/km profile. The subjective effort of 6/10 suggests your climbing fitness is improving.
 
-### Szybkie podsumowanie, plusy i minusy
+### What Stands Out
 
-Plusy:
-- Osiągnąłeś maksymalną prędkość 42 km/h, zbliżając się do swojego rekordu (45 km/h)
-- Utrzymałeś stabilne tętno w strefie 3 przez większość treningu
-- Znacząco poprawiłeś tempo na odcinkach pod górę w porównaniu do poprzednich treningów
+**The good stuff:**
+- Laps 8-9 were exceptionally strong at **32.4 km/h** and **30.3 km/h** - you actually got faster mid-ride
+- Heart rate stayed remarkably consistent in zones 3-4 (nearly 3 hours total) without erratic spikes
+- Your max speed of **59.8 km/h** shows confident descending technique
 
-Minusy:
-- Możesz zwiększyć czas spędzony w strefie 4 dla lepszego rozwoju progów tlenowych
-- Warto spróbować utrzymać wyższe tempo na ostatnich kilometrach, gdzie nastąpił lekki spadek
+**Worth noting:**
+- Laps 7, 11, 12 had the toughest climbs (62-89m each) - speed naturally dropped but you maintained 21+ km/h
+- Zone 5 barely activated - if you're targeting VO2max gains, consider adding short intervals
+- Final kilometers showed slight fatigue (about 1.5 km/h slower) - pacing strategy could extend that strong mid-ride performance
 
-### Najważniejsze osiągnięcia:
-- Osiągnąłeś maksymalną prędkość 42 km/h, zbliżając się do swojego rekordu (45 km/h)
-- Utrzymałeś stabilne tętno w strefie 3 przez większość treningu
-- Znacząco poprawiłeś tempo na odcinkach pod górę w porównaniu do poprzednich treningów
-
-### Osiągnięcia w porównaniu do innych treningów:
-- **Maksymalna prędkość:** 42 km/h, zbliżając się do swojego rekordu (45 km/h)
-- **Tętno:** Utrzymałeś stabilne tętno w strefie 3 przez większość treningu
-- **Tempo:** Znacząco poprawiłeś tempo na odcinkach pod górę w porównaniu do poprzednich treningów
-
-### Podsumowanie odcinków:
-- **Odcinek 1:** 5km przejechane w 15:00 to dobra średnia
-- **Odcinek 2:** obfitował w podjazdy, różnica wysokości wyniosła 50m
-- **Odcinek 3:** raczej spokojny odcinek, średnia prędkość wyniosła 20km/h
-
-### Twoje mocne strony:
-- **Wysoka regularność i wytrzymałość:** Doskonała kontrola wysiłku na podjazdach (widoczna w stabilnym tętnie)
-- **Stabilna praca serca:** Konsekwentne tempo na płaskich odcinkach
-- **Konsekwentne podtrzymywanie prędkości:** Umiejętność osiągania wysokich prędkości na zjazdach przy zachowaniu bezpieczeństwa
-
-### Obszary do poprawy:
-- **Wysoka regularność i wytrzymałość:** Możesz zwiększyć czas spędzony w strefie 4 dla lepszego rozwoju progów tlenowych
-- **Stabilna praca serca:** Warto spróbować utrzymać wyższe tempo na ostatnich kilometrach, gdzie nastąpił lekki spadek
-
-Twój postęp jest imponujący! Z każdym treningiem zwiększasz swoją wytrzymałość i efektywność. Przy utrzymaniu takiej konsekwencji, wkrótce pobijesz swoje rekordy średniej prędkości i dystansu. Kontynuuj świetną pracę!
+The standout detail: you sustained zone 3-4 intensity for over 2.5 hours on challenging terrain while maintaining speed above your historical average. That's solid endurance development. Keep this consistency and your PRs are within reach.
 \`\`\`
 
-The summary should be professional and motivational. Return the summary in Polish using Markdown formatting with:
-1. Level 2 heading (##) for the training title and date
-2. Level 3 headings (###) for each section
-3. Bullet points for lists, but do not use nested lists
-4. Basic formatting like **bold** or *italic* when appropriate for emphasis
-5. Bold the values and numbers to be more visible
+STRUCTURE:
+1. **Main heading (##)**: Training name and date
+2. **Opening paragraph**: 2-3 sentences with key stats and one interesting observation
+3. **Section "What Stands Out" (###)**: Split into "The good stuff" and "Worth noting" with 2-4 concise bullet points each
+4. **Closing**: 1-2 sentences with a unique insight or encouragement
 
-Include the following sections:
-1. Name and date of the training as the main heading
-2. A brief overview paragraph of how this training compares to the rider's averages and personal bests
-3. Laps (track sections) and trackpoints analysis
-4. Areas of strength shown in this training
-5. Any potential areas for improvement based on the metrics
+OUTPUT REQUIREMENTS:
+- Use Markdown: ## for title, ### for section
+- Bold key numbers and interesting findings
+- Keep bullet points to one line
+- Total: 250-400 words
+- Language: Polish
+- Tone: Analytical yet encouraging
+- Translate lap as "odcinek" in Polish
 
-Deeply focus on the training data and the laps (sections) data. Compare the training data to the historical metrics and the recent trainings from last 2 months. User must be able to understand the training and the metrics so return it in light and easy to understand language.`;
+IMPORTANT: Analyze the lap-by-lap data for interesting patterns - fastest/slowest laps, heart rate variations, elevation challenges, pacing strategy. Make each summary feel personalized and insightful, not templated.`;
 
         const summary = await completion(prompt);
 

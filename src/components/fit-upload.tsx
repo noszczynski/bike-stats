@@ -5,12 +5,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import {
-    useCheckFitFileExists,
-    useRemoveFitData,
-} from "@/hooks/use-training-mutations";
-    useUploadFitFile,
-} from "@/hooks/use-training-mutations";
+import { useRemoveFitData } from "@/hooks/use-training-mutations";
+import { Activity, CheckCircle, FileText, Upload, XCircle } from "lucide-react";
+import { toast } from "sonner";
 
 interface FitUploadProps {
     trainingId: string;
