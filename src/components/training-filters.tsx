@@ -327,18 +327,6 @@ export function TrainingFiltersComponent({ filters, onFiltersChange, onReset }: 
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent className="space-y-2 pt-2">
-                         <div className="flex items-center space-x-2">
-               <Checkbox
-                 id="hasHeartRate"
-                 checked={localFilters.hasHeartRateData === true}
-                 onCheckedChange={(checked) => 
-                   updateFilterImmediate('hasHeartRateData', checked ? true : undefined)
-                 }
-               />
-               <Label htmlFor="hasHeartRate" className="text-sm">
-                 Tylko z danymi tętna
-               </Label>
-             </div>
              <div className="flex items-center space-x-2">
                <Checkbox
                  id="hasFitData"
