@@ -186,10 +186,11 @@ export function TrainingEditTab({ training }: TrainingEditTabProps) {
     };
 
     return (
-        <div className="max-w-4xl space-y-8">
+        <div className="space-y-8">
             <div className="space-y-6">
                 <h3 className="text-xl font-medium">Edytuj szczegóły treningu</h3>
 
+<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
                     {/* Heart Rate Zones Section */}
                     <Card>
@@ -455,6 +456,7 @@ export function TrainingEditTab({ training }: TrainingEditTabProps) {
                         </div>
                     </CardContent>
                 </Card>
+                </div>
             </div>
         </div>
     );
