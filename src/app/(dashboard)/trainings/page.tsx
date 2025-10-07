@@ -17,7 +17,7 @@ export default async function TrainingsPage() {
     const dehydratedState = dehydrate(queryClient);
 
     return (
-        <div className='container py-8'>
+        <div className='w-full'>
             <div className='flex flex-row gap-2'>
                 <h1 className='mb-6 text-3xl font-bold'>Wszystkie treningi</h1>
                 <UpdateTrainingsButton />

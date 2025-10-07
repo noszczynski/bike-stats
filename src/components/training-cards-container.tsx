@@ -5,12 +5,11 @@ import { useGetTrainings } from '@/hooks/use-get-trainings';
 import { Skeleton } from './ui/skeleton';
 
 export function TrainingCardsContainer() {
-    // The data is now hydrated from the server through HydrationBoundary
     const { data } = useGetTrainings();
 
     if (!data?.trainings) {
         return (
-            <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+            <Container>
                 {Array.from({ length: 9 }).map((_, index) => (
                     <div
                         key={index}
@@ -51,9 +50,17 @@ export function TrainingCardsContainer() {
                         </div>
                     </div>
                 ))}
-            </div>
+            </Container>
         );
     }
 
-    return <TrainingCards trainings={data.trainings} />;
+    return <Container>
+        <TrainingCards trainings={data.trainings} />
+        </Container>;
+}
+
+function Container({ children }: { children: React.ReactNode }) {
+    return <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'>
+        {children} 
+    </div>;
 }

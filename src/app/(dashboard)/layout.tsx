@@ -1,31 +1,29 @@
 import type { ReactNode } from 'react';
 
-import Link from 'next/link';
-
 import { AuthGate } from '@/components/auth-gate';
-import { StravaProfileHeader } from '@/components/strava-profile-header';
-import { ThemeSwitch } from '@/components/ui/theme-switch';
+import { AppSidebar } from '@/components/app-sidebar';
+import {
+    SidebarProvider,
+    SidebarInset,
+    SidebarTrigger,
+} from '@/components/ui/sidebar';
+import { Separator } from '@/components/ui/separator';
 
 const Layout = ({ children }: Readonly<{ children: ReactNode }>) => {
     return (
         <AuthGate>
-            <div className='flex w-full flex-col'>
-                <div className='flex w-full items-center justify-between gap-8 border-b px-8'>
-                    <nav className='flex items-center gap-4'>
-                        <Link href='/'>Panel</Link> 
-                        <Link href='/profile'>Profil</Link>
-                        <Link href='/trainings'>Treningi</Link>
-                        <Link href='/trainings/calendar'>Kalendarz</Link>
-                        <Link href='/routes'>Moje trasy</Link>
-                        <Link href='/chat'>Chat</Link>
-                    </nav>
-                    <div className='flex h-16 items-center gap-4'>
-                        <StravaProfileHeader />
-                        <ThemeSwitch />
+            <SidebarProvider>
+                <AppSidebar />
+                <SidebarInset>
+                    <header className='flex h-16 shrink-0 items-center gap-2 border-b px-4'>
+                        <SidebarTrigger className='-ml-1' />
+                        <Separator orientation='vertical' className='mr-2 h-4' />
+                    </header>
+                    <div className='flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6'>
+                        {children}
                     </div>
-                </div>
-                <div className='flex-1 space-y-4 p-8 pt-6'>{children}</div>
-            </div>
+                </SidebarInset>
+            </SidebarProvider>
         </AuthGate>
     );
 };

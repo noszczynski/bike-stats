@@ -45,8 +45,6 @@ export default function CalendarPage() {
     // Get trainings for the current month with pagination (100 items per page to show all)
     const { data, isLoading, error } = useGetTrainings(filters, { page: 1, pageSize: 100 });
 
-    console.log(error);
-
     // Navigate to previous month
     const prevMonth = () => {
         setCurrentMonth(currentMonth.subtract(1, 'month'));
