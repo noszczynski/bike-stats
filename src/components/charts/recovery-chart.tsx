@@ -30,6 +30,10 @@ const chartConfig = {
         label: "Intensywność",
         color: "#ef4444",
     },
+    form: {
+        label: "Forma",
+        color: "#10b981",
+    },
 };
 
 export function RecoveryChart({ trainings }: { trainings: Training[] }) {
@@ -61,35 +65,82 @@ export function RecoveryChart({ trainings }: { trainings: Training[] }) {
         intensity += (training.avg_speed_kmh / 35) * 15;
         intensity += (training.elevation_gain_m / 1000) * 15;
 
+        // Convert moving_time (hh:mm:ss) to minutes
+        const timeParts = training.moving_time.split(":").map(Number);
+        const durationMinutes =
+            (timeParts[0] || 0) * 60 + // hours to minutes
+            (timeParts[1] || 0) + // minutes
+            (timeParts[2] || 0) / 60; // seconds to minutes
+
+        // Calculate training load (stress) for this training
+        const trainingLoad = intensity * (durationMinutes / 60);
+
         return {
             date: training.date,
             formattedDate: date(training.date).format("DD MMM"),
             recoveryTime: recoveryDays,
             intensity: Number(intensity.toFixed(1)),
+            trainingLoad: Number(trainingLoad.toFixed(1)),
             name: training.name,
+        };
+    });
+
+    // Calculate Fitness (CTL - Chronic Training Load) and Fatigue (ATL - Acute Training Load)
+    // Fitness = 42-day exponential moving average
+    // Fatigue = 7-day exponential moving average
+    // Form (TSB) = Fitness - Fatigue
+    const fitnessDecay = 0.93; // ~42 day time constant
+    const fatigueDecay = 0.6; // ~7 day time constant
+
+    let fitness = 0;
+    let fatigue = 0;
+
+    const dataWithForm = data.map((item, index) => {
+        // Update fitness and fatigue with exponential moving average
+        fitness = fitness * fitnessDecay + item.trainingLoad * (1 - fitnessDecay);
+        fatigue = fatigue * fatigueDecay + item.trainingLoad * (1 - fatigueDecay);
+
+        // Form (TSB) = Fitness - Fatigue
+        // Positive = fresh, ready to perform
+        // Negative = fatigued
+        const form = fitness - fatigue;
+
+        return {
+            ...item,
+            form: Number(form.toFixed(1)),
         };
     });
 
     // Calculate statistics
     const avgRecoveryTime =
-        data.reduce((sum, d) => sum + d.recoveryTime, 0) / (data.length - 1) || 0;
+        dataWithForm.reduce((sum, d) => sum + d.recoveryTime, 0) / (dataWithForm.length - 1) || 0;
 
     // Count recovery patterns
-    const shortRecovery = data.filter(d => d.recoveryTime >= 1 && d.recoveryTime <= 1).length;
-    const optimalRecovery = data.filter(d => d.recoveryTime >= 2 && d.recoveryTime <= 3).length;
-    const longRecovery = data.filter(d => d.recoveryTime >= 4).length;
+    const shortRecovery = dataWithForm.filter(
+        d => d.recoveryTime >= 1 && d.recoveryTime <= 1,
+    ).length;
+    const optimalRecovery = dataWithForm.filter(
+        d => d.recoveryTime >= 2 && d.recoveryTime <= 3,
+    ).length;
+    const longRecovery = dataWithForm.filter(d => d.recoveryTime >= 4).length;
 
     // Calculate consistency score (0-100)
     const recoveryStdDev = Math.sqrt(
-        data.reduce((sum, d) => sum + Math.pow(d.recoveryTime - avgRecoveryTime, 2), 0) /
-            (data.length - 1),
+        dataWithForm.reduce((sum, d) => sum + Math.pow(d.recoveryTime - avgRecoveryTime, 2), 0) /
+            (dataWithForm.length - 1),
     );
     const consistencyScore = Math.max(0, 100 - recoveryStdDev * 10);
 
-    // Identify potential overtraining (high intensity with short recovery)
-    const overtrainingRisk = data.filter(
-        d => d.intensity > 60 && d.recoveryTime < 2 && d.recoveryTime > 0,
+    // Identify potential overtraining (high intensity with short recovery OR negative form)
+    const overtrainingRisk = dataWithForm.filter(
+        d => (d.intensity > 60 && d.recoveryTime < 2 && d.recoveryTime > 0) || d.form < -30,
     ).length;
+
+    // Calculate average form and form trend
+    const avgForm = dataWithForm.reduce((sum, d) => sum + d.form, 0) / dataWithForm.length || 0;
+    const recentForm =
+        dataWithForm.slice(-5).reduce((sum, d) => sum + d.form, 0) /
+            Math.min(5, dataWithForm.length) || 0;
 
     return (
         <Card>
@@ -101,8 +152,8 @@ export function RecoveryChart({ trainings }: { trainings: Training[] }) {
                             <TooltipTrigger>
                                 <InfoIcon className="text-muted-foreground h-4 w-4" />
                             </TooltipTrigger>
-                            <TooltipContent className="w-[350px]">
-                                <p className="mb-2 font-semibold">Analiza recovery:</p>
+                            <TooltipContent className="w-[400px]">
+                                <p className="mb-2 font-semibold">Analiza recovery i formy:</p>
                                 <ul className="space-y-1 text-sm">
                                     <li>
                                         <strong>Krótki recovery</strong> - 1 dzień: Dobry dla
@@ -118,9 +169,14 @@ export function RecoveryChart({ trainings }: { trainings: Training[] }) {
                                     </li>
                                 </ul>
                                 <p className="mt-2 text-sm">
-                                    <strong>Ryzyko przetrenowania:</strong> Wysoka intensywność z
-                                    krótkim czasem recovery
+                                    <strong>Forma (TSB):</strong> Różnica między długoterminową
+                                    adaptacją a krótkoterminowym zmęczeniem
                                 </p>
+                                <ul className="mt-1 space-y-1 text-sm">
+                                    <li>Forma &gt; 5: Świetna forma, gotowość</li>
+                                    <li>Forma -10 do 5: Produktywne zmęczenie</li>
+                                    <li>Forma &lt; -30: Ryzyko przetrenowania</li>
+                                </ul>
                             </TooltipContent>
                         </Tooltip>
                     </TooltipProvider>
@@ -131,7 +187,10 @@ export function RecoveryChart({ trainings }: { trainings: Training[] }) {
             </CardHeader>
             <CardContent>
                 <ChartContainer config={chartConfig} className="aspect-auto h-80">
-                    <ComposedChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <ComposedChart
+                        data={dataWithForm}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                    >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="formattedDate" tickLine={false} axisLine={false} />
                         <YAxis
@@ -144,7 +203,11 @@ export function RecoveryChart({ trainings }: { trainings: Training[] }) {
                         <YAxis
                             yAxisId="right"
                             orientation="right"
-                            label={{ value: "Intensywność", angle: 90, position: "insideRight" }}
+                            label={{
+                                value: "Intensywność / Forma",
+                                angle: 90,
+                                position: "insideRight",
+                            }}
                             tickLine={false}
                             axisLine={false}
                         />
@@ -174,6 +237,21 @@ export function RecoveryChart({ trainings }: { trainings: Training[] }) {
                                                         {data.intensity.toFixed(0)}
                                                     </span>
                                                 </p>
+                                                <p>
+                                                    Forma:{" "}
+                                                    <span
+                                                        className={`font-medium ${
+                                                            data.form > 5
+                                                                ? "text-green-500"
+                                                                : data.form < -30
+                                                                  ? "text-red-500"
+                                                                  : "text-yellow-500"
+                                                        }`}
+                                                    >
+                                                        {data.form > 0 ? "+" : ""}
+                                                        {data.form.toFixed(1)}
+                                                    </span>
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
@@ -194,6 +272,15 @@ export function RecoveryChart({ trainings }: { trainings: Training[] }) {
                             stroke={chartConfig.intensity.color}
                             strokeWidth={2}
                             dot={{ fill: chartConfig.intensity.color, r: 3 }}
+                        />
+                        <Line
+                            name="form"
+                            type="monotone"
+                            dataKey="form"
+                            yAxisId="right"
+                            stroke={chartConfig.form.color}
+                            strokeWidth={2}
+                            dot={{ fill: chartConfig.form.color, r: 3 }}
                         />
                         <ChartLegend
                             content={({ payload }) => {
@@ -216,10 +303,28 @@ export function RecoveryChart({ trainings }: { trainings: Training[] }) {
                 <div className="text-muted-foreground leading-none">
                     Krótki: {shortRecovery} | Optymalny: {optimalRecovery} | Długi: {longRecovery}
                 </div>
+                <div className="leading-none">
+                    <span className="text-muted-foreground">Forma: </span>
+                    <span
+                        className={`font-medium ${
+                            recentForm > 5
+                                ? "text-green-500"
+                                : recentForm < -30
+                                  ? "text-red-500"
+                                  : "text-yellow-500"
+                        }`}
+                    >
+                        {recentForm > 0 ? "+" : ""}
+                        {recentForm.toFixed(1)}
+                    </span>
+                    <span className="text-muted-foreground ml-2 text-xs">
+                        (ostatnie 5 treningów)
+                    </span>
+                </div>
                 {overtrainingRisk > 0 && (
                     <div className="text-xs leading-none text-orange-500">
                         ⚠️ Ryzyko przetrenowania: {overtrainingRisk} przypadków wysokiej
-                        intensywności z krótkim recovery
+                        intensywności z krótkim recovery lub negatywnej formy
                     </div>
                 )}
             </CardFooter>

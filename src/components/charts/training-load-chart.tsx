@@ -36,25 +36,25 @@ const chartConfig = {
     },
 };
 
-// Calculate Training Stress Score (TSS) based on available data
+// Obliczanie Wyniku Stresu Treningowego (TSS) na podstawie dostępnych danych
 function calculateTSS(training: Training): number {
-    // Base TSS calculation using available metrics
+    // Podstawowe obliczenie TSS używając dostępnych metryk
     let tss = 0;
 
-    // Distance component (normalized to ~50 TSS for 40km ride)
+    // Komponent dystansu (znormalizowany do ~50 TSS dla 40km jazdy)
     tss += (training.distance_km / 40) * 50;
 
-    // Elevation component (normalized to add ~20 TSS for 500m elevation)
+    // Komponent przewyższenia (znormalizowany do dodania ~20 TSS dla 500m przewyższenia)
     tss += (training.elevation_gain_m / 500) * 20;
 
-    // Heart rate component (if available)
+    // Komponent tętna (jeśli dostępny)
     if (training.avg_heart_rate_bpm) {
-        // Assuming max HR of 190 and threshold at 160
+        // Zakładając maksymalne tętno 190 i próg na 160
         const hrIntensity = training.avg_heart_rate_bpm / 190;
         tss += hrIntensity * 30;
     }
 
-    // Effort component (if available)
+    // Komponent wysiłku (jeśli dostępny)
     if (training.effort) {
         tss += (training.effort / 10) * 20;
     }
@@ -63,19 +63,19 @@ function calculateTSS(training: Training): number {
 }
 
 export function TrainingLoadChart({ trainings }: { trainings: Training[] }) {
-    // Sort trainings by date
+    // Sortuj treningi według daty
     const sortedTrainings = [...trainings].sort(
         (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
     );
 
-    // Calculate CTL, ATL, and TSB for each day
-    let ctl = 0; // Chronic Training Load (42-day exponential average)
-    let atl = 0; // Acute Training Load (7-day exponential average)
+    // Oblicz CTL, ATL i TSB dla każdego dnia
+    let ctl = 0; // Chroniczne Obciążenie Treningowe (42-dniowa średnia wykładnicza)
+    let atl = 0; // Akutne Obciążenie Treningowe (7-dniowa średnia wykładnicza)
 
     const data = sortedTrainings.map((training, index) => {
         const tss = calculateTSS(training);
 
-        // Update CTL and ATL using exponential moving average
+        // Aktualizuj CTL i ATL używając wykładniczej średniej ruchomej
         ctl = ctl + (tss - ctl) / 42;
         atl = atl + (tss - atl) / 7;
 
@@ -92,7 +92,7 @@ export function TrainingLoadChart({ trainings }: { trainings: Training[] }) {
         };
     });
 
-    // Get latest values for footer
+    // Pobierz najnowsze wartości dla stopki
     const latestData = data[data.length - 1];
     const tsbStatus =
         latestData?.tsb > 5
@@ -164,7 +164,7 @@ export function TrainingLoadChart({ trainings }: { trainings: Training[] }) {
                                                 if (key === "ctl") {
                                                     formattedValue = `${Number(value).toFixed(1)}`;
                                                 } else if (key === "atl") {
-                                                    formattedValue = `${Number(value).toFixed(1)} km`;
+                                                    formattedValue = `${Number(value).toFixed(1)}`;
                                                 } else if (key === "tsb") {
                                                     formattedValue = `${Number(value).toFixed(1)}`;
                                                 }
