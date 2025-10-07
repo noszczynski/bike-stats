@@ -16,6 +16,8 @@ const Layout = ({ children }: Readonly<{ children: ReactNode }>) => {
                         <Link href='/profile'>Profil</Link>
                         <Link href='/trainings'>Treningi</Link>
                         <Link href='/trainings/calendar'>Kalendarz</Link>
+                        <Link href='/routes'>Moje trasy</Link>
+                        <Link href='/chat'>Chat</Link>
                     </nav>
                     <div className='flex h-16 items-center gap-4'>
                         <StravaProfileHeader />

@@ -14,6 +14,22 @@ export async function GET(request: NextRequest) {
         if (searchParams.has('type')) filters.type = searchParams.get('type') as string;
         if (searchParams.has('minDistance')) filters.minDistance = Number(searchParams.get('minDistance'));
         if (searchParams.has('maxDistance')) filters.maxDistance = Number(searchParams.get('maxDistance'));
+        if (searchParams.has('minHeartRate')) filters.minHeartRate = Number(searchParams.get('minHeartRate'));
+        if (searchParams.has('maxHeartRate')) filters.maxHeartRate = Number(searchParams.get('maxHeartRate'));
+        if (searchParams.has('minSpeed')) filters.minSpeed = Number(searchParams.get('minSpeed'));
+        if (searchParams.has('maxSpeed')) filters.maxSpeed = Number(searchParams.get('maxSpeed'));
+        if (searchParams.has('minElevation')) filters.minElevation = Number(searchParams.get('minElevation'));
+        if (searchParams.has('maxElevation')) filters.maxElevation = Number(searchParams.get('maxElevation'));
+        if (searchParams.has('minTime')) filters.minTime = Number(searchParams.get('minTime'));
+        if (searchParams.has('maxTime')) filters.maxTime = Number(searchParams.get('maxTime'));
+        if (searchParams.has('hasHeartRateData')) filters.hasHeartRateData = searchParams.get('hasHeartRateData') === 'true';
+        if (searchParams.has('hasFitData')) filters.hasFitData = searchParams.get('hasFitData') === 'true';
+        
+        // Handle tagIds array
+        const tagIds = searchParams.getAll('tagIds');
+        if (tagIds.length > 0) {
+            filters.tagIds = tagIds;
+        }
 
         // Parse pagination params
         const pagination: PaginationOptions = {

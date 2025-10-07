@@ -76,7 +76,7 @@ async function getTrainingWithDetails(trainingId: string) {
     return {
         ...activity,
         // Filter out trackpoints with null values for HR and cadence if they're consistently null
-        trackpoints: activity.trackpoints.filter(tp => 
+        trackpoints: activity.trackpoints.filter(tp =>
             tp.heart_rate_bpm !== null || tp.cadence_rpm !== null || tp.speed_ms !== null
         )
     };
@@ -275,6 +275,17 @@ Example Response in Markdown Format:
 
 Twój dzisiejszy 28-kilometrowy trening trwający 1 godzinę i 15 minut był solidną sesją o średniej prędkości 22.4 km/h, co przewyższa Twoją przeciętną (21.2 km/h). Pokonałeś 380 m przewyższenia (13.6 m/km), co stanowi wyzwanie powyżej Twojej średniej (11.2 m/km).
 
+### Szybkie podsumowanie, plusy i minusy
+
+Plusy:
+- Osiągnąłeś maksymalną prędkość 42 km/h, zbliżając się do swojego rekordu (45 km/h)
+- Utrzymałeś stabilne tętno w strefie 3 przez większość treningu
+- Znacząco poprawiłeś tempo na odcinkach pod górę w porównaniu do poprzednich treningów
+
+Minusy:
+- Możesz zwiększyć czas spędzony w strefie 4 dla lepszego rozwoju progów tlenowych
+- Warto spróbować utrzymać wyższe tempo na ostatnich kilometrach, gdzie nastąpił lekki spadek
+
 ### Najważniejsze osiągnięcia:
 - Osiągnąłeś maksymalną prędkość 42 km/h, zbliżając się do swojego rekordu (45 km/h)
 - Utrzymałeś stabilne tętno w strefie 3 przez większość treningu
@@ -312,11 +323,11 @@ The summary should be professional and motivational. Return the summary in Polis
 Include the following sections:
 1. Name and date of the training as the main heading
 2. A brief overview paragraph of how this training compares to the rider's averages and personal bests
-3. Laps and trackpoints analysis
+3. Laps (track sections) and trackpoints analysis
 4. Areas of strength shown in this training
 5. Any potential areas for improvement based on the metrics
 
-Deeply focus on the training data and the laps data. Compare the training data to the historical metrics and the recent trainings from last 2 months. User must be able to understand the training and the metrics so return it in light and easy to understand language.`;
+Deeply focus on the training data and the laps (sections) data. Compare the training data to the historical metrics and the recent trainings from last 2 months. User must be able to understand the training and the metrics so return it in light and easy to understand language.`;
 
         const summary = await completion(prompt);
 

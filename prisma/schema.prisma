@@ -49,6 +49,7 @@ model Activity {
   strava_activity StravaActivity? @relation(fields: [strava_activity_id], references: [id])
   trackpoints     Trackpoint[]
   laps            Lap[]
+  activity_tags   ActivityTag[]
 
   @@index([user_id])
   @@map("activities")
@@ -154,4 +155,34 @@ model UserSettings {
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("user_settings")
+}
+
+model Tag {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  color       String   @default("#6b7280") // hex color code
+  icon        String   @default("tag") // lucide icon name
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  activity_tags ActivityTag[]
+
+  @@map("tags")
+}
+
+model ActivityTag {
+  id                String   @id @default(uuid())
+  activity_id       String
+  tag_id            String
+  is_auto_generated Boolean  @default(false)
+  created_at        DateTime @default(now())
+
+  activity Activity @relation(fields: [activity_id], references: [id], onDelete: Cascade)
+  tag      Tag      @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@unique([activity_id, tag_id])
+  @@index([activity_id])
+  @@index([tag_id])
+  @@map("activity_tags")
 }

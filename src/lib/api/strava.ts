@@ -1,5 +1,5 @@
 import { serverEnv } from '@/env/env-server';
-import { StravaActivity, StravaAuthResponse, StravaTokens } from '@/types/strava';
+import { StravaActivity, StravaAuthResponse, StravaTokens, StravaRoute } from '@/types/strava';
 
 const STRAVA_CLIENT_ID = serverEnv.STRAVA_CLIENT_ID;
 const STRAVA_CLIENT_SECRET = serverEnv.STRAVA_CLIENT_SECRET;
@@ -151,6 +151,41 @@ export async function getActivity(activityId: number, accessToken: string, refre
 
         if (!response.ok) {
             throw new Error(`Failed to fetch activity ${activityId}`);
+        }
+
+        return response.json();
+    });
+}
+
+/**
+ * Get all routes for the authenticated athlete
+ */
+export async function getAthleteRoutes(
+    athleteId: string,
+    accessToken: string,
+    refreshToken?: string,
+    params?: {
+        page?: number;
+        per_page?: number;
+    }
+): Promise<StravaRoute[]> {
+    return handleStravaRequest(accessToken, refreshToken, async (token) => {
+        const queryParams = new URLSearchParams();
+
+        queryParams.append('page', (params?.page ?? 1).toString());
+        queryParams.append('per_page', (params?.per_page ?? 100).toString());
+
+        const response = await fetch(
+            `https://www.strava.com/api/v3/athletes/${athleteId}/routes?${queryParams.toString()}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }
+        );
+
+        if (!response.ok) {
+            return [];
         }
 
         return response.json();

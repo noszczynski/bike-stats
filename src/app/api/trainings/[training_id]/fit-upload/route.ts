@@ -174,6 +174,15 @@ return NextResponse.json(
       });
     });
 
+    // Apply auto-tagging after FIT processing (now we have detailed data)
+    try {
+      const { reapplyAutoTagging } = await import('@/features/training/auto-tagging-rules');
+      await reapplyAutoTagging(training_id);
+    } catch (error) {
+      console.error('Error applying auto-tagging after FIT processing:', error);
+      // Don't fail the FIT processing if auto-tagging fails
+    }
+
     // Return success response with summary
     return NextResponse.json({
       success: true,

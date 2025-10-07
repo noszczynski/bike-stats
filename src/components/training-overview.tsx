@@ -30,6 +30,8 @@ import { EffortLevelChart } from './effort-level-chart';
 import { FitUpload } from './fit-upload';
 import { FitHeartRateChart } from './charts/fit-heart-rate-chart';
 import { TrainingEditTab } from './training-edit-tab';
+import { ActivityTagsManager } from './activity-tags-manager';
+import { AutoTaggingRulesInfo } from './auto-tagging-rules-info';
 import isNil from 'lodash/isNil';
 import { ChevronLeft, ChevronRight, Loader2, SparklesIcon, Clock, Activity } from 'lucide-react';
 import { useQueryState } from 'nuqs';
@@ -237,6 +239,7 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                     <TabsTrigger value='performance'>Wydajność</TabsTrigger>
                     <TabsTrigger value='technical'>Dane techniczne</TabsTrigger>
                     <TabsTrigger value='summary'>Podsumowanie</TabsTrigger>
+                    <TabsTrigger value='tags'>Tagi</TabsTrigger>
                     <TabsTrigger value='edit'>Edycja</TabsTrigger>
                 </TabsList>
 
@@ -448,6 +451,21 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                                     </>
                                 )}
                             </Button>
+                        </div>
+                    </div>
+                </TabsContent>
+
+                <TabsContent value='tags' className='mt-6'>
+                    <div className='grid gap-6 lg:grid-cols-2'>
+                        <div>
+                            <ActivityTagsManager 
+                                activityId={training.id} 
+                                showInline={false}
+                                className='space-y-6'
+                            />
+                        </div>
+                        <div>
+                            <AutoTaggingRulesInfo />
                         </div>
                     </div>
                 </TabsContent>

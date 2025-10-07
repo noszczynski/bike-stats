@@ -9,6 +9,7 @@ export function middleware(request: NextRequest) {
     const protectedRoutes = [
         '/profile',
         '/trainings',
+        '/chat',
         '/'
     ];
     
