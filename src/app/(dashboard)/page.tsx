@@ -1,4 +1,3 @@
-import { DashboardGlobalStatsTabContent } from '@/components/dashboard-global-stats-tab-content';
 import { DashboardMetricsTabContent } from '@/components/dashboard-metrics-tab-content';
 import { DashboardOverviewTabContent } from '@/components/dashboard-overview-tab-content';
 import { AuthSuccessHandler } from '@/components/auth-success-handler';
@@ -17,16 +16,12 @@ const Page = () => {
                 <TabsList>
                     <TabsTrigger value='overview'>Przegląd</TabsTrigger>
                     <TabsTrigger value='metrics'>Metryki</TabsTrigger>
-                    <TabsTrigger value='global-stats'>Statystyki globalne</TabsTrigger>
                 </TabsList>
                 <TabsContent value='overview'>
                     <DashboardOverviewTabContent />
                 </TabsContent>
                 <TabsContent value='metrics'>
                     <DashboardMetricsTabContent />
-                </TabsContent>
-                <TabsContent value='global-stats'>
-                    <DashboardGlobalStatsTabContent />
                 </TabsContent>
             </Tabs>
         </>

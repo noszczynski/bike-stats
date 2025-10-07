@@ -90,48 +90,14 @@ export function TrainingFiltersComponent({ filters, onFiltersChange, onReset }: 
 
   return (
     <Card className="w-full">
-             <CardHeader className="pb-3">
+      <CardHeader className="pb-3">
          <CardTitle className="flex items-center gap-2 text-base">
            <Filter className="h-4 w-4" />
            Filtry treningów
-           <div className="ml-auto flex gap-2">
-             {hasPendingChanges && (
-               <Button
-                 variant="default"
-                 size="sm"
-                 onClick={applyPendingFilters}
-                 className="h-7 px-3"
-               >
-                 <Search className="h-3 w-3 mr-1" />
-                 Zastosuj
-               </Button>
-             )}
-             {hasActiveFilters && (
-               <Button
-                 variant="outline"
-                 size="sm"
-                 onClick={onReset}
-                 className="h-7 px-2"
-               >
-                 <RotateCcw className="h-3 w-3 mr-1" />
-                 Resetuj
-               </Button>
-             )}
-           </div>
          </CardTitle>
        </CardHeader>
-      <CardContent className="space-y-4 pt-0">
-        {/* Basic Filters */}
-        <Collapsible open={expandedSections.basic} onOpenChange={() => toggleSection('basic')}>
-          <CollapsibleTrigger asChild>
-            <Button variant="ghost" className="w-full justify-between p-2 h-8">
-              <span className="text-sm font-medium">Podstawowe</span>
-              {expandedSections.basic ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-3 pt-2">
-            {/* Date Range */}
-            <div className="grid grid-cols-2 gap-2">
+
+      <CardContent className="space-y-4 flex flex-row flex-wrap w-full gap-4">
               <div>
                 <Label className="text-xs text-muted-foreground">Od</Label>
                                  <Input
@@ -141,6 +107,7 @@ export function TrainingFiltersComponent({ filters, onFiltersChange, onReset }: 
                    className="h-8"
                  />
                </div>
+
                <div>
                  <Label className="text-xs text-muted-foreground">Do</Label>
                  <Input
@@ -150,23 +117,10 @@ export function TrainingFiltersComponent({ filters, onFiltersChange, onReset }: 
                    className="h-8"
                  />
               </div>
-            </div>
 
-          </CollapsibleContent>
-        </Collapsible>
 
-        {/* Range Filters */}
-        <Collapsible open={expandedSections.ranges} onOpenChange={() => toggleSection('ranges')}>
-          <CollapsibleTrigger asChild>
-            <Button variant="ghost" className="w-full justify-between p-2 h-8">
-              <span className="text-sm font-medium">Zakresy wartości</span>
-              {expandedSections.ranges ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-4 pt-2">
-            <div className="grid grid-cols-2 gap-4">
               {/* Distance */}
-                             <div className="space-y-2">
+                             <div className="space-y-2 w-32">
                  <Label className="text-xs font-medium">Dystans (km)</Label>
                  <DualRangeSlider
                    defaultValue={[0, 200]}
@@ -183,7 +137,7 @@ export function TrainingFiltersComponent({ filters, onFiltersChange, onReset }: 
                </div>
 
                {/* Heart Rate */}
-               <div className="space-y-2">
+               <div className="space-y-2 w-32">
                  <Label className="text-xs font-medium">Tętno (bpm)</Label>
                  <DualRangeSlider
                    defaultValue={[80, 200]}
@@ -201,7 +155,7 @@ export function TrainingFiltersComponent({ filters, onFiltersChange, onReset }: 
                </div>
 
                {/* Speed */}
-               <div className="space-y-2">
+               <div className="space-y-2 w-32">
                  <Label className="text-xs font-medium">Prędkość (km/h)</Label>
                  <DualRangeSlider
                    defaultValue={[10, 50]}
@@ -219,7 +173,7 @@ export function TrainingFiltersComponent({ filters, onFiltersChange, onReset }: 
                </div>
 
                {/* Elevation */}
-               <div className="space-y-2">
+               <div className="space-y-2 w-32">
                  <Label className="text-xs font-medium">Przewyższenie (m)</Label>
                  <DualRangeSlider
                    defaultValue={[0, 2000]}
@@ -234,10 +188,9 @@ export function TrainingFiltersComponent({ filters, onFiltersChange, onReset }: 
                    <span>{pendingFilters.maxElevation || 2000}</span>
                  </div>
                </div>
-             </div>
 
              {/* Time - full width */}
-             <div className="space-y-2">
+             <div className="space-y-2 w-32">
                <Label className="text-xs font-medium">Czas jazdy (minuty)</Label>
                <DualRangeSlider
                  defaultValue={[0, 300]}
@@ -252,19 +205,8 @@ export function TrainingFiltersComponent({ filters, onFiltersChange, onReset }: 
                  <span>{pendingFilters.maxTime || 300} min</span>
                </div>
              </div>
-          </CollapsibleContent>
-        </Collapsible>
 
-        {/* Data Availability */}
-        <Collapsible open={expandedSections.data} onOpenChange={() => toggleSection('data')}>
-          <CollapsibleTrigger asChild>
-            <Button variant="ghost" className="w-full justify-between p-2 h-8">
-              <span className="text-sm font-medium">Dostępność danych</span>
-              {expandedSections.data ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-2 pt-2">
-             <div className="flex items-center space-x-2">
+             <div className="flex items-center space-x-2 w-64">
                <Checkbox
                  id="hasFitData"
                  checked={localFilters.hasFitData === true}
@@ -276,8 +218,6 @@ export function TrainingFiltersComponent({ filters, onFiltersChange, onReset }: 
                  Tylko z przetworzonym plikiem FIT
                </Label>
              </div>
-          </CollapsibleContent>
-        </Collapsible>
       </CardContent>
     </Card>
   );
