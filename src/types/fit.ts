@@ -9,6 +9,7 @@ export interface FitTrackpoint {
     speed?: number; // meters per second
     heart_rate?: number; // bpm
     cadence?: number; // rpm
+    power?: number; // watts
     temperature?: number; // celsius
 }
 
@@ -25,6 +26,8 @@ export interface FitLap {
     max_heart_rate?: number; // bpm
     avg_cadence?: number; // rpm
     max_cadence?: number; // rpm
+    avg_power?: number; // watts
+    max_power?: number; // watts
     total_elevation_gain?: number; // meters
     start_latitude?: number;
     start_longitude?: number;
@@ -63,6 +66,7 @@ export interface TrackpointInsert {
     speed_ms?: number;
     heart_rate_bpm?: number;
     cadence_rpm?: number;
+    power_watts?: number;
     temperature_c?: number;
 }
 
@@ -80,6 +84,8 @@ export interface LapInsert {
     max_heart_rate_bpm?: number;
     avg_cadence_rpm?: number;
     max_cadence_rpm?: number;
+    avg_power_watts?: number;
+    max_power_watts?: number;
     total_elevation_gain_m?: number;
     start_latitude?: number;
     start_longitude?: number;

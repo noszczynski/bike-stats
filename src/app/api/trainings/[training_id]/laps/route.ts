@@ -46,6 +46,8 @@ export async function GET(
                 max_heart_rate_bpm: true,
                 avg_cadence_rpm: true,
                 max_cadence_rpm: true,
+                avg_power_watts: true,
+                max_power_watts: true,
                 total_elevation_gain_m: true,
                 start_latitude: true,
                 start_longitude: true,

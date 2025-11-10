@@ -12,6 +12,8 @@ export interface Lap {
     max_heart_rate_bpm: number | null;
     avg_cadence_rpm: number | null;
     max_cadence_rpm: number | null;
+    avg_power_watts: number | null;
+    max_power_watts: number | null;
     total_elevation_gain_m: number | null;
     start_latitude: number | null;
     start_longitude: number | null;

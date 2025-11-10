@@ -20,6 +20,8 @@ export const TrainingSchema = z.object({
     name: z.string(),
     /** Date of the training */
     date: z.string().regex(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/, "Date must be in YYYY-MM-DD format"),
+    /** Activity type */
+    type: z.enum(["ride", "virtual_ride", "gravel_ride", "mountain_bike_ride"]),
     /** Distance of the training in km */
     distance_km: z.number(),
     /** Elevation gain of the training in m */

@@ -1,4 +1,4 @@
-import { getAllStravaRideActivities } from "@/lib/api/strava";
+import { getActivity, getAllStravaRideActivities } from "@/lib/api/strava";
 import { meterPerSecondToKmph } from "@/lib/convert/meter-per-second-to-kmph";
 import { Training, TrainingSchema } from "@/types/training";
 import { secondsToTimeString } from "@/utils/time";
@@ -9,6 +9,26 @@ import { z } from "zod";
 
 import { getActivityById, getActivityByStravaId } from "../db";
 import { prisma } from "../prisma";
+
+/**
+ * Map Strava sport_type to ActivityType enum
+ */
+function mapStravaSportTypeToActivityType(sportType: string): ActivityType {
+    const mapping: Record<string, ActivityType> = {
+        Ride: ActivityType.ride,
+        VirtualRide: ActivityType.virtual_ride,
+        GravelRide: ActivityType.gravel_ride,
+        MountainBikeRide: ActivityType.mountain_bike_ride,
+        Run: ActivityType.run,
+        Walk: ActivityType.walk,
+        Hike: ActivityType.hike,
+        Swim: ActivityType.swim,
+        Workout: ActivityType.workout,
+        Soccer: ActivityType.soccer,
+    };
+
+    return mapping[sportType] || ActivityType.ride;
+}
 
 function formatActivityToTraining(
     activity: Activity & { strava_activity: StravaActivity | null },
@@ -21,6 +41,7 @@ function formatActivityToTraining(
         id: activity.id,
         strava_activity_id: Number(activity.strava_activity.id),
         name: activity.strava_activity.name,
+        type: activity.type as Training["type"],
         date: dayjs(activity.strava_activity.date).format("YYYY-MM-DD"),
         distance_km: activity.strava_activity.distance_m / 1000,
         elevation_gain_m: activity.strava_activity.elevation_gain_m,
@@ -122,9 +143,17 @@ export async function getAllTrainings(
     const skip = (page - 1) * pageSize;
 
     // Build where clause based on filters
-    const where: any = {
-        type: type || "ride",
-    };
+    const where: any = {};
+
+    // Handle type filter - if not specified, show ride and virtual_ride by default
+    if (type) {
+        where.type = type;
+    } else {
+        // Default: show ride and virtual_ride
+        where.type = {
+            in: [ActivityType.ride, ActivityType.virtual_ride],
+        };
+    }
 
     // Initialize strava_activity filter object
     if (
@@ -292,6 +321,7 @@ export async function updateTrainings(accessToken: string, refreshToken: string)
 
     await prisma.$transaction(async tx => {
         for await (const training of trainingsToImport) {
+            const activityType = mapStravaSportTypeToActivityType(training.sport_type);
             const stravaActivity = await tx.stravaActivity.create({
                 data: {
                     id: Number(training.id),
@@ -306,7 +336,7 @@ export async function updateTrainings(accessToken: string, refreshToken: string)
                     max_heart_rate_bpm: Number(training.max_heartrate),
                     activity: {
                         create: {
-                            type: "ride",
+                            type: activityType,
                             device: training.device_name,
                             user_id: "b3c8fc32-b5e8-4f90-8048-b8663d3bf02b", // todo: get user id from auth
                         },
@@ -374,6 +404,8 @@ export async function importActivity(
         device?: string | undefined;
         battery_percent_usage?: number | undefined;
         effort?: number | undefined;
+        accessToken?: string | undefined;
+        refreshToken?: string | undefined;
     },
 ) {
     const existingActivity = await getActivityByStravaId(BigInt(stravaActivityId));
@@ -382,9 +414,25 @@ export async function importActivity(
         throw new Error("Activity already imported");
     }
 
+    // Fetch activity from Strava to get sport_type
+    let activityType: ActivityType = ActivityType.ride; // default fallback
+    if (additionalData.accessToken && additionalData.refreshToken) {
+        try {
+            const stravaActivity = await getActivity(
+                stravaActivityId,
+                additionalData.accessToken,
+                additionalData.refreshToken,
+            );
+            activityType = mapStravaSportTypeToActivityType(stravaActivity.sport_type);
+        } catch (error) {
+            console.error("Failed to fetch activity from Strava for type mapping:", error);
+            // Fallback to default ride type
+        }
+    }
+
     const activity = await prisma.activity.create({
         data: {
-            type: ActivityType.ride,
+            type: activityType,
             strava_activity_id: BigInt(stravaActivityId),
             heart_rate_zone_1: additionalData.heart_rate_zones?.zone_1 ?? null,
             heart_rate_zone_2: additionalData.heart_rate_zones?.zone_2 ?? null,
@@ -473,4 +521,92 @@ export async function updateTrainingsClient(accessToken: string, refreshToken: s
     }
 
     return response.json();
+}
+
+/**
+ * Get aggregated power and cadence statistics from all laps
+ */
+export async function getPowerAndCadenceStats() {
+    const laps = await prisma.lap.findMany({
+        where: {
+            OR: [
+                { avg_power_watts: { not: null, gt: 0 } },
+                { avg_cadence_rpm: { not: null, gt: 0 } },
+            ],
+        },
+        select: {
+            avg_power_watts: true,
+            max_power_watts: true,
+            avg_cadence_rpm: true,
+            max_cadence_rpm: true,
+            activity: {
+                select: {
+                    strava_activity: {
+                        select: {
+                            date: true,
+                        },
+                    },
+                },
+            },
+        },
+    });
+
+    // Calculate averages
+    const powerLaps = laps.filter(lap => lap.avg_power_watts && lap.avg_power_watts > 0);
+    const cadenceLaps = laps.filter(lap => lap.avg_cadence_rpm && lap.avg_cadence_rpm > 0);
+
+    const avgPower =
+        powerLaps.length > 0
+            ? powerLaps.reduce((sum, lap) => sum + (lap.avg_power_watts || 0), 0) / powerLaps.length
+            : null;
+
+    const maxPower =
+        powerLaps.length > 0 ? Math.max(...powerLaps.map(lap => lap.max_power_watts || 0)) : null;
+
+    const avgCadence =
+        cadenceLaps.length > 0
+            ? cadenceLaps.reduce((sum, lap) => sum + (lap.avg_cadence_rpm || 0), 0) /
+              cadenceLaps.length
+            : null;
+
+    const maxCadence =
+        cadenceLaps.length > 0
+            ? Math.max(...cadenceLaps.map(lap => lap.max_cadence_rpm || 0))
+            : null;
+
+    // Calculate stats for last 30 days
+    const thirtyDaysAgo = dayjs().subtract(30, "day").toDate();
+    const recentPowerLaps = powerLaps.filter(lap =>
+        dayjs(lap.activity.strava_activity?.date).isAfter(thirtyDaysAgo),
+    );
+    const recentCadenceLaps = cadenceLaps.filter(lap =>
+        dayjs(lap.activity.strava_activity?.date).isAfter(thirtyDaysAgo),
+    );
+
+    const recentAvgPower =
+        recentPowerLaps.length > 0
+            ? recentPowerLaps.reduce((sum, lap) => sum + (lap.avg_power_watts || 0), 0) /
+              recentPowerLaps.length
+            : null;
+
+    const recentAvgCadence =
+        recentCadenceLaps.length > 0
+            ? recentCadenceLaps.reduce((sum, lap) => sum + (lap.avg_cadence_rpm || 0), 0) /
+              recentCadenceLaps.length
+            : null;
+
+    return {
+        power: {
+            avg: avgPower,
+            max: maxPower,
+            recentAvg: recentAvgPower,
+            trainingsWithData: powerLaps.length,
+        },
+        cadence: {
+            avg: avgCadence,
+            max: maxCadence,
+            recentAvg: recentAvgCadence,
+            trainingsWithData: cadenceLaps.length,
+        },
+    };
 }

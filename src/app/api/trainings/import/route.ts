@@ -57,6 +57,8 @@ export async function POST(request: Request) {
             device: data.device || undefined,
             battery_percent_usage: data.battery_percent_usage || undefined,
             effort: data.effort || undefined,
+            accessToken,
+            refreshToken,
         });
 
         return NextResponse.json({ activity }, { status: 201 });
@@ -71,7 +73,10 @@ export async function POST(request: Request) {
         }
 
         return NextResponse.json(
-            { error: "Internal server error", details: error?.message ?? "" },
+            {
+                error: "Internal server error",
+                details: error instanceof Error ? error.message : "Unknown error",
+            },
             { status: 500 },
         );
     }

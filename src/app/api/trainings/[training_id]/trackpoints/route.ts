@@ -44,6 +44,7 @@ export async function GET(
                 speed_ms: true,
                 heart_rate_bpm: true,
                 cadence_rpm: true,
+                power_watts: true,
                 temperature_c: true,
             },
         });

@@ -49,6 +49,7 @@ export function parseFitFile(buffer: Buffer): Promise<ParsedFitFile> {
                 speed: record.speed,
                 heart_rate: record.heart_rate,
                 cadence: record.cadence,
+                power: record.power,
                 temperature: record.temperature,
             }));
 
@@ -68,6 +69,8 @@ export function parseFitFile(buffer: Buffer): Promise<ParsedFitFile> {
                 max_heart_rate: lap.max_heart_rate,
                 avg_cadence: lap.avg_cadence,
                 max_cadence: lap.max_cadence,
+                avg_power: lap.avg_power,
+                max_power: lap.max_power,
                 total_elevation_gain: lap.total_ascent,
                 start_latitude: lap.start_position_lat,
                 start_longitude: lap.start_position_long,
@@ -118,6 +121,7 @@ export function convertTrackpointsForDB(
         speed_ms: tp.speed,
         heart_rate_bpm: tp.heart_rate,
         cadence_rpm: tp.cadence,
+        power_watts: tp.power,
         temperature_c: tp.temperature,
     }));
 }
@@ -140,6 +144,8 @@ export function convertLapsForDB(laps: FitLap[], activityId: string): LapInsert[
         max_heart_rate_bpm: lap.max_heart_rate,
         avg_cadence_rpm: lap.avg_cadence,
         max_cadence_rpm: lap.max_cadence,
+        avg_power_watts: lap.avg_power,
+        max_power_watts: lap.max_power,
         total_elevation_gain_m: lap.total_elevation_gain,
         start_latitude: lap.start_latitude,
         start_longitude: lap.start_longitude,

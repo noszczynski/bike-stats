@@ -23,7 +23,10 @@ export default function StravaProfileClient({ searchParams }: StravaProfileClien
     } = useStravaActivities(100);
 
     const bikeActivities =
-        activities?.filter((activity: StravaActivity) => activity.sport_type === "Ride") || [];
+        activities?.filter(
+            (activity: StravaActivity) =>
+                activity.sport_type === "Ride" || activity.sport_type === "VirtualRide",
+        ) || [];
 
     if (isAthleteLoading || isActivitiesLoading) {
         return (

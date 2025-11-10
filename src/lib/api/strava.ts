@@ -134,7 +134,9 @@ export async function getAllStravaRideActivities(
 
         const json = await (response.json() as Promise<StravaActivity[]>);
 
-        return json.filter(activity => activity.sport_type === "Ride");
+        return json.filter(
+            activity => activity.sport_type === "Ride" || activity.sport_type === "VirtualRide",
+        );
     });
 }
 

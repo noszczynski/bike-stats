@@ -1,4 +1,5 @@
-import { validateEnv, validateEnv } from "@/env/env-server";
+import { validateEnv } from "@/env/env-server";
+import { NextResponse } from "next/server";
 
 export async function GET() {
     const env = validateEnv();

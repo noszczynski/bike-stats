@@ -67,6 +67,7 @@ model Trackpoint {
   speed_ms       Float?
   heart_rate_bpm Int?
   cadence_rpm    Int?
+  power_watts    Int?
   temperature_c  Float?
   created_at     DateTime @default(now())
 
@@ -92,6 +93,8 @@ model Lap {
   max_heart_rate_bpm     Int?
   avg_cadence_rpm        Int?
   max_cadence_rpm        Int?
+  avg_power_watts        Int?
+  max_power_watts        Int?
   total_elevation_gain_m Float?
   start_latitude         Float?
   start_longitude        Float?

@@ -3,12 +3,13 @@ import { calculateAverageHeartRate } from "@/features/training/calculate-average
 import { calculateAverageSpeed } from "@/features/training/calculate-average-speed";
 import { calculateHighestAverageSpeed } from "@/features/training/calculate-highest-average-speed";
 import { calculateMaxSpeed } from "@/features/training/calculate-max-speed";
-import { getAllTrainings } from "@/lib/api/trainings";
+import { getAllTrainings, getPowerAndCadenceStats } from "@/lib/api/trainings";
 import date from "@/lib/date";
 import { TrendingDownIcon, TrendingUpIcon } from "lucide-react";
 
 export async function DashboardOverviewTabContent() {
     const { trainings } = await getAllTrainings();
+    const powerAndCadenceStats = await getPowerAndCadenceStats();
 
     const avgSpeed = calculateAverageSpeed(trainings);
     const maxSpeed = calculateMaxSpeed(trainings);
@@ -127,6 +128,38 @@ export async function DashboardOverviewTabContent() {
                     unit="treningi"
                     description="Liczba treningów w ostatnich 30 dniach"
                 />
+                {powerAndCadenceStats.power.avg !== null && (
+                    <StatsCard
+                        title="Średnia moc"
+                        value={powerAndCadenceStats.power.avg.toFixed(0)}
+                        unit="W"
+                        description={`Dane z ${powerAndCadenceStats.power.trainingsWithData} treningów`}
+                    />
+                )}
+                {powerAndCadenceStats.cadence.avg !== null && (
+                    <StatsCard
+                        title="Średnia kadencja"
+                        value={powerAndCadenceStats.cadence.avg.toFixed(0)}
+                        unit="RPM"
+                        description={`Dane z ${powerAndCadenceStats.cadence.trainingsWithData} treningów`}
+                    />
+                )}
+                {powerAndCadenceStats.power.recentAvg !== null && (
+                    <StatsCard
+                        title="Średnia moc (ostatnie 30 dni)"
+                        value={powerAndCadenceStats.power.recentAvg.toFixed(0)}
+                        unit="W"
+                        description="Średnia moc z ostatnich 30 dni"
+                    />
+                )}
+                {powerAndCadenceStats.cadence.recentAvg !== null && (
+                    <StatsCard
+                        title="Średnia kadencja (ostatnie 30 dni)"
+                        value={powerAndCadenceStats.cadence.recentAvg.toFixed(0)}
+                        unit="RPM"
+                        description="Średnia kadencja z ostatnich 30 dni"
+                    />
+                )}
             </div>
         </div>
     );

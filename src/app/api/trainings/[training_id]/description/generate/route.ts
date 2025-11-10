@@ -48,6 +48,8 @@ async function getTrainingWithDetails(trainingId: string) {
                     max_heart_rate_bpm: true,
                     avg_cadence_rpm: true,
                     max_cadence_rpm: true,
+                    avg_power_watts: true,
+                    max_power_watts: true,
                     total_elevation_gain_m: true,
                     start_latitude: true,
                     start_longitude: true,
@@ -66,6 +68,7 @@ async function getTrainingWithDetails(trainingId: string) {
                     speed_ms: true,
                     heart_rate_bpm: true,
                     cadence_rpm: true,
+                    power_watts: true,
                     temperature_c: true,
                 },
                 // Order by timestamp to get chronological data
@@ -82,9 +85,13 @@ async function getTrainingWithDetails(trainingId: string) {
 
     return {
         ...activity,
-        // Filter out trackpoints with null values for HR and cadence if they're consistently null
+        // Filter out trackpoints with null values for HR, cadence, power, or speed if they're consistently null
         trackpoints: activity.trackpoints.filter(
-            tp => tp.heart_rate_bpm !== null || tp.cadence_rpm !== null || tp.speed_ms !== null,
+            tp =>
+                tp.heart_rate_bpm !== null ||
+                tp.cadence_rpm !== null ||
+                tp.power_watts !== null ||
+                tp.speed_ms !== null,
         ),
     };
 }
@@ -166,6 +173,10 @@ export async function POST(request: Request, { params }: { params: { training_id
             max_speed_kmh: lap.max_speed_ms ? (lap.max_speed_ms * 3.6).toFixed(1) : null,
             avg_heart_rate_bpm: lap.avg_heart_rate_bpm,
             max_heart_rate_bpm: lap.max_heart_rate_bpm,
+            avg_cadence_rpm: lap.avg_cadence_rpm,
+            max_cadence_rpm: lap.max_cadence_rpm,
+            avg_power_watts: lap.avg_power_watts,
+            max_power_watts: lap.max_power_watts,
             elevation_gain_m: lap.total_elevation_gain_m
                 ? lap.total_elevation_gain_m.toFixed(1)
                 : null,
@@ -179,6 +190,8 @@ export async function POST(request: Request, { params }: { params: { training_id
                 distance_m: tp.distance_m,
                 speed_kmh: tp.speed_ms ? (tp.speed_ms * 3.6).toFixed(1) : null,
                 heart_rate_bpm: tp.heart_rate_bpm,
+                cadence_rpm: tp.cadence_rpm,
+                power_watts: tp.power_watts,
                 altitude_m: tp.altitude_m ? tp.altitude_m.toFixed(1) : null,
             }));
 
@@ -227,9 +240,13 @@ ${lapsData
 - Distance: ${lap.distance_km} km;
 - Moving Time: ${lap.moving_time_s}s;
 - Average Speed: ${lap.avg_speed_kmh || "N/A"} km/h;
-- Max Speed: ${lap.max_speed_kmh || "N/A"} km/h
-- Average Heart Rate: ${lap.avg_heart_rate_bpm || "N/A"} bpm
+- Max Speed: ${lap.max_speed_kmh || "N/A"} km/h;
+- Average Heart Rate: ${lap.avg_heart_rate_bpm || "N/A"} bpm;
 - Max Heart Rate: ${lap.max_heart_rate_bpm || "N/A"} bpm;
+- Average Cadence: ${lap.avg_cadence_rpm || "N/A"} rpm;
+- Max Cadence: ${lap.max_cadence_rpm || "N/A"} rpm;
+- Average Power: ${lap.avg_power_watts || "N/A"} W;
+- Max Power: ${lap.max_power_watts || "N/A"} W;
 - Elevation Gain: ${lap.elevation_gain_m || "N/A"} m`,
     )
     .join("; \n\n")}
@@ -242,7 +259,7 @@ ${sampledTrackpoints
     .slice(0, 50)
     .map(
         tp =>
-            `Time: ${date(tp.timestamp).format("YYYY-MM-DD HH:mm:ss")} | Distance: ${tp.distance_m || "N/A"}m | Speed: ${tp.speed_kmh || "N/A"} km/h | HR: ${tp.heart_rate_bpm || "N/A"} bpm | Altitude: ${tp.altitude_m || "N/A"}m`,
+            `Time: ${date(tp.timestamp).format("YYYY-MM-DD HH:mm:ss")} | Distance: ${tp.distance_m || "N/A"}m | Speed: ${tp.speed_kmh || "N/A"} km/h | HR: ${tp.heart_rate_bpm || "N/A"} bpm | Cadence: ${tp.cadence_rpm || "N/A"} rpm | Power: ${tp.power_watts || "N/A"} W | Altitude: ${tp.altitude_m || "N/A"}m`,
     )
     .join(";\n")}
 \`\`\`
@@ -295,7 +312,7 @@ CRITICAL GUIDELINES:
 - **Keep it SHORT**: Aim for 250-400 words maximum
 - **Find the story**: Look for interesting patterns, unusual data points, or notable achievements in the laps and trackpoints
 - **Vary your language**: Each summary should feel fresh and unique - avoid repetitive phrases
-- **Be specific**: Reference actual lap numbers, specific moments, or unusual heart rate/speed patterns
+- **Be specific**: Reference actual lap numbers, specific moments, or unusual heart rate/speed/power/cadence patterns
 - **Skip the obvious**: Don't just restate numbers - provide insights and context
 - **Conversational tone**: Write like a knowledgeable training buddy, not a robot
 
@@ -336,7 +353,7 @@ OUTPUT REQUIREMENTS:
 - Tone: Analytical yet encouraging
 - Translate lap as "odcinek" in Polish
 
-IMPORTANT: Analyze the lap-by-lap data for interesting patterns - fastest/slowest laps, heart rate variations, elevation challenges, pacing strategy. Make each summary feel personalized and insightful, not templated.`;
+IMPORTANT: Analyze the lap-by-lap data for interesting patterns - fastest/slowest laps, heart rate variations, power output, cadence consistency, elevation challenges, pacing strategy. Pay special attention to power-to-speed ratios, cadence efficiency, and how power/cadence correlate with heart rate zones. Make each summary feel personalized and insightful, not templated.`;
 
         const summary = await completion(prompt);
 

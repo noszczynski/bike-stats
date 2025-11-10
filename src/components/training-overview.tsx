@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { HeartRateZonesChart } from "@/components/heart-rate-zones-chart";
 import { RideMap } from "@/components/ride-map";
 import { StatsCard } from "@/components/stats-card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -14,6 +15,7 @@ import {
     getTrendMessage,
     getTrendProgress,
 } from "@/features/training/trend-utils";
+import { useLaps } from "@/hooks/use-laps-queries";
 import { useUpdateTrainingNotes } from "@/hooks/use-training-mutations";
 import { useTrainingNavigation } from "@/hooks/use-training-navigation";
 import date from "@/lib/date";
@@ -36,7 +38,9 @@ import { useQueryState } from "nuqs";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 
+import { FitCadenceChart } from "./charts/fit-cadence-chart";
 import { FitHeartRateChart } from "./charts/fit-heart-rate-chart";
+import { FitPowerChart } from "./charts/fit-power-chart";
 import { CompareToSelect } from "./compare-to-select";
 import { EffortLevelChart } from "./effort-level-chart";
 import { FitUpload } from "./fit-upload";
@@ -73,6 +77,24 @@ function formatMinutes(minutes: number): string {
     const remainingMinutes = (minutes % 60).toFixed(0);
 
     return hours > 0 ? `${hours}h ${remainingMinutes}m` : `${remainingMinutes}m`;
+}
+
+// Helper function to format activity type to display name
+function formatActivityType(type: string): string {
+    const typeMap: Record<string, string> = {
+        ride: "Ride",
+        virtual_ride: "Virtual Ride",
+        gravel_ride: "Gravel Ride",
+        mountain_bike_ride: "Mountain Bike Ride",
+        run: "Run",
+        walk: "Walk",
+        hike: "Hike",
+        swim: "Swim",
+        workout: "Workout",
+        soccer: "Soccer",
+    };
+
+    return typeMap[type] || type;
 }
 
 export function TrainingOverview({ training, compareTo, allTrainings }: TrainingOverviewProps) {
@@ -169,10 +191,30 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
 
     // Use React Query hooks for server-side data
     const { data: navigationData } = useTrainingNavigation(training.id);
+    const { data: lapsData } = useLaps(training.id);
 
     // Navigation data from server
     const prevTraining = navigationData?.previous;
     const nextTraining = navigationData?.next;
+
+    // Calculate power and cadence statistics from laps
+    const laps = lapsData?.laps || [];
+    const avgPower =
+        laps.length > 0 && laps.some(lap => lap.avg_power_watts)
+            ? laps.reduce((sum, lap) => sum + (lap.avg_power_watts || 0), 0) / laps.length
+            : null;
+    const maxPower =
+        laps.length > 0 && laps.some(lap => lap.max_power_watts)
+            ? Math.max(...laps.map(lap => lap.max_power_watts || 0))
+            : null;
+    const avgCadence =
+        laps.length > 0 && laps.some(lap => lap.avg_cadence_rpm)
+            ? laps.reduce((sum, lap) => sum + (lap.avg_cadence_rpm || 0), 0) / laps.length
+            : null;
+    const maxCadence =
+        laps.length > 0 && laps.some(lap => lap.max_cadence_rpm)
+            ? Math.max(...laps.map(lap => lap.max_cadence_rpm || 0))
+            : null;
 
     // Get all trainings to compare against
     let compareTrainings: Training[] = [];
@@ -400,9 +442,12 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                         </div>
                     </div>
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                        <h2 className="text-muted-foreground text-lg font-medium">
-                            {training.name} - {date(training.date).format("LL")}
-                        </h2>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <h2 className="text-muted-foreground text-lg font-medium">
+                                {training.name} - {date(training.date).format("LL")}
+                            </h2>
+                            <Badge variant="secondary">{formatActivityType(training.type)}</Badge>
+                        </div>
                         <div className="mt-2 sm:mt-0">
                             <CompareToSelect trainingDate={training.date} />
                         </div>
@@ -462,118 +507,126 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                     </div>
 
                     {/* Personal Notes Section */}
-                    <div className="mt-8 border-t pt-8">
-                        <h3 className="mb-4 text-xl font-semibold">Notatki osobiste</h3>
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <Textarea
-                                    value={notes}
-                                    onChange={e => setNotes(e.target.value)}
-                                    placeholder="Dodaj swoje notatki o tym treningu..."
-                                    className="min-h-32 w-full"
-                                    maxLength={2048}
-                                />
-                                <div className="flex items-center justify-between">
-                                    <p className="text-muted-foreground text-sm">
-                                        {notes.length}/2048 znaków
+                    <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+                        {/* AI-Generated Summary Section */}
+                        <div className="max-w-xl border-t pt-8">
+                            <h3 className="mb-4 text-xl font-semibold">Podsumowanie AI</h3>
+                            <div className="space-y-4">
+                                {training.summary ? (
+                                    <div className="max-w-none">
+                                        <ReactMarkdown
+                                            components={{
+                                                h2: ({ children }) => (
+                                                    <h2 className="mb-4 text-2xl font-bold">
+                                                        {children}
+                                                    </h2>
+                                                ),
+                                                h3: ({ children }) => (
+                                                    <h3 className="mt-6 mb-3 text-xl font-semibold">
+                                                        {children}
+                                                    </h3>
+                                                ),
+                                                p: ({ children }) => (
+                                                    <p className="mb-4 leading-relaxed">
+                                                        {children}
+                                                    </p>
+                                                ),
+                                                ul: ({ children }) => (
+                                                    <ul className="mb-4 space-y-1 pl-6">
+                                                        {children}
+                                                    </ul>
+                                                ),
+                                                li: ({ children }) => (
+                                                    <li className="ml-2 list-disc">{children}</li>
+                                                ),
+                                                strong: ({ children }) => (
+                                                    <strong className="font-semibold">
+                                                        {children}
+                                                    </strong>
+                                                ),
+                                                em: ({ children }) => (
+                                                    <em className="italic">{children}</em>
+                                                ),
+                                            }}
+                                        >
+                                            {training.summary}
+                                        </ReactMarkdown>
+                                    </div>
+                                ) : (
+                                    <p className="text-muted-foreground">
+                                        Brak podsumowania treningu.
                                     </p>
+                                )}
+
+                                <div className="mt-4 flex justify-end">
                                     <Button
-                                        onClick={async () => {
-                                            updateNotesMutation.mutate({
-                                                trainingId: training.id,
-                                                notes,
-                                            });
-                                        }}
-                                        disabled={
-                                            updateNotesMutation.isPending ||
-                                            notes === training.notes
-                                        }
+                                        onClick={handleGenerateClick}
+                                        disabled={isGenerating}
                                         className="gap-2"
                                     >
-                                        {updateNotesMutation.isPending ? (
+                                        {isGenerating ? (
                                             <>
                                                 <Loader2 className="h-4 w-4 animate-spin" />
-                                                Zapisywanie...
+                                                Generowanie...
+                                            </>
+                                        ) : training.summary ? (
+                                            <>
+                                                <SparklesIcon size={16} />
+                                                Wygeneruj ponownie
                                             </>
                                         ) : (
                                             <>
-                                                <Save className="h-4 w-4" />
-                                                Zapisz
+                                                <SparklesIcon size={16} />
+                                                Generuj podsumowanie
                                             </>
                                         )}
                                     </Button>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    {/* AI-Generated Summary Section */}
-                    <div className="mt-8 border-t pt-8">
-                        <h3 className="mb-4 text-xl font-semibold">Podsumowanie AI</h3>
-                        <div className="space-y-4">
-                            {training.summary ? (
-                                <div className="max-w-none">
-                                    <ReactMarkdown
-                                        components={{
-                                            h2: ({ children }) => (
-                                                <h2 className="mb-4 text-2xl font-bold">
-                                                    {children}
-                                                </h2>
-                                            ),
-                                            h3: ({ children }) => (
-                                                <h3 className="mt-6 mb-3 text-xl font-semibold">
-                                                    {children}
-                                                </h3>
-                                            ),
-                                            p: ({ children }) => (
-                                                <p className="mb-4 leading-relaxed">{children}</p>
-                                            ),
-                                            ul: ({ children }) => (
-                                                <ul className="mb-4 space-y-1 pl-6">{children}</ul>
-                                            ),
-                                            li: ({ children }) => (
-                                                <li className="ml-2 list-disc">{children}</li>
-                                            ),
-                                            strong: ({ children }) => (
-                                                <strong className="font-semibold">
-                                                    {children}
-                                                </strong>
-                                            ),
-                                            em: ({ children }) => (
-                                                <em className="italic">{children}</em>
-                                            ),
-                                        }}
-                                    >
-                                        {training.summary}
-                                    </ReactMarkdown>
+                        <div className="border-t pt-8">
+                            <h3 className="mb-4 text-xl font-semibold">Notatki osobiste</h3>
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Textarea
+                                        value={notes}
+                                        onChange={e => setNotes(e.target.value)}
+                                        placeholder="Dodaj swoje notatki o tym treningu..."
+                                        className="min-h-32 w-full"
+                                        maxLength={2048}
+                                    />
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-muted-foreground text-sm">
+                                            {notes.length}/2048 znaków
+                                        </p>
+                                        <Button
+                                            onClick={async () => {
+                                                updateNotesMutation.mutate({
+                                                    trainingId: training.id,
+                                                    notes,
+                                                });
+                                            }}
+                                            disabled={
+                                                updateNotesMutation.isPending ||
+                                                notes === training.notes
+                                            }
+                                            className="gap-2"
+                                        >
+                                            {updateNotesMutation.isPending ? (
+                                                <>
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                    Zapisywanie...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Save className="h-4 w-4" />
+                                                    Zapisz
+                                                </>
+                                            )}
+                                        </Button>
+                                    </div>
                                 </div>
-                            ) : (
-                                <p className="text-muted-foreground">Brak podsumowania treningu.</p>
-                            )}
-
-                            <div className="mt-4 flex justify-end">
-                                <Button
-                                    onClick={handleGenerateClick}
-                                    disabled={isGenerating}
-                                    className="gap-2"
-                                >
-                                    {isGenerating ? (
-                                        <>
-                                            <Loader2 className="h-4 w-4 animate-spin" />
-                                            Generowanie...
-                                        </>
-                                    ) : training.summary ? (
-                                        <>
-                                            <SparklesIcon size={16} />
-                                            Wygeneruj ponownie
-                                        </>
-                                    ) : (
-                                        <>
-                                            <SparklesIcon size={16} />
-                                            Generuj podsumowanie
-                                        </>
-                                    )}
-                                </Button>
                             </div>
                         </div>
                     </div>
@@ -585,7 +638,7 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                         {/* Technical Data Section */}
                         <div>
                             <h3 className="mb-4 text-lg font-semibold">Dane techniczne</h3>
-                            <div className="grid w-full grid-cols-1 items-stretch gap-4 space-y-6 md:grid-cols-2">
+                            <div className="grid w-full grid-cols-1 items-stretch gap-4 md:grid-cols-2">
                                 <div className="flex h-full w-full flex-row items-stretch gap-4">
                                     <FitUpload
                                         trainingId={training.id}
@@ -594,6 +647,16 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                                 </div>
                                 <div className="w-full">
                                     <FitHeartRateChart trainingId={training.id} />
+                                </div>
+                            </div>
+
+                            {/* Power and Cadence Charts */}
+                            <div className="mt-6 grid w-full grid-cols-1 items-stretch gap-4 md:grid-cols-2">
+                                <div className="w-full">
+                                    <FitPowerChart trainingId={training.id} />
+                                </div>
+                                <div className="w-full">
+                                    <FitCadenceChart trainingId={training.id} />
                                 </div>
                             </div>
                         </div>
@@ -675,6 +738,26 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                                     infoText={`Większe przewyższenie to wyższy poziom trudności. Twoje średnie przewyższenie wynosi: ${avgElevationPast.toFixed(0)} m`}
                                     formatValue={val => val.toFixed(0)}
                                 />
+
+                                {avgPower !== null && maxPower !== null && (
+                                    <StatsCard
+                                        title="Średnia moc"
+                                        value={avgPower}
+                                        unit="W"
+                                        infoText={`Moc średnia z treningu. Maksymalna moc: ${maxPower.toFixed(0)} W`}
+                                        formatValue={val => val.toFixed(0)}
+                                    />
+                                )}
+
+                                {avgCadence !== null && maxCadence !== null && (
+                                    <StatsCard
+                                        title="Średnia kadencja"
+                                        value={avgCadence}
+                                        unit="RPM"
+                                        infoText={`Kadencja średnia z treningu. Maksymalna kadencja: ${maxCadence.toFixed(0)} RPM`}
+                                        formatValue={val => val.toFixed(0)}
+                                    />
+                                )}
 
                                 <EffortLevelChart effort={training.effort ?? 0} />
 
