@@ -67,12 +67,12 @@ export function FitCadenceChart({ trainingId }: FitCadenceChartProps) {
     const trackpoints = data?.trackpoints || [];
 
     const cadenceData = trackpoints
-        .filter(tp => tp.cadence && tp.cadence > 0)
+        .filter(tp => tp.cadence_rpm && tp.cadence_rpm > 0)
         .map((tp, index) => ({
             index,
             timestamp: tp.timestamp ? date(tp.timestamp).toISOString() : null,
-            cadence: tp.cadence ?? null,
-            distance: tp.distance ? (tp.distance / 1000).toFixed(1) : null,
+            cadence: tp.cadence_rpm ?? null,
+            distance: tp.distance_m ? (tp.distance_m / 1000).toFixed(1) : null,
             timeFormatted: tp.timestamp ? date(tp.timestamp).format("HH:mm") : null,
         }));
 

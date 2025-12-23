@@ -1,26 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { Trackpoint, TrackpointsResponse } from "@/types/trackpoint";
 
-interface TrackPoint {
-    timestamp: string; // iso string
-    position_lat?: number | null;
-    position_long?: number | null;
-    altitude?: number | null;
-    distance?: number | null;
-    heart_rate_bpm?: number | null;
-    speed?: number | null;
-    cadence?: number | null;
-    power?: number | null;
-    temperature?: number | null;
-}
-
-interface TrackPointsResponse {
-    trackpoints: TrackPoint[];
-    totalCount: number;
-}
-
-async function fetchTrackpoints(trainingId: string): Promise<TrackPointsResponse> {
+async function fetchTrackpoints(trainingId: string): Promise<TrackpointsResponse> {
     const response = await fetch(`/api/trainings/${trainingId}/trackpoints`);
 
     if (!response.ok) {
@@ -31,7 +14,7 @@ async function fetchTrackpoints(trainingId: string): Promise<TrackPointsResponse
 }
 
 export function useTrackpoints(trainingId: string) {
-    return useQuery<TrackPointsResponse>({
+    return useQuery<TrackpointsResponse>({
         queryKey: ["trackpoints", trainingId],
         queryFn: () => fetchTrackpoints(trainingId),
         enabled: !!trainingId,

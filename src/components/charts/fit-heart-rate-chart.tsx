@@ -72,7 +72,7 @@ export function FitHeartRateChart({ trainingId }: FitHeartRateChartProps) {
             index,
             timestamp: tp.timestamp ? date(tp.timestamp).toISOString() : null,
             heart_rate: tp.heart_rate_bpm ?? null,
-            distance: tp.distance ? (tp.distance / 1000).toFixed(1) : null,
+            distance: tp.distance_m ? (tp.distance_m / 1000).toFixed(1) : null,
             timeFormatted: tp.timestamp ? date(tp.timestamp).format("HH:mm") : null,
         }));
 

@@ -1,5 +1,7 @@
 import { TrainingOverview } from "@/components/training-overview";
 import { getAllTrainings, getTrainingById } from "@/lib/api/trainings";
+import date from "@/lib/date";
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
@@ -11,6 +13,22 @@ interface TrainingPageProps {
     };
     searchParams: {
         compareTo?: string;
+    };
+}
+
+export async function generateMetadata({ params }: TrainingPageProps): Promise<Metadata> {
+    const training = await getTrainingById(params.training_id);
+
+    if (!training) {
+        return {
+            title: "Trening nie znaleziony | Bike Stats",
+        };
+    }
+
+    const formattedDate = date(training.date).format("LL");
+
+    return {
+        title: `${training.name} - ${formattedDate} | Bike Stats`,
     };
 }
 

@@ -67,12 +67,12 @@ export function FitPowerChart({ trainingId }: FitPowerChartProps) {
     const trackpoints = data?.trackpoints || [];
 
     const powerData = trackpoints
-        .filter(tp => tp.power && tp.power > 0)
+        .filter(tp => tp.power_watts && tp.power_watts > 0)
         .map((tp, index) => ({
             index,
             timestamp: tp.timestamp ? date(tp.timestamp).toISOString() : null,
-            power: tp.power ?? null,
-            distance: tp.distance ? (tp.distance / 1000).toFixed(1) : null,
+            power: tp.power_watts ?? null,
+            distance: tp.distance_m ? (tp.distance_m / 1000).toFixed(1) : null,
             timeFormatted: tp.timestamp ? date(tp.timestamp).format("HH:mm") : null,
         }));
 
