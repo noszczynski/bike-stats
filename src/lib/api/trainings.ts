@@ -180,7 +180,15 @@ export async function getAllTrainings(
             where.strava_activity.date.gte = new Date(startDate);
         }
         if (endDate) {
-            where.strava_activity.date.lte = new Date(endDate);
+            // Jeśli dostałeś tylko datę bez godziny (typowy przypadek z input[type="date"]), dodaj koniec dnia
+            const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(endDate);
+            if (isDateOnly) {
+                const [y, m, d] = endDate.split('-').map(Number);
+                // month jest 0-based, więc -1
+                where.strava_activity.date.lte = new Date(y, m - 1, d, 23, 59, 59, 999);
+            } else {
+                where.strava_activity.date.lte = new Date(endDate);
+            }
         }
     }
 

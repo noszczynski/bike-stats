@@ -59,7 +59,7 @@ import { Textarea } from "./ui/textarea";
 
 type TrainingOverviewProps = {
     training: Training;
-    compareTo: "all" | "earlier" | "other";
+    compareTo: "all" | "earlier" | "other" | "lastTwoMonths" | "thisQuarter";
     allTrainings: Training[];
 };
 
@@ -233,6 +233,16 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
     } else if (compareTo === "other") {
         // Compare to all other trainings (same as 'all')
         compareTrainings = sortedTrainings.filter(t => t.date !== training.date);
+    } else if (compareTo === "lastTwoMonths") {
+        // Compare to last two months
+        compareTrainings = sortedTrainings.filter(t =>
+            date(t.date).isAfter(date().subtract(2, "months")),
+        );
+    } else if (compareTo === "thisQuarter") {
+        // Compare to this quarter
+        compareTrainings = sortedTrainings.filter(t =>
+            date(t.date).isAfter(date().subtract(3, "months")),
+        );
     }
 
     // Perform comparisons only if we have data to compare

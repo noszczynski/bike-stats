@@ -19,7 +19,16 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import date from "@/lib/date";
 import { Training } from "@/types/training";
 import { ActivityIcon, InfoIcon } from "lucide-react";
-import { Area, AreaChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import {
+    Area,
+    AreaChart,
+    CartesianGrid,
+    Line,
+    LineChart,
+    ReferenceLine,
+    XAxis,
+    YAxis,
+} from "recharts";
 
 const chartConfig = {
     ctl: {
@@ -38,57 +47,86 @@ const chartConfig = {
 
 // Obliczanie Wyniku Stresu Treningowego (TSS) na podstawie dostępnych danych
 function calculateTSS(training: Training): number {
-    // Podstawowe obliczenie TSS używając dostępnych metryk
-    let tss = 0;
+    // === DANE WEJŚCIOWE ===
+    const durationSec = training.moving_time
+        .split(":")
+        .map(Number)
+        .reduce((acc, curr) => acc * 60 + curr, 0); // np. 5400 seconds = 1.5 hours
+    const avgHrBpm = training.avg_heart_rate_bpm ?? 0; // średnie tętno
+    const lthrBpm = 180; // próg tętna (LTHR) stałe
 
-    // Komponent dystansu (znormalizowany do ~50 TSS dla 40km jazdy)
-    tss += (training.distance_km / 40) * 50;
-
-    // Komponent przewyższenia (znormalizowany do dodania ~20 TSS dla 500m przewyższenia)
-    tss += (training.elevation_gain_m / 500) * 20;
-
-    // Komponent tętna (jeśli dostępny)
-    if (training.avg_heart_rate_bpm) {
-        // Zakładając maksymalne tętno 190 i próg na 160
-        const hrIntensity = training.avg_heart_rate_bpm / 190;
-        tss += hrIntensity * 30;
+    // === WALIDACJA ===
+    if (durationSec <= 0 || avgHrBpm <= 0 || lthrBpm <= 0) {
+        throw new Error("Nieprawidłowe dane wejściowe");
     }
 
-    // Komponent wysiłku (jeśli dostępny)
-    if (training.effort) {
-        tss += (training.effort / 10) * 20;
-    }
+    // === OBLICZENIA ===
+    const hours = durationSec / 3600;
+    const intensityFactor = avgHrBpm / lthrBpm;
+
+    const tss = hours * intensityFactor * intensityFactor * 100;
 
     return Math.round(tss);
 }
 
 export function TrainingLoadChart({ trainings }: { trainings: Training[] }) {
-    // Sortuj treningi według daty
+    // 1. Zakres dat: od najstarszego treningu do dziś
     const sortedTrainings = [...trainings].sort(
         (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
     );
+    const firstDate = sortedTrainings[0] ? sortedTrainings[0].date : null;
+    const todayDate = date().format("YYYY-MM-DD");
 
-    // Oblicz CTL, ATL i TSB dla każdego dnia
-    let ctl = 0; // Chroniczne Obciążenie Treningowe (42-dniowa średnia wykładnicza)
-    let atl = 0; // Akutne Obciążenie Treningowe (7-dniowa średnia wykładnicza)
+    if (!firstDate) {
+        // Brak treningów — zwracamy pustą tablicę
+        return null;
+    }
 
-    const data = sortedTrainings.map((training, index) => {
-        const tss = calculateTSS(training);
+    // 2. Generuj wszystkie dni od najstarszego treningu do dzisiaj
+    let days: string[] = [];
+    let day = date(firstDate);
+    const endDay = date(todayDate);
+    while (day.isBefore(endDay) || day.isSame(endDay, "day")) {
+        days.push(day.format("YYYY-MM-DD"));
+        day = day.add(1, "day");
+    }
 
-        // Aktualizuj CTL i ATL używając wykładniczej średniej ruchomej
-        ctl = ctl + (tss - ctl) / 42;
-        atl = atl + (tss - atl) / 7;
+    // 3. Grupuj treningi wg dni (może być >1 trening/dzień)
+    const trainingsByDay = days.map(dayStr => sortedTrainings.filter(t => t.date === dayStr));
 
-        // TSB = CTL - ATL
+    // 4. Obliczaj TSS/tssSum per day
+    const DAYS_CTL = 42;
+    const DAYS_ATL = 7;
+    let ctl = 0;
+    let atl = 0;
+    const data = days.map((dayStr, i) => {
+        const trainings = trainingsByDay[i];
+        const tss = trainings.reduce((sum, t) => {
+            try {
+                return sum + calculateTSS(t);
+            } catch {
+                return sum;
+            }
+        }, 0);
+
+        // Nazwa ostatniego treningu w danym dniu (jeśli był)
+        let trainingName = null;
+        if (trainings.length > 0) {
+            // Jeśli chcesz sprawdzić godzinę to tu można rozwinąć logikę
+            trainingName = trainings[trainings.length - 1].name;
+        }
+
+        ctl += (tss - ctl) / DAYS_CTL;
+        atl += (tss - atl) / DAYS_ATL;
         const tsb = ctl - atl;
-
         return {
-            date: training.date,
-            formattedDate: date(training.date).format("DD MMM YY"),
+            date: dayStr,
+            formattedDate: date(dayStr).format("DD MMM YY"),
             ctl: Number(ctl.toFixed(1)),
             atl: Number(atl.toFixed(1)),
             tsb: Number(tsb.toFixed(1)),
             tss,
+            trainingName, // Dodane pole
         };
     });
 
@@ -147,36 +185,54 @@ export function TrainingLoadChart({ trainings }: { trainings: Training[] }) {
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="formattedDate" tickLine={false} axisLine={false} />
                         <YAxis tickLine={false} axisLine={false} />
+                        {/* Gruba linia Y=0 */}
+                        <ReferenceLine
+                            y={0}
+                            stroke="#ffffff"
+                            strokeWidth={1}
+                            ifOverflow="extendDomain"
+                            isFront={false}
+                        />
                         <ChartTooltip
-                            content={({ active, payload }) => {
+                            content={({ active, payload, label }) => {
                                 if (!active || !payload?.length) return null;
+                                // Próbujemy znaleźć pełne dane punktu z wykresu (np. data, trainingName)
+                                const point = data.find(d => d.formattedDate === label);
 
                                 return (
-                                    <ChartTooltipContent
-                                        className="w-[300px]"
-                                        payload={payload
-                                            .filter(p => p.value !== null)
-                                            .map(p => {
-                                                const key = p.name as keyof typeof chartConfig;
-                                                const value = p.value;
-                                                let formattedValue = value;
-
-                                                if (key === "ctl") {
-                                                    formattedValue = `${Number(value).toFixed(1)}`;
-                                                } else if (key === "atl") {
-                                                    formattedValue = `${Number(value).toFixed(1)}`;
-                                                } else if (key === "tsb") {
-                                                    formattedValue = `${Number(value).toFixed(1)}`;
-                                                }
-
-                                                return {
-                                                    ...p,
-                                                    value: formattedValue,
-                                                    name: chartConfig[key].label,
-                                                };
-                                            })}
-                                        active={active}
-                                    />
+                                    <div className="w-[300px] p-3">
+                                        <div className="text-muted-foreground mb-1 text-xs">
+                                            {point?.date || label}
+                                        </div>
+                                        {point?.trainingName && (
+                                            <div className="mb-1 text-sm font-medium">
+                                                {point.trainingName}
+                                            </div>
+                                        )}
+                                        <ChartTooltipContent
+                                            className="w-full"
+                                            payload={payload
+                                                .filter(p => p.value !== null)
+                                                .map(p => {
+                                                    const key = p.name as keyof typeof chartConfig;
+                                                    const value = p.value;
+                                                    let formattedValue = value;
+                                                    if (
+                                                        key === "ctl" ||
+                                                        key === "atl" ||
+                                                        key === "tsb"
+                                                    ) {
+                                                        formattedValue = `${Number(value).toFixed(1)}`;
+                                                    }
+                                                    return {
+                                                        ...p,
+                                                        value: formattedValue,
+                                                        name: chartConfig[key].label,
+                                                    };
+                                                })}
+                                            active={active}
+                                        />
+                                    </div>
                                 );
                             }}
                         />

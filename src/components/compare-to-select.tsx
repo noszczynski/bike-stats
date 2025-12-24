@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-type CompareToType = "all" | "earlier" | "other";
+type CompareToType = "all" | "earlier" | "other" | "lastTwoMonths" | "thisQuarter";
 
 interface CompareToSelectProps {
     trainingDate: string;
@@ -49,6 +49,8 @@ export function CompareToSelect({ trainingDate }: CompareToSelectProps) {
                     <SelectItem value="other">Inne treningi</SelectItem>
                     <SelectItem value="earlier">Wcześniejsze treningi</SelectItem>
                     <SelectItem value="all">Wszystkie treningi</SelectItem>
+                    <SelectItem value="lastTwoMonths">Ostatnie dwa miesiące</SelectItem>
+                    <SelectItem value="thisQuarter">Ten kwartał</SelectItem>
                 </SelectContent>
             </Select>
         </div>
