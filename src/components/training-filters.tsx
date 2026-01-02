@@ -6,6 +6,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { DualRangeSlider } from "@/components/ui/dual-range-slider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { TrainingFilters } from "@/lib/api/trainings";
 import { debounce } from "lodash";
 import { Filter } from "lucide-react";
@@ -70,6 +77,28 @@ export function TrainingFiltersComponent({ filters, onFiltersChange }: TrainingF
             </CardHeader>
 
             <CardContent className="flex w-full flex-row flex-wrap gap-4 space-y-4">
+                {/* Activity Type */}
+                <div className="space-y-2">
+                    <Label className="text-xs font-medium">Typ aktywności</Label>
+                    <Select
+                        value={localFilters.type || "all"}
+                        onValueChange={value =>
+                            updateFilterImmediate("type", value === "all" ? undefined : value)
+                        }
+                    >
+                        <SelectTrigger className="h-8 w-[180px]">
+                            <SelectValue placeholder="Wszystkie typy" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Wszystkie typy</SelectItem>
+                            <SelectItem value="ride">Jazda</SelectItem>
+                            <SelectItem value="virtual_ride">Jazda wirtualna</SelectItem>
+                            <SelectItem value="gravel_ride">Gravel</SelectItem>
+                            <SelectItem value="mountain_bike_ride">MTB</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
                 <div>
                     <Label className="text-muted-foreground text-xs">Od</Label>
                     <Input

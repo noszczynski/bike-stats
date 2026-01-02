@@ -3,6 +3,8 @@ import { UpdateTrainingsButton } from "@/components/update-trainings-button";
 import { fetchTrainings } from "@/lib/api/trainings-client";
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
 
+import { TrainingsPageClient } from "./trainings-page-client";
+
 export default async function TrainingsPage() {
     // Create a new QueryClient for the server
     const queryClient = new QueryClient();
@@ -23,7 +25,7 @@ export default async function TrainingsPage() {
                 <UpdateTrainingsButton />
             </div>
             <HydrationBoundary state={dehydratedState}>
-                <TrainingCardsContainer />
+                <TrainingsPageClient />
             </HydrationBoundary>
         </div>
     );

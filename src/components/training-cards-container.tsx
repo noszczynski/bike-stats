@@ -2,11 +2,16 @@
 
 import { TrainingCards } from "@/components/training-card";
 import { useGetTrainings } from "@/hooks/use-get-trainings";
+import { TrainingFilters } from "@/lib/api/trainings";
 
 import { Skeleton } from "./ui/skeleton";
 
-export function TrainingCardsContainer() {
-    const { data } = useGetTrainings();
+interface TrainingCardsContainerProps {
+    filters?: TrainingFilters;
+}
+
+export function TrainingCardsContainer({ filters = {} }: TrainingCardsContainerProps) {
+    const { data } = useGetTrainings(filters);
 
     if (!data?.trainings) {
         return (
@@ -64,6 +69,8 @@ export function TrainingCardsContainer() {
 
 function Container({ children }: { children: React.ReactNode }) {
     return (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">{children}</div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {children}
+        </div>
     );
 }
