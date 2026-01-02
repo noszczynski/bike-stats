@@ -1,4 +1,4 @@
-import { TrainingOverview } from "@/components/training-overview";
+import { TrainingFitWizardWrapper } from "@/components/training-fit-wizard-wrapper";
 import { getAllTrainings, getTrainingById } from "@/lib/api/trainings";
 import date from "@/lib/date";
 import type { Metadata } from "next";
@@ -65,7 +65,7 @@ export default async function TrainingPage({ params, searchParams }: TrainingPag
 
     return (
         <div className="container py-8">
-            <TrainingOverview
+            <TrainingFitWizardWrapper
                 training={training}
                 compareTo={compareTo}
                 allTrainings={allTrainings.trainings}

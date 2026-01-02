@@ -185,6 +185,7 @@ export function useUploadFitFile() {
                 queryKey: ["heart-rate-zones-suggestion", trainingId],
             });
             queryClient.invalidateQueries({ queryKey: ["fit-file-exists", trainingId] });
+            queryClient.invalidateQueries({ queryKey: ["fit-status", trainingId] });
         },
     });
 }
