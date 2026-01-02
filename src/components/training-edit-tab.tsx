@@ -10,11 +10,11 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { useGenerateLaps } from "@/hooks/use-laps-mutations";
 import { useFitStatus, useLaps } from "@/hooks/use-laps-queries";
-import { useUpdateTraining } from "@/hooks/use-training-mutations";
+import { useRemoveFitData, useUpdateTraining } from "@/hooks/use-training-mutations";
 import { cn } from "@/lib/utils";
 import { Training } from "@/types/training";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Activity, Clock, Heart, MapPin, Zap } from "lucide-react";
+import { Activity, CheckCircle, Clock, FileText, Heart, MapPin, Trash2, XCircle, Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -87,6 +87,7 @@ export function TrainingEditTab({ training }: TrainingEditTabProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const updateTrainingMutation = useUpdateTraining();
     const generateLapsMutation = useGenerateLaps();
+    const removeFitDataMutation = useRemoveFitData();
 
     // Use TanStack Query hooks for laps data
     const { data: lapsData, isLoading: lapsLoading } = useLaps(training.id);
@@ -224,7 +225,7 @@ export function TrainingEditTab({ training }: TrainingEditTabProps) {
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
                         {/* Heart Rate Zones Section */}
-                        <Card>
+                        <Card id="heart-rate-zones-section">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <Heart className="h-5 w-5" />
@@ -324,7 +325,7 @@ export function TrainingEditTab({ training }: TrainingEditTabProps) {
                         </Card>
 
                         {/* Effort Level Section */}
-                        <Card>
+                        <Card id="effort-section">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <Zap className="h-5 w-5" />
@@ -530,6 +531,89 @@ export function TrainingEditTab({ training }: TrainingEditTabProps) {
                                     </div>
                                 )}
                             </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* FIT Data Management Section */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <FileText className="h-5 w-5" />
+                                Zarządzanie danymi .FIT
+                            </CardTitle>
+                            <CardDescription>
+                                Zarządzaj plikiem .FIT i danymi z treningu
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {fitStatusData?.fit_processed ? (
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-2 text-sm text-green-600">
+                                        <CheckCircle className="h-4 w-4" />
+                                        <span>Plik .FIT został przetworzony</span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                        <div className="flex items-center gap-2">
+                                            <Activity className="h-4 w-4 text-blue-500" />
+                                            <span>
+                                                Punkty GPS:{" "}
+                                                {fitStatusData.trackpoints_count.toLocaleString()}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <FileText className="h-4 w-4 text-purple-500" />
+                                            <span>Segmenty: {fitStatusData.laps_count}</span>
+                                        </div>
+                                    </div>
+                                    <Separator />
+                                    <div>
+                                        <Button
+                                            onClick={async () => {
+                                                if (
+                                                    confirm(
+                                                        "Czy na pewno chcesz usunąć dane .FIT? Ta operacja jest nieodwracalna.",
+                                                    )
+                                                ) {
+                                                    try {
+                                                        await removeFitDataMutation.mutateAsync(
+                                                            training.id,
+                                                        );
+                                                        toast.success(
+                                                            "Dane .FIT zostały pomyślnie usunięte!",
+                                                        );
+                                                        router.refresh();
+                                                    } catch (error) {
+                                                        const errorMessage =
+                                                            error instanceof Error
+                                                                ? error.message
+                                                                : "Nieznany błąd";
+                                                        toast.error(`Błąd: ${errorMessage}`);
+                                                    }
+                                                }
+                                            }}
+                                            disabled={removeFitDataMutation.isPending}
+                                            variant="destructive"
+                                            className="gap-2"
+                                        >
+                                            {removeFitDataMutation.isPending ? (
+                                                <>
+                                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                                    Usuwanie...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Trash2 className="h-4 w-4" />
+                                                    Usuń dane .FIT
+                                                </>
+                                            )}
+                                        </Button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-muted-foreground text-sm">
+                                    Brak przetworzonego pliku .FIT. Prześlij plik w zakładce "Analiza".
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </div>

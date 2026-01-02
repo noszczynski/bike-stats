@@ -169,56 +169,10 @@ export function FitUpload({ trainingId, onUploadSuccess }: FitUploadProps) {
         return `${km.toFixed(1)} km`;
     };
 
-    // If FIT is already processed, show status
+    // If FIT is already processed, return null (hidden)
+    // The delete option will be available in the Management tab
     if (fitStatus?.fit_processed) {
-        return (
-            <Card className="w-full">
-                <CardHeader className="flex flex-row justify-between">
-                    <div className="flex flex-col gap-2">
-                        <CardTitle className="flex items-center gap-2">
-                            <CheckCircle className="h-5 w-5 text-green-500" />
-                            Dane .FIT przetworzono
-                        </CardTitle>
-                        <CardDescription>
-                            Plik .FIT został już przetworzony dla tego treningu
-                        </CardDescription>
-                    </div>
-                    <div>
-                        <Button
-                            onClick={handleRemoveFitData}
-                            disabled={removeFitDataMutation.isPending}
-                            variant="destructive"
-                            size="sm"
-                            className="w-full"
-                        >
-                            {removeFitDataMutation.isPending ? (
-                                <>
-                                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                                    Usuwanie...
-                                </>
-                            ) : (
-                                <>
-                                    <XCircle className="mr-2 h-4 w-4" />
-                                    Usuń dane .FIT
-                                </>
-                            )}
-                        </Button>
-                    </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div className="flex items-center gap-2">
-                            <Activity className="h-4 w-4 text-blue-500" />
-                            <span>Punkty GPS: {fitStatus.trackpoints_count.toLocaleString()}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4 text-purple-500" />
-                            <span>Segmenty: {fitStatus.laps_count}</span>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-        );
+        return null;
     }
 
     return (

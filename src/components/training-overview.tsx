@@ -4,8 +4,15 @@ import React, { useState } from "react";
 import { HeartRateZonesChart } from "@/components/heart-rate-zones-chart";
 import { RideMap } from "@/components/ride-map";
 import { StatsCard } from "@/components/stats-card";
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { calculateTrainingLoad } from "@/features/training/calculate-training-load";
@@ -39,8 +46,10 @@ import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 
 import { FitCadenceChart } from "./charts/fit-cadence-chart";
+import { FitElevationChart } from "./charts/fit-elevation-chart";
 import { FitHeartRateChart } from "./charts/fit-heart-rate-chart";
 import { FitPowerChart } from "./charts/fit-power-chart";
+import { FitSpeedChart } from "./charts/fit-speed-chart";
 import { CompareToSelect } from "./compare-to-select";
 import { EffortLevelChart } from "./effort-level-chart";
 import { FitUpload } from "./fit-upload";
@@ -502,7 +511,52 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                             formatValue={val => val.toFixed(1)}
                         />
                     </div>
-                    <div className="flex flex-row gap-4">
+
+                    {/* Heart Rate Zones Section */}
+                    {training.heart_rate_zones && (
+                        <div className="mt-6">
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between">
+                                    <div>
+                                        <CardTitle>Strefy tętna</CardTitle>
+                                        <CardDescription>
+                                            Rozkład czasu w strefach tętna
+                                        </CardDescription>
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                            setActiveTab("management");
+                                            setTimeout(() => {
+                                                const hrZonesSection = document.getElementById(
+                                                    "heart-rate-zones-section",
+                                                );
+                                                if (hrZonesSection) {
+                                                    hrZonesSection.scrollIntoView({
+                                                        behavior: "smooth",
+                                                        block: "start",
+                                                    });
+                                                }
+                                            }, 100);
+                                        }}
+                                        className="gap-2"
+                                    >
+                                        <HeartPulseIcon className="h-4 w-4" />
+                                        Edytuj
+                                    </Button>
+                                </CardHeader>
+                                <CardContent className="px-0">
+                                    <HeartRateZonesChart
+                                        heartRateZones={training.heart_rate_zones as HeartRateZones}
+                                        hideCard={true}
+                                    />
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
+
+                    <div className="mt-6 flex flex-row gap-4">
                         {/* Ride Map */}
                         {typeof window !== "undefined" &&
                             training &&
@@ -516,129 +570,157 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                         )} */}
                     </div>
 
-                    {/* Personal Notes Section */}
-                    <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
-                        {/* AI-Generated Summary Section */}
-                        <div className="max-w-xl border-t pt-8">
-                            <h3 className="mb-4 text-xl font-semibold">Podsumowanie AI</h3>
-                            <div className="space-y-4">
-                                {training.summary ? (
-                                    <div className="max-w-none">
-                                        <ReactMarkdown
-                                            components={{
-                                                h2: ({ children }) => (
-                                                    <h2 className="mb-4 text-2xl font-bold">
-                                                        {children}
-                                                    </h2>
-                                                ),
-                                                h3: ({ children }) => (
-                                                    <h3 className="mt-6 mb-3 text-xl font-semibold">
-                                                        {children}
-                                                    </h3>
-                                                ),
-                                                p: ({ children }) => (
-                                                    <p className="mb-4 leading-relaxed">
-                                                        {children}
+                    {/* Notes and Summary Section */}
+                    <div className="mt-8">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Notatki i podsumowanie</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <Accordion
+                                    type="multiple"
+                                    defaultValue={["summary", "notes"]}
+                                    className="w-full"
+                                >
+                                    <AccordionItem value="summary">
+                                        <AccordionTrigger>
+                                            <h3 className="text-lg font-semibold">
+                                                Podsumowanie AI
+                                            </h3>
+                                        </AccordionTrigger>
+                                        <AccordionContent>
+                                            <div className="space-y-4">
+                                                {training.summary ? (
+                                                    <div className="max-w-none">
+                                                        <ReactMarkdown
+                                                            components={{
+                                                                h2: ({ children }) => (
+                                                                    <h2 className="mb-4 text-2xl font-bold">
+                                                                        {children}
+                                                                    </h2>
+                                                                ),
+                                                                h3: ({ children }) => (
+                                                                    <h3 className="mt-6 mb-3 text-xl font-semibold">
+                                                                        {children}
+                                                                    </h3>
+                                                                ),
+                                                                p: ({ children }) => (
+                                                                    <p className="mb-4 leading-relaxed">
+                                                                        {children}
+                                                                    </p>
+                                                                ),
+                                                                ul: ({ children }) => (
+                                                                    <ul className="mb-4 space-y-1 pl-6">
+                                                                        {children}
+                                                                    </ul>
+                                                                ),
+                                                                li: ({ children }) => (
+                                                                    <li className="ml-2 list-disc">
+                                                                        {children}
+                                                                    </li>
+                                                                ),
+                                                                strong: ({ children }) => (
+                                                                    <strong className="font-semibold">
+                                                                        {children}
+                                                                    </strong>
+                                                                ),
+                                                                em: ({ children }) => (
+                                                                    <em className="italic">
+                                                                        {children}
+                                                                    </em>
+                                                                ),
+                                                            }}
+                                                        >
+                                                            {training.summary}
+                                                        </ReactMarkdown>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-muted-foreground">
+                                                        Brak podsumowania treningu.
                                                     </p>
-                                                ),
-                                                ul: ({ children }) => (
-                                                    <ul className="mb-4 space-y-1 pl-6">
-                                                        {children}
-                                                    </ul>
-                                                ),
-                                                li: ({ children }) => (
-                                                    <li className="ml-2 list-disc">{children}</li>
-                                                ),
-                                                strong: ({ children }) => (
-                                                    <strong className="font-semibold">
-                                                        {children}
-                                                    </strong>
-                                                ),
-                                                em: ({ children }) => (
-                                                    <em className="italic">{children}</em>
-                                                ),
-                                            }}
-                                        >
-                                            {training.summary}
-                                        </ReactMarkdown>
-                                    </div>
-                                ) : (
-                                    <p className="text-muted-foreground">
-                                        Brak podsumowania treningu.
-                                    </p>
-                                )}
+                                                )}
 
-                                <div className="mt-4 flex justify-end">
-                                    <Button
-                                        onClick={handleGenerateClick}
-                                        disabled={isGenerating}
-                                        className="gap-2"
-                                    >
-                                        {isGenerating ? (
-                                            <>
-                                                <Loader2 className="h-4 w-4 animate-spin" />
-                                                Generowanie...
-                                            </>
-                                        ) : training.summary ? (
-                                            <>
-                                                <SparklesIcon size={16} />
-                                                Wygeneruj ponownie
-                                            </>
-                                        ) : (
-                                            <>
-                                                <SparklesIcon size={16} />
-                                                Generuj podsumowanie
-                                            </>
-                                        )}
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
+                                                <div className="mt-4 flex justify-end">
+                                                    <Button
+                                                        onClick={handleGenerateClick}
+                                                        disabled={isGenerating}
+                                                        className="gap-2"
+                                                    >
+                                                        {isGenerating ? (
+                                                            <>
+                                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                                Generowanie...
+                                                            </>
+                                                        ) : training.summary ? (
+                                                            <>
+                                                                <SparklesIcon size={16} />
+                                                                Wygeneruj ponownie
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <SparklesIcon size={16} />
+                                                                Generuj podsumowanie
+                                                            </>
+                                                        )}
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </AccordionContent>
+                                    </AccordionItem>
 
-                        <div className="border-t pt-8">
-                            <h3 className="mb-4 text-xl font-semibold">Notatki osobiste</h3>
-                            <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <Textarea
-                                        value={notes}
-                                        onChange={e => setNotes(e.target.value)}
-                                        placeholder="Dodaj swoje notatki o tym treningu..."
-                                        className="min-h-32 w-full"
-                                        maxLength={2048}
-                                    />
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-muted-foreground text-sm">
-                                            {notes.length}/2048 znaków
-                                        </p>
-                                        <Button
-                                            onClick={async () => {
-                                                updateNotesMutation.mutate({
-                                                    trainingId: training.id,
-                                                    notes,
-                                                });
-                                            }}
-                                            disabled={
-                                                updateNotesMutation.isPending ||
-                                                notes === training.notes
-                                            }
-                                            className="gap-2"
-                                        >
-                                            {updateNotesMutation.isPending ? (
-                                                <>
-                                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                                    Zapisywanie...
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Save className="h-4 w-4" />
-                                                    Zapisz
-                                                </>
-                                            )}
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                                    <AccordionItem value="notes">
+                                        <AccordionTrigger>
+                                            <h3 className="text-lg font-semibold">
+                                                Notatki osobiste
+                                            </h3>
+                                        </AccordionTrigger>
+                                        <AccordionContent>
+                                            <div className="space-y-4">
+                                                <div className="space-y-2">
+                                                    <Textarea
+                                                        value={notes}
+                                                        onChange={e => setNotes(e.target.value)}
+                                                        placeholder="Dodaj swoje notatki o tym treningu..."
+                                                        className="min-h-32 w-full"
+                                                        maxLength={2048}
+                                                    />
+                                                    <div className="flex items-center justify-between">
+                                                        <p className="text-muted-foreground text-sm">
+                                                            {notes.length}/2048 znaków
+                                                        </p>
+                                                        <Button
+                                                            onClick={async () => {
+                                                                updateNotesMutation.mutate({
+                                                                    trainingId: training.id,
+                                                                    notes,
+                                                                });
+                                                            }}
+                                                            disabled={
+                                                                updateNotesMutation.isPending ||
+                                                                notes === training.notes
+                                                            }
+                                                            className="gap-2"
+                                                        >
+                                                            {updateNotesMutation.isPending ? (
+                                                                <>
+                                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                                    Zapisywanie...
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <Save className="h-4 w-4" />
+                                                                    Zapisz
+                                                                </>
+                                                            )}
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                </Accordion>
+                            </CardContent>
+                        </Card>
                     </div>
                 </TabsContent>
 
@@ -660,6 +742,16 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                                 </div>
                             </div>
 
+                            {/* Speed and Elevation Charts */}
+                            <div className="mt-6 grid w-full grid-cols-1 items-stretch gap-4 md:grid-cols-2">
+                                <div className="w-full">
+                                    <FitSpeedChart trainingId={training.id} />
+                                </div>
+                                <div className="w-full">
+                                    <FitElevationChart trainingId={training.id} />
+                                </div>
+                            </div>
+
                             {/* Power and Cadence Charts */}
                             <div className="mt-6 grid w-full grid-cols-1 items-stretch gap-4 md:grid-cols-2">
                                 <div className="w-full">
@@ -671,116 +763,167 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                             </div>
                         </div>
 
+                        {/* Effort Section */}
                         <div className="border-t pt-6">
-                            <h3 className="mb-4 text-lg font-semibold">Metryki wydajności</h3>
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                                <StatsCard
-                                    title="Średnia prędkość"
-                                    value={training.avg_speed_kmh}
-                                    unit="km/h"
-                                    trend={formatTrend(speedDiff)}
-                                    trendIcon={getTrendIcon(speedDiff, "speed")}
-                                    trendMessage={getTrendMessage(speedDiff, "speed")}
-                                    trendProgress={getTrendProgress(speedDiff, "speed")}
-                                    infoText={`Wyższa średnia prędkość wskazuje na poprawę wydolności. Twoja średnia prędkość wynosi: ${avgSpeedPast.toFixed(1)} km/h`}
-                                    formatValue={val => val.toFixed(1)}
-                                />
-                                <StatsCard
-                                    title="Maksymalna prędkość"
-                                    value={training.max_speed_kmh}
-                                    unit="km/h"
-                                    trend={formatTrend(maxSpeedDiff)}
-                                    trendIcon={getTrendIcon(maxSpeedDiff, "maxSpeed")}
-                                    trendMessage={getTrendMessage(maxSpeedDiff, "maxSpeed")}
-                                    trendProgress={getTrendProgress(maxSpeedDiff, "maxSpeed")}
-                                    infoText={`Wzrost maksymalnej prędkości może świadczyć o lepszej mocy. Twoja średnia maksymalna prędkość wynosi: ${avgMaxSpeedPast.toFixed(1)} km/h`}
-                                    formatValue={val => val.toFixed(1)}
-                                />
-                                <StatsCard
-                                    title="Czas jazdy"
-                                    value={`${lastHours > 0 ? `${lastHours} h ` : ""}${lastHours > 0 ? lastMinutes.toString().padStart(2, "0") : lastMinutes.toString()} min`}
-                                    unit=""
-                                    trend={formatTrend(timeDiff)}
-                                    trendIcon={getTrendIcon(timeDiff, "time")}
-                                    trendMessage={getTrendMessage(timeDiff, "time")}
-                                    trendProgress={getTrendProgress(timeDiff, "time")}
-                                    infoText={`Dłuższy czas jazdy buduje podstawową wytrzymałość. Twój średni czas jazdy wynosi: ${formatMinutes(avgTimePast * 60)}`}
-                                />
-                                <StatsCard
-                                    title="Czas na kilometr"
-                                    value={lastTimePerKm * 60}
-                                    unit="min/km"
-                                    trend={formatTrend(timePerKmDiff)}
-                                    trendIcon={getTrendIcon(timePerKmDiff, "timePerKm")}
-                                    trendMessage={getTrendMessage(timePerKmDiff, "timePerKm")}
-                                    trendProgress={getTrendProgress(timePerKmDiff, "timePerKm")}
-                                    infoText={`Niższy czas na kilometr oznacza większą efektywność. Twój średni czas na kilometr wynosi: ${(avgTimePerKmPast * 60).toFixed(1)} min/km`}
-                                    formatValue={val => val.toFixed(1)}
-                                />
-                                {!isNil(training.avg_heart_rate_bpm) &&
-                                    training.avg_heart_rate_bpm > 0 && (
-                                        <StatsCard
-                                            title="Średnie tętno"
-                                            value={training.avg_heart_rate_bpm || 0}
-                                            unit="bpm"
-                                            trend={formatTrend(heartRateDiff)}
-                                            trendIcon={getTrendIcon(heartRateDiff, "heartRate")}
-                                            trendMessage={getTrendMessage(
-                                                heartRateDiff,
-                                                "heartRate",
-                                            )}
-                                            trendProgress={getTrendProgress(
-                                                heartRateDiff,
-                                                "heartRate",
-                                            )}
-                                            infoText={`Niższe tętno przy podobnym wysiłku oznacza lepszą wydolność sercowo-naczyniową. Twoje średnie tętno wynosi: ${avgHeartRatePast.toFixed(0)} bpm`}
-                                            formatValue={val => val.toFixed(0)}
-                                        />
-                                    )}
-                                <StatsCard
-                                    title="Przewyższenie"
-                                    value={training.elevation_gain_m}
-                                    unit="m"
-                                    trend={formatTrend(elevationDiff)}
-                                    trendIcon={getTrendIcon(elevationDiff, "elevation")}
-                                    trendMessage={getTrendMessage(elevationDiff, "elevation")}
-                                    trendProgress={getTrendProgress(elevationDiff, "elevation")}
-                                    infoText={`Większe przewyższenie to wyższy poziom trudności. Twoje średnie przewyższenie wynosi: ${avgElevationPast.toFixed(0)} m`}
-                                    formatValue={val => val.toFixed(0)}
-                                />
-
-                                {avgPower !== null && maxPower !== null && (
-                                    <StatsCard
-                                        title="Średnia moc"
-                                        value={avgPower}
-                                        unit="W"
-                                        infoText={`Moc średnia z treningu. Maksymalna moc: ${maxPower.toFixed(0)} W`}
-                                        formatValue={val => val.toFixed(0)}
-                                    />
-                                )}
-
-                                {avgCadence !== null && maxCadence !== null && (
-                                    <StatsCard
-                                        title="Średnia kadencja"
-                                        value={avgCadence}
-                                        unit="RPM"
-                                        infoText={`Kadencja średnia z treningu. Maksymalna kadencja: ${maxCadence.toFixed(0)} RPM`}
-                                        formatValue={val => val.toFixed(0)}
-                                    />
-                                )}
-
-                                <EffortLevelChart effort={training.effort ?? 0} />
-
-                                {training.heart_rate_zones && (
-                                    <div className="col-span-2">
-                                        <HeartRateZonesChart
-                                            heartRateZones={
-                                                training.heart_rate_zones as HeartRateZones
+                            <div className="mb-4 flex items-center justify-between">
+                                <h3 className="text-lg font-semibold">Wysiłek</h3>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        setActiveTab("management");
+                                        // Scroll to effort section after tab change
+                                        setTimeout(() => {
+                                            const effortSection =
+                                                document.getElementById("effort-section");
+                                            if (effortSection) {
+                                                effortSection.scrollIntoView({
+                                                    behavior: "smooth",
+                                                    block: "start",
+                                                });
                                             }
-                                        />
-                                    </div>
-                                )}
+                                        }, 100);
+                                    }}
+                                    className="gap-2"
+                                >
+                                    <ZapIcon className="h-4 w-4" />
+                                    Edytuj wysiłek
+                                </Button>
                             </div>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                <EffortLevelChart effort={training.effort ?? 0} />
+                            </div>
+                        </div>
+
+                        <div className="border-t pt-6">
+                            <Accordion type="single" collapsible className="w-full">
+                                <AccordionItem value="performance-metrics">
+                                    <AccordionTrigger>
+                                        <h3 className="text-lg font-semibold">
+                                            Metryki wydajności
+                                        </h3>
+                                    </AccordionTrigger>
+                                    <AccordionContent>
+                                        <div className="grid grid-cols-1 gap-4 pt-4 md:grid-cols-2 lg:grid-cols-3">
+                                            <StatsCard
+                                                title="Średnia prędkość"
+                                                value={training.avg_speed_kmh}
+                                                unit="km/h"
+                                                trend={formatTrend(speedDiff)}
+                                                trendIcon={getTrendIcon(speedDiff, "speed")}
+                                                trendMessage={getTrendMessage(speedDiff, "speed")}
+                                                trendProgress={getTrendProgress(speedDiff, "speed")}
+                                                infoText={`Wyższa średnia prędkość wskazuje na poprawę wydolności. Twoja średnia prędkość wynosi: ${avgSpeedPast.toFixed(1)} km/h`}
+                                                formatValue={val => val.toFixed(1)}
+                                            />
+                                            <StatsCard
+                                                title="Maksymalna prędkość"
+                                                value={training.max_speed_kmh}
+                                                unit="km/h"
+                                                trend={formatTrend(maxSpeedDiff)}
+                                                trendIcon={getTrendIcon(maxSpeedDiff, "maxSpeed")}
+                                                trendMessage={getTrendMessage(
+                                                    maxSpeedDiff,
+                                                    "maxSpeed",
+                                                )}
+                                                trendProgress={getTrendProgress(
+                                                    maxSpeedDiff,
+                                                    "maxSpeed",
+                                                )}
+                                                infoText={`Wzrost maksymalnej prędkości może świadczyć o lepszej mocy. Twoja średnia maksymalna prędkość wynosi: ${avgMaxSpeedPast.toFixed(1)} km/h`}
+                                                formatValue={val => val.toFixed(1)}
+                                            />
+                                            <StatsCard
+                                                title="Czas jazdy"
+                                                value={`${lastHours > 0 ? `${lastHours} h ` : ""}${lastHours > 0 ? lastMinutes.toString().padStart(2, "0") : lastMinutes.toString()} min`}
+                                                unit=""
+                                                trend={formatTrend(timeDiff)}
+                                                trendIcon={getTrendIcon(timeDiff, "time")}
+                                                trendMessage={getTrendMessage(timeDiff, "time")}
+                                                trendProgress={getTrendProgress(timeDiff, "time")}
+                                                infoText={`Dłuższy czas jazdy buduje podstawową wytrzymałość. Twój średni czas jazdy wynosi: ${formatMinutes(avgTimePast * 60)}`}
+                                            />
+                                            <StatsCard
+                                                title="Czas na kilometr"
+                                                value={lastTimePerKm * 60}
+                                                unit="min/km"
+                                                trend={formatTrend(timePerKmDiff)}
+                                                trendIcon={getTrendIcon(timePerKmDiff, "timePerKm")}
+                                                trendMessage={getTrendMessage(
+                                                    timePerKmDiff,
+                                                    "timePerKm",
+                                                )}
+                                                trendProgress={getTrendProgress(
+                                                    timePerKmDiff,
+                                                    "timePerKm",
+                                                )}
+                                                infoText={`Niższy czas na kilometr oznacza większą efektywność. Twój średni czas na kilometr wynosi: ${(avgTimePerKmPast * 60).toFixed(1)} min/km`}
+                                                formatValue={val => val.toFixed(1)}
+                                            />
+                                            {!isNil(training.avg_heart_rate_bpm) &&
+                                                training.avg_heart_rate_bpm > 0 && (
+                                                    <StatsCard
+                                                        title="Średnie tętno"
+                                                        value={training.avg_heart_rate_bpm || 0}
+                                                        unit="bpm"
+                                                        trend={formatTrend(heartRateDiff)}
+                                                        trendIcon={getTrendIcon(
+                                                            heartRateDiff,
+                                                            "heartRate",
+                                                        )}
+                                                        trendMessage={getTrendMessage(
+                                                            heartRateDiff,
+                                                            "heartRate",
+                                                        )}
+                                                        trendProgress={getTrendProgress(
+                                                            heartRateDiff,
+                                                            "heartRate",
+                                                        )}
+                                                        infoText={`Niższe tętno przy podobnym wysiłku oznacza lepszą wydolność sercowo-naczyniową. Twoje średnie tętno wynosi: ${avgHeartRatePast.toFixed(0)} bpm`}
+                                                        formatValue={val => val.toFixed(0)}
+                                                    />
+                                                )}
+                                            <StatsCard
+                                                title="Przewyższenie"
+                                                value={training.elevation_gain_m}
+                                                unit="m"
+                                                trend={formatTrend(elevationDiff)}
+                                                trendIcon={getTrendIcon(elevationDiff, "elevation")}
+                                                trendMessage={getTrendMessage(
+                                                    elevationDiff,
+                                                    "elevation",
+                                                )}
+                                                trendProgress={getTrendProgress(
+                                                    elevationDiff,
+                                                    "elevation",
+                                                )}
+                                                infoText={`Większe przewyższenie to wyższy poziom trudności. Twoje średnie przewyższenie wynosi: ${avgElevationPast.toFixed(0)} m`}
+                                                formatValue={val => val.toFixed(0)}
+                                            />
+
+                                            {avgPower !== null && maxPower !== null && (
+                                                <StatsCard
+                                                    title="Średnia moc"
+                                                    value={avgPower}
+                                                    unit="W"
+                                                    infoText={`Moc średnia z treningu. Maksymalna moc: ${maxPower.toFixed(0)} W`}
+                                                    formatValue={val => val.toFixed(0)}
+                                                />
+                                            )}
+
+                                            {avgCadence !== null && maxCadence !== null && (
+                                                <StatsCard
+                                                    title="Średnia kadencja"
+                                                    value={avgCadence}
+                                                    unit="RPM"
+                                                    infoText={`Kadencja średnia z treningu. Maksymalna kadencja: ${maxCadence.toFixed(0)} RPM`}
+                                                    formatValue={val => val.toFixed(0)}
+                                                />
+                                            )}
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            </Accordion>
                         </div>
                     </div>
                 </TabsContent>
