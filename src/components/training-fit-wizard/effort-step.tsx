@@ -90,3 +90,4 @@ export function EffortStep({ trainingId, training, onComplete }: EffortStepProps
     );
 }
 
+

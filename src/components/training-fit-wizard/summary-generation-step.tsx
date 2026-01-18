@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useGenerateDescription } from "@/hooks/use-training-mutations";
 import { Training } from "@/types/training";
 import { Loader2, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -17,14 +17,11 @@ export function SummaryGenerationStep({
     trainingId,
     training,
 }: SummaryGenerationStepProps) {
-    const [isGenerating, setIsGenerating] = useState(false);
-    const generateDescriptionMutation = useGenerateDescription();
     const router = useRouter();
-
-    const handleGenerate = useCallback(async () => {
-        setIsGenerating(true);
-        try {
-            await generateDescriptionMutation.mutateAsync(trainingId);
+    const hasTriggered = useRef(false);
+    
+    const { mutate: generateDescription, isPending } = useGenerateDescription({
+        onSuccess: () => {
             toast.success("Podsumowanie zostało wygenerowane");
             
             // Wait a bit before redirecting to allow user to see success message
@@ -32,20 +29,23 @@ export function SummaryGenerationStep({
                 router.push(`/trainings/${trainingId}`);
                 router.refresh();
             }, 1500);
-        } catch (error) {
+        },
+        onError: (error) => {
             toast.error(
                 error instanceof Error
                     ? error.message
                     : "Nie udało się wygenerować podsumowania",
             );
-            setIsGenerating(false);
-        }
-    }, [trainingId, generateDescriptionMutation, router]);
+        },
+    });
 
     useEffect(() => {
-        // Auto-generate summary when component mounts
-        handleGenerate();
-    }, [handleGenerate]);
+        // Auto-generate summary when component mounts (only once)
+        if (!hasTriggered.current) {
+            hasTriggered.current = true;
+            generateDescription(trainingId);
+        }
+    }, [trainingId, generateDescription]);
 
     return (
         <div className="space-y-6">
@@ -57,7 +57,7 @@ export function SummaryGenerationStep({
                 </p>
             </div>
 
-            {isGenerating ? (
+            {isPending ? (
                 <div className="flex flex-col items-center justify-center gap-4 py-8">
                     <Loader2 className="h-12 w-12 animate-spin text-primary" />
                     <p className="text-sm text-muted-foreground">Generowanie podsumowania...</p>
@@ -71,7 +71,7 @@ export function SummaryGenerationStep({
                 </div>
             )}
 
-            {!isGenerating && (
+            {!isPending && (
                 <div className="flex justify-end">
                     <Button onClick={() => router.push(`/trainings/${trainingId}`)}>
                         Przejdź do treningu

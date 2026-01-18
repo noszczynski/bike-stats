@@ -189,3 +189,4 @@ export function LapsValidationStep({ trainingId, onComplete }: LapsValidationSte
     );
 }
 
+

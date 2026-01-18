@@ -78,3 +78,4 @@ export function NotesStep({ trainingId, training, onComplete }: NotesStepProps) 
     );
 }
 
+

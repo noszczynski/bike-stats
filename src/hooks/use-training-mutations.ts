@@ -200,15 +200,20 @@ export function useCheckFitFileExists(trainingId: string) {
     });
 }
 
-export function useGenerateDescription() {
+export function useGenerateDescription(options: MutationOptions<GenerateDescriptionResponse, Error, string> = {}) {
     const queryClient = useQueryClient();
 
     return useMutation({
+        ...options,
         mutationFn: generateDescription,
-        onSuccess: (_, trainingId) => {
+        onSuccess: (data, trainingId, context) => {
+            options.onSuccess?.(data, trainingId, context);
             // Invalidate training to trigger refetch with new description
             queryClient.invalidateQueries({ queryKey: ["training", trainingId] });
             queryClient.invalidateQueries({ queryKey: ["trainings"] });
+        },
+        onError: (error, trainingId, context) => {
+            options.onError?.(error, trainingId, context);
         },
     });
 }
