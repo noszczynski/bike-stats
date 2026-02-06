@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import {
     Card,
     CardContent,
@@ -8,6 +9,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
+import { ChartExportActions } from "@/components/charts/chart-export-actions";
 import {
     ChartContainer,
     ChartLegend,
@@ -32,6 +34,7 @@ const chartConfig = {
 };
 
 export function TrainingFrequencyChart({ trainings }: { trainings: Training[] }) {
+    const chartRef = React.useRef<HTMLDivElement>(null);
     // Sort trainings by date
     const sortedTrainings = [...trainings].sort(
         (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
@@ -113,16 +116,24 @@ export function TrainingFrequencyChart({ trainings }: { trainings: Training[] })
 
     return (
         <Card>
-            <CardHeader>
-                <CardTitle>Częstotliwość treningów</CardTitle>
-                <CardDescription>Liczba treningów w czasie - tygodnie i miesiące</CardDescription>
+            <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div className="space-y-1">
+                    <CardTitle>Częstotliwość treningów</CardTitle>
+                    <CardDescription>
+                        Liczba treningów w czasie - tygodnie i miesiące
+                    </CardDescription>
+                </div>
+                <ChartExportActions
+                    targetRef={chartRef}
+                    fileName="czestotliwosc-treningow"
+                />
             </CardHeader>
             <CardContent>
-                <div className="space-y-8">
+                <div ref={chartRef} className="space-y-8">
                     {/* Weekly chart */}
                     <div>
                         <h4 className="mb-4 text-sm font-medium">Treningi tygodniowo</h4>
-                        <ChartContainer config={chartConfig} className="aspect-auto h-60">
+                        <ChartContainer config={chartConfig} className="aspect-[4/3] w-full">
                             <BarChart
                                 data={weeklyChartData}
                                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
@@ -158,7 +169,7 @@ export function TrainingFrequencyChart({ trainings }: { trainings: Training[] })
                     {/* Monthly chart */}
                     <div>
                         <h4 className="mb-4 text-sm font-medium">Treningi miesięcznie</h4>
-                        <ChartContainer config={chartConfig} className="aspect-auto h-60">
+                        <ChartContainer config={chartConfig} className="aspect-[4/3] w-full">
                             <LineChart
                                 data={monthlyChartData}
                                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }}

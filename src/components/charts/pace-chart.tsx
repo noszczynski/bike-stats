@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import {
     Card,
     CardContent,
@@ -8,6 +9,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
+import { ChartExportActions } from "@/components/charts/chart-export-actions";
 import {
     ChartContainer,
     ChartLegend,
@@ -43,6 +45,7 @@ function secondsToMinutesFormat(totalSeconds: number): string {
 }
 
 export function PaceChart({ trainings }: { trainings: Training[] }) {
+    const chartRef = React.useRef<HTMLDivElement>(null);
     // Filter out trainings with no distance or time data and sort by date
     const sortedTrainings = [...trainings]
         .filter(t => t.distance_km > 0 && t.moving_time)
@@ -104,12 +107,16 @@ export function PaceChart({ trainings }: { trainings: Training[] }) {
 
     return (
         <Card>
-            <CardHeader>
-                <CardTitle>Tempo</CardTitle>
-                <CardDescription>Średnia krocząca tempa (min/km)</CardDescription>
+            <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div className="space-y-1">
+                    <CardTitle>Tempo</CardTitle>
+                    <CardDescription>Średnia krocząca tempa (min/km)</CardDescription>
+                </div>
+                <ChartExportActions targetRef={chartRef} fileName="tempo-w-czasie" />
             </CardHeader>
             <CardContent>
-                <ChartContainer config={chartConfig} className="aspect-auto h-80">
+                <div ref={chartRef} className="w-full">
+                    <ChartContainer config={chartConfig} className="aspect-[4/3] w-full">
                     <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="formattedDate" tickLine={false} axisLine={false} />
@@ -161,7 +168,8 @@ export function PaceChart({ trainings }: { trainings: Training[] }) {
                             }}
                         />
                     </AreaChart>
-                </ChartContainer>
+                    </ChartContainer>
+                </div>
             </CardContent>
             <CardFooter className="flex-col items-start gap-2 text-sm">
                 <div className="flex gap-2 leading-none font-medium">

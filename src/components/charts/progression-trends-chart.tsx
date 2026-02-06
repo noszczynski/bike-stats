@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import {
     Card,
     CardContent,
@@ -8,6 +9,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
+import { ChartExportActions } from "@/components/charts/chart-export-actions";
 import {
     ChartContainer,
     ChartLegend,
@@ -37,6 +39,10 @@ const chartConfig = {
         label: "Średnie tętno (bpm)",
         color: "#ef4444",
     },
+    power: {
+        label: "Średnia moc (W)",
+        color: "#8b5cf6",
+    },
 };
 
 // Calculate moving average
@@ -51,7 +57,28 @@ function calculateMovingAverage(data: number[], windowSize: number = 5): number[
     return result;
 }
 
+function calculateNullableMovingAverage(
+    data: Array<number | null | undefined>,
+    windowSize: number = 5,
+): Array<number | null> {
+    const result: Array<number | null> = [];
+    for (let i = 0; i < data.length; i++) {
+        const start = Math.max(0, i - windowSize + 1);
+        const window = data.slice(start, i + 1).filter((value): value is number => {
+            return value !== null && value !== undefined;
+        });
+        if (window.length === 0) {
+            result.push(null);
+            continue;
+        }
+        const avg = window.reduce((sum, val) => sum + val, 0) / window.length;
+        result.push(avg);
+    }
+    return result;
+}
+
 export function ProgressionTrendsChart({ trainings }: { trainings: Training[] }) {
+    const chartRef = React.useRef<HTMLDivElement>(null);
     // Sort trainings by date
     const sortedTrainings = [...trainings].sort(
         (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
@@ -61,6 +88,7 @@ export function ProgressionTrendsChart({ trainings }: { trainings: Training[] })
     const speeds = sortedTrainings.map(t => t.avg_speed_kmh);
     const distances = sortedTrainings.map(t => t.distance_km);
     const elevations = sortedTrainings.map(t => t.elevation_gain_m);
+    const powers = sortedTrainings.map(t => t.avg_power_watts ?? null);
     const heartRates = sortedTrainings
         .map(t => t.avg_heart_rate_bpm)
         .filter((hr): hr is number => hr !== null && hr !== undefined);
@@ -69,6 +97,7 @@ export function ProgressionTrendsChart({ trainings }: { trainings: Training[] })
     const speedMA = calculateMovingAverage(speeds, 5);
     const distanceMA = calculateMovingAverage(distances, 5);
     const elevationMA = calculateMovingAverage(elevations, 5);
+    const powerMA = calculateNullableMovingAverage(powers, 5);
 
     // For heart rate, calculate MA only for trainings with HR data
     const hrIndices: number[] = [];
@@ -84,6 +113,7 @@ export function ProgressionTrendsChart({ trainings }: { trainings: Training[] })
             distance: Number(distanceMA[index].toFixed(1)),
             elevation: Number(elevationMA[index].toFixed(0)),
             heartRate: training.avg_heart_rate_bpm || null,
+            power: powerMA[index] !== null ? Number(powerMA[index].toFixed(0)) : null,
         };
     });
 
@@ -108,14 +138,18 @@ export function ProgressionTrendsChart({ trainings }: { trainings: Training[] })
 
     return (
         <Card>
-            <CardHeader>
-                <CardTitle>Progresja i trendy</CardTitle>
-                <CardDescription>
-                    Średnie kroczące (5 treningów) - śledź swoją poprawę w czasie
-                </CardDescription>
+            <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div className="space-y-1">
+                    <CardTitle>Progresja i trendy</CardTitle>
+                    <CardDescription>
+                        Średnie kroczące (5 treningów) - śledź swoją poprawę w czasie
+                    </CardDescription>
+                </div>
+                <ChartExportActions targetRef={chartRef} fileName="progresja-i-trendy" />
             </CardHeader>
             <CardContent>
-                <ChartContainer config={chartConfig} className="aspect-auto h-80">
+                <div ref={chartRef} className="w-full">
+                    <ChartContainer config={chartConfig} className="aspect-[4/3] w-full">
                     <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="formattedDate" tickLine={false} axisLine={false} />
@@ -153,6 +187,8 @@ export function ProgressionTrendsChart({ trainings }: { trainings: Training[] })
                                                     formattedValue = `${Number(value).toFixed(0)} m`;
                                                 } else if (key === "heartRate") {
                                                     formattedValue = `${Number(value).toFixed(0)} bpm`;
+                                                } else if (key === "power") {
+                                                    formattedValue = `${Number(value).toFixed(0)} W`;
                                                 }
 
                                                 return {
@@ -205,6 +241,18 @@ export function ProgressionTrendsChart({ trainings }: { trainings: Training[] })
                                 connectNulls
                             />
                         )}
+                        {powerMA.some(value => value !== null) && (
+                            <Line
+                                name="power"
+                                type="monotone"
+                                dataKey="power"
+                                yAxisId="right"
+                                stroke={chartConfig.power.color}
+                                strokeWidth={2}
+                                dot={false}
+                                connectNulls
+                            />
+                        )}
                         <ChartLegend
                             content={({ payload }) => {
                                 if (payload && payload.length) {
@@ -215,7 +263,8 @@ export function ProgressionTrendsChart({ trainings }: { trainings: Training[] })
                             }}
                         />
                     </LineChart>
-                </ChartContainer>
+                    </ChartContainer>
+                </div>
             </CardContent>
             <CardFooter className="flex-col items-start gap-2 text-sm">
                 <div className="flex gap-2 leading-none font-medium">

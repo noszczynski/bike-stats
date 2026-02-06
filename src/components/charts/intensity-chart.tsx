@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import {
     Card,
     CardContent,
@@ -8,6 +9,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
+import { ChartExportActions } from "@/components/charts/chart-export-actions";
 import {
     ChartContainer,
     ChartLegend,
@@ -29,6 +31,7 @@ const chartConfig = {
 };
 
 export function IntensityChart({ trainings }: { trainings: Training[] }) {
+    const chartRef = React.useRef<HTMLDivElement>(null);
     // Sort trainings by date
     const sortedTrainings = [...trainings].sort(
         (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
@@ -77,37 +80,43 @@ export function IntensityChart({ trainings }: { trainings: Training[] }) {
 
     return (
         <Card>
-            <CardHeader>
-                <div className="flex items-center gap-2">
-                    <CardTitle>Intensywność treningu</CardTitle>
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger>
-                                <InfoIcon className="text-muted-foreground h-4 w-4" />
-                            </TooltipTrigger>
-                            <TooltipContent className="w-[300px]">
-                                <p>
-                                    Wskaźnik intensywności treningów (0-100) jest obliczany na
-                                    podstawie:
-                                </p>
-                                <ul className="mt-2 list-disc pl-4">
-                                    <li>Dystansu (30%)</li>
-                                    <li>Prędkości (30%)</li>
-                                    <li>Tętna (20%)</li>
-                                    <li>Przewyższenia (20%)</li>
-                                </ul>
-                                <p className="mt-2">
-                                    Każdy komponent jest normalizowany względem maksymalnej wartości
-                                    w historii treningów.
-                                </p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
+            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                        <CardTitle>Intensywność treningu</CardTitle>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger>
+                                    <InfoIcon className="text-muted-foreground h-4 w-4" />
+                                </TooltipTrigger>
+                                <TooltipContent className="w-[300px]">
+                                    <p>
+                                        Wskaźnik intensywności treningów (0-100) jest obliczany na
+                                        podstawie:
+                                    </p>
+                                    <ul className="mt-2 list-disc pl-4">
+                                        <li>Dystansu (30%)</li>
+                                        <li>Prędkości (30%)</li>
+                                        <li>Tętna (20%)</li>
+                                        <li>Przewyższenia (20%)</li>
+                                    </ul>
+                                    <p className="mt-2">
+                                        Każdy komponent jest normalizowany względem maksymalnej
+                                        wartości w historii treningów.
+                                    </p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
+                    <CardDescription>
+                        Średni wskaźnik intensywności treningów (0-100)
+                    </CardDescription>
                 </div>
-                <CardDescription>Średni wskaźnik intensywności treningów (0-100)</CardDescription>
+                <ChartExportActions targetRef={chartRef} fileName="intensywnosc-treningu" />
             </CardHeader>
             <CardContent>
-                <ChartContainer config={chartConfig} className="aspect-auto h-80">
+                <div ref={chartRef} className="w-full">
+                    <ChartContainer config={chartConfig} className="aspect-[4/3] w-full">
                     <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="formattedDate" tickLine={false} axisLine={false} />
@@ -147,7 +156,8 @@ export function IntensityChart({ trainings }: { trainings: Training[] }) {
                             }}
                         />
                     </AreaChart>
-                </ChartContainer>
+                    </ChartContainer>
+                </div>
             </CardContent>
             <CardFooter className="flex-col items-start gap-2 text-sm">
                 <div className="flex gap-2 leading-none font-medium">

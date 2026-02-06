@@ -1,5 +1,8 @@
 "use client";
 
+import * as React from "react";
+
+import { ChartExportActions } from "@/components/charts/chart-export-actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     ChartConfig,
@@ -27,19 +30,28 @@ const chartConfig = {
 
 export function FitSpeedChart({ trainingId }: FitSpeedChartProps) {
     const { data, isLoading, error } = useTrackpoints(trainingId);
+    const chartRef = React.useRef<HTMLDivElement>(null);
 
     if (isLoading) {
         return (
-            <Card className="w-full">
-                <CardHeader>
+            <Card className="w-full aspect-[4/3] flex flex-col">
+                <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <CardTitle className="flex items-center gap-2">
                         <Gauge className="h-5 w-5" />
                         Prędkość w czasie (FIT)
                     </CardTitle>
-                    <CardDescription>Szczegółowy wykres prędkości z danych .FIT</CardDescription>
+                    <div className="flex flex-col gap-2 sm:items-end">
+                        <CardDescription>Szczegółowy wykres prędkości z danych .FIT</CardDescription>
+                        <ChartExportActions
+                            targetRef={chartRef}
+                            fileName="predkosc-w-czasie"
+                        />
+                    </div>
                 </CardHeader>
-                <CardContent>
-                    <Skeleton className="h-[300px] w-full" />
+                <CardContent className="flex-1">
+                    <div ref={chartRef} className="h-full w-full">
+                        <Skeleton className="h-full w-full" />
+                    </div>
                 </CardContent>
             </Card>
         );
@@ -47,16 +59,22 @@ export function FitSpeedChart({ trainingId }: FitSpeedChartProps) {
 
     if (error) {
         return (
-            <Card className="w-full">
-                <CardHeader>
+            <Card className="w-full aspect-[4/3] flex flex-col">
+                <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <CardTitle className="flex items-center gap-2">
                         <Gauge className="h-5 w-5" />
                         Prędkość w czasie (FIT)
                     </CardTitle>
-                    <CardDescription>Szczegółowy wykres prędkości z danych .FIT</CardDescription>
+                    <div className="flex flex-col gap-2 sm:items-end">
+                        <CardDescription>Szczegółowy wykres prędkości z danych .FIT</CardDescription>
+                        <ChartExportActions
+                            targetRef={chartRef}
+                            fileName="predkosc-w-czasie"
+                        />
+                    </div>
                 </CardHeader>
-                <CardContent>
-                    <div className="text-muted-foreground py-8 text-center">
+                <CardContent className="flex-1">
+                    <div className="text-muted-foreground flex h-full items-center justify-center text-center">
                         Błąd: {error.message}
                     </div>
                 </CardContent>
@@ -82,16 +100,22 @@ export function FitSpeedChart({ trainingId }: FitSpeedChartProps) {
 
     if (speedData.length === 0) {
         return (
-            <Card className="w-full">
-                <CardHeader>
+            <Card className="w-full aspect-[4/3] flex flex-col">
+                <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <CardTitle className="flex items-center gap-2">
                         <Gauge className="h-5 w-5" />
                         Prędkość w czasie (FIT)
                     </CardTitle>
-                    <CardDescription>Szczegółowy wykres prędkości z danych .FIT</CardDescription>
+                    <div className="flex flex-col gap-2 sm:items-end">
+                        <CardDescription>Szczegółowy wykres prędkości z danych .FIT</CardDescription>
+                        <ChartExportActions
+                            targetRef={chartRef}
+                            fileName="predkosc-w-czasie"
+                        />
+                    </div>
                 </CardHeader>
-                <CardContent>
-                    <div className="text-muted-foreground py-8 text-center">
+                <CardContent className="flex-1">
+                    <div className="text-muted-foreground flex h-full items-center justify-center text-center">
                         Brak danych prędkości w pliku .FIT
                     </div>
                 </CardContent>
@@ -105,81 +129,90 @@ export function FitSpeedChart({ trainingId }: FitSpeedChartProps) {
     const minSpeed = Math.min(...speedData.map(data => data.speed || 0));
 
     return (
-        <Card className="w-full">
-            <CardHeader>
+        <Card className="w-full aspect-[4/3] flex flex-col">
+            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <CardTitle className="flex items-center gap-2">
                     <Gauge className="h-5 w-5" />
                     Prędkość w czasie (FIT)
                 </CardTitle>
-                <CardDescription>
-                    Średnia: {avgSpeed.toFixed(1)} km/h • Max: {maxSpeed.toFixed(1)} km/h • Min:{" "}
-                    {minSpeed.toFixed(1)} km/h
-                </CardDescription>
+                <div className="flex flex-col gap-2 sm:items-end">
+                    <CardDescription>
+                        Średnia: {avgSpeed.toFixed(1)} km/h • Max: {maxSpeed.toFixed(1)} km/h • Min:{" "}
+                        {minSpeed.toFixed(1)} km/h
+                    </CardDescription>
+                    <ChartExportActions targetRef={chartRef} fileName="predkosc-w-czasie" />
+                </div>
             </CardHeader>
-            <CardContent>
-                <ChartContainer config={chartConfig} className="h-[300px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <LineChart
-                            data={speedData}
-                            margin={{
-                                top: 5,
-                                right: 10,
-                                left: 10,
-                                bottom: 5,
-                            }}
-                        >
-                            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                            <XAxis
-                                dataKey="timeFormatted"
-                                tick={{ fontSize: 12 }}
-                                tickLine={false}
-                                axisLine={false}
-                            />
-                            <YAxis
-                                tick={{ fontSize: 12 }}
-                                tickLine={false}
-                                axisLine={false}
-                                domain={[
-                                    (dataMin: number) => Math.max(0, dataMin - 5),
-                                    (dataMax: number) => dataMax + 5,
-                                ]}
-                                label={{ value: "Prędkość (km/h)", angle: -90, position: "insideLeft" }}
-                            />
-                            <ChartTooltip
-                                content={
-                                    <ChartTooltipContent
-                                        labelFormatter={(value, payload) => {
-                                            if (payload && payload[0]) {
-                                                const data = payload[0].payload;
+            <CardContent className="flex-1">
+                <div ref={chartRef} className="h-full w-full">
+                    <ChartContainer config={chartConfig} className="h-full w-full aspect-auto">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart
+                                data={speedData}
+                                margin={{
+                                    top: 5,
+                                    right: 10,
+                                    left: 10,
+                                    bottom: 5,
+                                }}
+                            >
+                                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                                <XAxis
+                                    dataKey="timeFormatted"
+                                    tick={{ fontSize: 12 }}
+                                    tickLine={false}
+                                    axisLine={false}
+                                />
+                                <YAxis
+                                    tick={{ fontSize: 12 }}
+                                    tickLine={false}
+                                    axisLine={false}
+                                    domain={[0, 100]}
+                                    ticks={[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]}
+                                    label={{
+                                        value: "Prędkość (km/h)",
+                                        angle: -90,
+                                        position: "insideLeft",
+                                    }}
+                                />
+                                <ChartTooltip
+                                    content={
+                                        <ChartTooltipContent
+                                            labelFormatter={(value, payload) => {
+                                                if (payload && payload[0]) {
+                                                    const data = payload[0].payload;
 
-                                                return `Czas: ${data.timeFormatted} • Dystans: ${data.distance} km`;
-                                            }
+                                                    return `Czas: ${data.timeFormatted} • Dystans: ${data.distance} km`;
+                                                }
 
-                                            return value;
-                                        }}
-                                        formatter={(value, name) => {
-                                            if (name === "speed") {
-                                                return [`${value?.toFixed(1)} km/h`, "Prędkość"];
-                                            }
+                                                return value;
+                                            }}
+                                            formatter={(value, name) => {
+                                                if (name === "speed") {
+                                                    return [
+                                                        `${value?.toFixed(1)} km/h`,
+                                                        "Prędkość",
+                                                    ];
+                                                }
 
-                                            return [value, name];
-                                        }}
-                                    />
-                                }
-                            />
-                            <Line
-                                type="monotone"
-                                dataKey="speed"
-                                stroke="var(--color-speed)"
-                                strokeWidth={2}
-                                dot={false}
-                                name="Prędkość"
-                            />
-                        </LineChart>
-                    </ResponsiveContainer>
-                </ChartContainer>
+                                                return [value, name];
+                                            }}
+                                        />
+                                    }
+                                />
+                                <Line
+                                    type="monotone"
+                                    dataKey="speed"
+                                    stroke="var(--color-speed)"
+                                    strokeWidth={2}
+                                    dot={false}
+                                    name="Prędkość"
+                                />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </ChartContainer>
+                </div>
             </CardContent>
         </Card>
     );
 }
-

@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import {
     Card,
     CardContent,
@@ -8,6 +9,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
+import { ChartExportActions } from "@/components/charts/chart-export-actions";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import date from "@/lib/date";
@@ -27,6 +29,7 @@ const chartConfig = {
 };
 
 export function VolumeIntensityChart({ trainings }: { trainings: Training[] }) {
+    const chartRef = React.useRef<HTMLDivElement>(null);
     // Prepare data for scatter plot
     const data = trainings.map(training => {
         // Calculate intensity score based on heart rate and effort
@@ -81,43 +84,50 @@ export function VolumeIntensityChart({ trainings }: { trainings: Training[] }) {
 
     return (
         <Card>
-            <CardHeader>
-                <div className="flex items-center gap-2">
-                    <CardTitle>Objętość vs Intensywność</CardTitle>
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger>
-                                <InfoIcon className="text-muted-foreground h-4 w-4" />
-                            </TooltipTrigger>
-                            <TooltipContent className="w-[350px]">
-                                <p className="mb-2 font-semibold">Analiza relacji:</p>
-                                <ul className="space-y-1 text-sm">
-                                    <li>
-                                        <strong>Objętość</strong> - dystans treningu (km)
-                                    </li>
-                                    <li>
-                                        <strong>Intensywność</strong> - wskaźnik oparty na tętnie,
-                                        prędkości i wysiłku
-                                    </li>
-                                    <li>
-                                        <strong>Sweet spot</strong> - strefy zbliżone do średnich
-                                        wartości
-                                    </li>
-                                </ul>
-                                <p className="mt-2 text-sm">
-                                    Wykres pomaga zidentyfikować, czy preferujesz długie spokojne
-                                    jazdy czy krótkie intensywne treningi.
-                                </p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
+            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                        <CardTitle>Objętość vs Intensywność</CardTitle>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger>
+                                    <InfoIcon className="text-muted-foreground h-4 w-4" />
+                                </TooltipTrigger>
+                                <TooltipContent className="w-[350px]">
+                                    <p className="mb-2 font-semibold">Analiza relacji:</p>
+                                    <ul className="space-y-1 text-sm">
+                                        <li>
+                                            <strong>Objętość</strong> - dystans treningu (km)
+                                        </li>
+                                        <li>
+                                            <strong>Intensywność</strong> - wskaźnik oparty na
+                                            tętnie, prędkości i wysiłku
+                                        </li>
+                                        <li>
+                                            <strong>Sweet spot</strong> - strefy zbliżone do średnich
+                                            wartości
+                                        </li>
+                                    </ul>
+                                    <p className="mt-2 text-sm">
+                                        Wykres pomaga zidentyfikować, czy preferujesz długie spokojne
+                                        jazdy czy krótkie intensywne treningi.
+                                    </p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
+                    <CardDescription>
+                        Relacja między dystansem a intensywnością treningów
+                    </CardDescription>
                 </div>
-                <CardDescription>
-                    Relacja między dystansem a intensywnością treningów
-                </CardDescription>
+                <ChartExportActions
+                    targetRef={chartRef}
+                    fileName="objetosc-vs-intensywnosc"
+                />
             </CardHeader>
             <CardContent>
-                <ChartContainer config={chartConfig} className="aspect-auto h-80">
+                <div ref={chartRef} className="w-full">
+                    <ChartContainer config={chartConfig} className="aspect-[4/3] w-full">
                     <ScatterChart margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis
@@ -217,7 +227,8 @@ export function VolumeIntensityChart({ trainings }: { trainings: Training[] }) {
                             strokeDasharray="5 5"
                         />
                     </ScatterChart>
-                </ChartContainer>
+                    </ChartContainer>
+                </div>
             </CardContent>
             <CardFooter className="flex-col items-start gap-2 text-sm">
                 <div className="flex gap-2 leading-none font-medium">

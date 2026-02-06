@@ -7,6 +7,8 @@ import { HeartRateChart } from "@/components/charts/heart-rate-chart";
 import { HeartRateTimeChart } from "@/components/charts/heart-rate-time-chart";
 import { IntensityChart } from "@/components/charts/intensity-chart";
 import { PaceChart } from "@/components/charts/pace-chart";
+import { CadenceTrendChart } from "@/components/charts/cadence-trend-chart";
+import { PowerTrendChart } from "@/components/charts/power-trend-chart";
 import { YearlyDistanceChart } from "@/components/charts/yearly-distance-chart";
 import { useGetTrainings } from "@/hooks/use-get-trainings";
 import { TrainingFilters } from "@/lib/api/trainings";
@@ -75,6 +77,10 @@ export function DashboardMetricsTabContent() {
             {/* Charts */}
             {trainings.length > 0 ? (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+                    {/* Power & Cadence */}
+                    <PowerTrendChart trainings={trainings} />
+                    <CadenceTrendChart trainings={trainings} />
+
                     {/* Training Load & Performance */}
                     <TrainingLoadChart trainings={trainings} />
                     <ProgressionTrendsChart trainings={trainings} />

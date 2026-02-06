@@ -224,6 +224,7 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
         laps.length > 0 && laps.some(lap => lap.max_cadence_rpm)
             ? Math.max(...laps.map(lap => lap.max_cadence_rpm || 0))
             : null;
+    const hasAvgPower = avgPower !== null && avgPower > 0;
 
     // Get all trainings to compare against
     let compareTrainings: Training[] = [];
@@ -499,17 +500,27 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                             infoText={`Wskaźnik obciążenia treningowego (0-100) uwzględnia dystans, prędkość, tętno i przewyższenie. Twoje średnie obciążenie wynosi: ${avgTrainingLoad.toFixed(0)}`}
                             formatValue={val => val.toFixed(0)}
                         />
-                        <StatsCard
-                            title="Dystans"
-                            value={training.distance_km}
-                            unit="km"
-                            trend={formatTrend(distanceDiff)}
-                            trendIcon={getTrendIcon(distanceDiff, "distance")}
-                            trendMessage={getTrendMessage(distanceDiff, "distance")}
-                            trendProgress={getTrendProgress(distanceDiff, "distance")}
-                            infoText={`Więcej = lepiej. Większy dystans zwykle oznacza lepszą kondycję i wytrzymałość. Twój średni dystans wynosi: ${avgDistancePast.toFixed(1)} km`}
-                            formatValue={val => val.toFixed(1)}
-                        />
+                        {hasAvgPower ? (
+                            <StatsCard
+                                title="Średnia moc"
+                                value={avgPower ?? 0}
+                                unit="W"
+                                infoText="Średnia moc wyliczona z okrążeń treningu."
+                                formatValue={val => val.toFixed(0)}
+                            />
+                        ) : (
+                            <StatsCard
+                                title="Dystans"
+                                value={training.distance_km}
+                                unit="km"
+                                trend={formatTrend(distanceDiff)}
+                                trendIcon={getTrendIcon(distanceDiff, "distance")}
+                                trendMessage={getTrendMessage(distanceDiff, "distance")}
+                                trendProgress={getTrendProgress(distanceDiff, "distance")}
+                                infoText={`Więcej = lepiej. Większy dystans zwykle oznacza lepszą kondycję i wytrzymałość. Twój średni dystans wynosi: ${avgDistancePast.toFixed(1)} km`}
+                                formatValue={val => val.toFixed(1)}
+                            />
+                        )}
                     </div>
 
                     {/* Heart Rate Zones Section */}
@@ -730,34 +741,21 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                         {/* Technical Data Section */}
                         <div>
                             <h3 className="mb-4 text-lg font-semibold">Dane techniczne</h3>
-                            <div className="grid w-full grid-cols-1 items-stretch gap-4 md:grid-cols-2">
-                                <div className="flex h-full w-full flex-row items-stretch gap-4">
-                                    <FitUpload
-                                        trainingId={training.id}
-                                        onUploadSuccess={() => router.refresh()}
-                                    />
-                                </div>
-                                <div className="w-full">
-                                    <FitHeartRateChart trainingId={training.id} />
-                                </div>
-                            </div>
-
                             {/* Speed and Elevation Charts */}
                             <div className="mt-6 grid w-full grid-cols-1 items-stretch gap-4 md:grid-cols-2">
-                                <div className="w-full">
+                                <div className="aspect-[4/3] w-full">
+                                    <FitHeartRateChart trainingId={training.id} />
+                                </div>
+                                <div className="aspect-[4/3] w-full">
                                     <FitSpeedChart trainingId={training.id} />
                                 </div>
-                                <div className="w-full">
+                                <div className="aspect-[4/3] w-full">
                                     <FitElevationChart trainingId={training.id} />
                                 </div>
-                            </div>
-
-                            {/* Power and Cadence Charts */}
-                            <div className="mt-6 grid w-full grid-cols-1 items-stretch gap-4 md:grid-cols-2">
-                                <div className="w-full">
+                                <div className="aspect-[4/3] w-full">
                                     <FitPowerChart trainingId={training.id} />
                                 </div>
-                                <div className="w-full">
+                                <div className="aspect-[4/3] w-full">
                                     <FitCadenceChart trainingId={training.id} />
                                 </div>
                             </div>

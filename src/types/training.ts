@@ -48,6 +48,10 @@ export const TrainingSchema = z.object({
     battery_percent_usage: z.number().nullish(),
     /** Fit file processed */
     fit_processed: z.boolean().nullish(),
+    /** Average power of the training in watts (from laps, if available) */
+    avg_power_watts: z.number().nullish(),
+    /** Average cadence of the training in rpm (from laps, if available) */
+    avg_cadence_rpm: z.number().nullish(),
     /**
      * Effort of the training (e.g.: Apple Training Effort).
      * 1-3 is Easy, 4-6 is Medium, 7-8 is Hard, 9-10 is All Out

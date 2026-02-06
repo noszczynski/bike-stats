@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import {
     Card,
     CardContent,
@@ -8,6 +9,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
+import { ChartExportActions } from "@/components/charts/chart-export-actions";
 import {
     ChartContainer,
     ChartLegend,
@@ -26,6 +28,7 @@ const chartConfig = {
 };
 
 export function YearlyDistanceChart({ trainings }: { trainings: Training[] }) {
+    const chartRef = React.useRef<HTMLDivElement>(null);
     // Group trainings by year and calculate total distance
     const yearlyData = trainings.reduce<Record<string, number>>((acc, training) => {
         const year = new Date(training.date).getFullYear().toString();
@@ -54,12 +57,16 @@ export function YearlyDistanceChart({ trainings }: { trainings: Training[] }) {
 
     return (
         <Card>
-            <CardHeader>
-                <CardTitle>Dystans według roku</CardTitle>
-                <CardDescription>Łączny przejechany dystans w każdym roku</CardDescription>
+            <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div className="space-y-1">
+                    <CardTitle>Dystans według roku</CardTitle>
+                    <CardDescription>Łączny przejechany dystans w każdym roku</CardDescription>
+                </div>
+                <ChartExportActions targetRef={chartRef} fileName="dystans-wedlug-roku" />
             </CardHeader>
             <CardContent>
-                <ChartContainer config={chartConfig} className="aspect-auto h-80">
+                <div ref={chartRef} className="w-full">
+                    <ChartContainer config={chartConfig} className="aspect-[4/3] w-full">
                     <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="year" tickLine={false} axisLine={false} />
@@ -101,7 +108,8 @@ export function YearlyDistanceChart({ trainings }: { trainings: Training[] }) {
                             }}
                         />
                     </BarChart>
-                </ChartContainer>
+                    </ChartContainer>
+                </div>
             </CardContent>
             <CardFooter className="flex-col items-start gap-2 text-sm">
                 <div className="flex gap-2 leading-none font-medium">

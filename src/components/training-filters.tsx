@@ -1,11 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import dayjs from "dayjs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DualRangeSlider } from "@/components/ui/dual-range-slider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import {
     Select,
     SelectContent,
@@ -23,30 +25,56 @@ interface TrainingFiltersProps {
 }
 
 export function TrainingFiltersComponent({ filters, onFiltersChange }: TrainingFiltersProps) {
-    const [localFilters, setLocalFilters] = useState<TrainingFilters>({ ...filters });
-    const [pendingFilters, setPendingFilters] = useState<TrainingFilters>({ ...filters });
+    const [draftFilters, setDraftFilters] = useState<TrainingFilters>({ ...filters });
+    const [isDateDirty, setIsDateDirty] = useState(false);
 
     // Debounced function to update filters (for sliders and inputs)
     const debouncedUpdateFilters = useCallback(
         debounce((newFilters: TrainingFilters) => {
             onFiltersChange(newFilters);
-            setLocalFilters(newFilters);
-        }, 800), // 800ms delay
+        }, 600), // 600ms delay
         [onFiltersChange],
     );
 
     // Sync local state with prop changes
     useEffect(() => {
-        setLocalFilters(filters);
-        setPendingFilters(filters);
+        setDraftFilters(filters);
+        setIsDateDirty(false);
     }, [filters]);
 
-    // Immediate update for non-slider filters (dates, tags, checkboxes)
+    useEffect(() => {
+        return () => {
+            debouncedUpdateFilters.cancel();
+        };
+    }, [debouncedUpdateFilters]);
+
+    const normalizeDateRange = useCallback((nextFilters: TrainingFilters) => {
+        if (nextFilters.startDate && nextFilters.endDate) {
+            const start = dayjs(nextFilters.startDate);
+            const end = dayjs(nextFilters.endDate);
+            if (start.isAfter(end)) {
+                return {
+                    ...nextFilters,
+                    startDate: nextFilters.endDate,
+                    endDate: nextFilters.startDate,
+                };
+            }
+        }
+        return nextFilters;
+    }, []);
+
+    // Immediate update for non-slider filters (selects, checkboxes)
     const updateFilterImmediate = (key: keyof TrainingFilters, value: any) => {
-        const newFilters = { ...localFilters, [key]: value };
-        setLocalFilters(newFilters);
-        setPendingFilters(newFilters);
+        const newFilters = normalizeDateRange({ ...draftFilters, [key]: value });
+        setDraftFilters(newFilters);
+        setIsDateDirty(false);
         onFiltersChange(newFilters);
+    };
+
+    const updateDraftFilter = (key: keyof TrainingFilters, value: any) => {
+        const newFilters = { ...draftFilters, [key]: value };
+        setDraftFilters(newFilters);
+        setIsDateDirty(true);
     };
 
     // Update range filters (min/max pairs) together
@@ -59,12 +87,79 @@ export function TrainingFiltersComponent({ filters, onFiltersChange }: TrainingF
     ) => {
         const [min, max] = values;
         const newFilters = {
-            ...pendingFilters,
+            ...draftFilters,
             [minKey]: min > minDefault ? min : undefined,
             [maxKey]: max < maxDefault ? max : undefined,
         };
-        setPendingFilters(newFilters);
+        setDraftFilters(newFilters);
         debouncedUpdateFilters(newFilters);
+    };
+
+    const applyDateFilters = () => {
+        const normalized = normalizeDateRange(draftFilters);
+        setDraftFilters(normalized);
+        setIsDateDirty(false);
+        onFiltersChange(normalized);
+    };
+
+    const clearDateFilters = () => {
+        const newFilters = { ...draftFilters, startDate: undefined, endDate: undefined };
+        setDraftFilters(newFilters);
+        setIsDateDirty(false);
+        onFiltersChange(newFilters);
+    };
+
+    const datePresets = useMemo(
+        () => [
+            {
+                id: "7d",
+                label: "Ostatnie 7 dni",
+                range: () => ({
+                    startDate: dayjs().subtract(6, "day").format("YYYY-MM-DD"),
+                    endDate: dayjs().format("YYYY-MM-DD"),
+                }),
+            },
+            {
+                id: "30d",
+                label: "Ostatnie 30 dni",
+                range: () => ({
+                    startDate: dayjs().subtract(29, "day").format("YYYY-MM-DD"),
+                    endDate: dayjs().format("YYYY-MM-DD"),
+                }),
+            },
+            {
+                id: "90d",
+                label: "Ostatnie 90 dni",
+                range: () => ({
+                    startDate: dayjs().subtract(89, "day").format("YYYY-MM-DD"),
+                    endDate: dayjs().format("YYYY-MM-DD"),
+                }),
+            },
+            {
+                id: "ytd",
+                label: "Od początku roku",
+                range: () => ({
+                    startDate: dayjs().startOf("year").format("YYYY-MM-DD"),
+                    endDate: dayjs().format("YYYY-MM-DD"),
+                }),
+            },
+            {
+                id: "12m",
+                label: "Ostatnie 12 mies.",
+                range: () => ({
+                    startDate: dayjs().subtract(12, "month").format("YYYY-MM-DD"),
+                    endDate: dayjs().format("YYYY-MM-DD"),
+                }),
+            },
+        ],
+        [],
+    );
+
+    const applyDatePreset = (startDate?: string, endDate?: string) => {
+        const newFilters = normalizeDateRange({ ...draftFilters, startDate, endDate });
+        setDraftFilters(newFilters);
+        setIsDateDirty(false);
+        onFiltersChange(newFilters);
     };
 
     return (
@@ -76,12 +171,12 @@ export function TrainingFiltersComponent({ filters, onFiltersChange }: TrainingF
                 </CardTitle>
             </CardHeader>
 
-            <CardContent className="flex w-full flex-row flex-wrap gap-4 space-y-4">
+            <CardContent className="grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {/* Activity Type */}
                 <div className="space-y-2">
                     <Label className="text-xs font-medium">Typ aktywności</Label>
                     <Select
-                        value={localFilters.type || "all"}
+                        value={draftFilters.type || "all"}
                         onValueChange={value =>
                             updateFilterImmediate("type", value === "all" ? undefined : value)
                         }
@@ -99,37 +194,94 @@ export function TrainingFiltersComponent({ filters, onFiltersChange }: TrainingF
                     </Select>
                 </div>
 
-                <div>
-                    <Label className="text-muted-foreground text-xs">Od</Label>
-                    <Input
-                        type="date"
-                        value={localFilters.startDate || ""}
-                        onChange={e => {
-                            console.log("e.target.value", e.target.value);
-                            updateFilterImmediate("startDate", e.target.value || undefined);
-                        }}
-                        className="h-8"
-                    />
-                </div>
+                <div className="col-span-full space-y-3">
+                    <div className="flex flex-wrap items-end gap-3">
+                        <div>
+                            <Label className="text-muted-foreground text-xs">Od</Label>
+                            <Input
+                                type="date"
+                                value={draftFilters.startDate || ""}
+                                onChange={e =>
+                                    updateDraftFilter("startDate", e.target.value || undefined)
+                                }
+                                onKeyDown={e => {
+                                    if (e.key === "Enter") {
+                                        applyDateFilters();
+                                    }
+                                }}
+                                className="h-9 min-w-[160px]"
+                            />
+                        </div>
 
-                <div>
-                    <Label className="text-muted-foreground text-xs">Do</Label>
-                    <Input
-                        type="date"
-                        value={localFilters.endDate || ""}
-                        onChange={e => {
-                            updateFilterImmediate("endDate", e.target.value || undefined);
-                        }}
-                        className="h-8"
-                    />
+                        <div>
+                            <Label className="text-muted-foreground text-xs">Do</Label>
+                            <Input
+                                type="date"
+                                value={draftFilters.endDate || ""}
+                                onChange={e => updateDraftFilter("endDate", e.target.value || undefined)}
+                                onKeyDown={e => {
+                                    if (e.key === "Enter") {
+                                        applyDateFilters();
+                                    }
+                                }}
+                                className="h-9 min-w-[160px]"
+                            />
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="secondary"
+                                onClick={applyDateFilters}
+                                disabled={!isDateDirty}
+                            >
+                                Zastosuj daty
+                            </Button>
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                onClick={clearDateFilters}
+                            >
+                                Wyczyść daty
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-muted-foreground text-xs">Presety:</span>
+                        {datePresets.map(preset => (
+                            <Button
+                                key={preset.id}
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                    const range = preset.range();
+                                    applyDatePreset(range.startDate, range.endDate);
+                                }}
+                            >
+                                {preset.label}
+                            </Button>
+                        ))}
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => applyDatePreset(undefined, undefined)}
+                        >
+                            Wszystko
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Distance */}
-                <div className="w-32 space-y-2">
+                <div className="space-y-2">
                     <Label className="text-xs font-medium">Dystans (km)</Label>
                     <DualRangeSlider
                         defaultValue={[0, 200]}
-                        value={[pendingFilters.minDistance || 0, pendingFilters.maxDistance || 200]}
+                        value={[draftFilters.minDistance || 0, draftFilters.maxDistance || 200]}
                         onValueChange={(values: number[]) =>
                             updateRangeFilter("minDistance", "maxDistance", values, 0, 200)
                         }
@@ -138,19 +290,19 @@ export function TrainingFiltersComponent({ filters, onFiltersChange }: TrainingF
                         className="w-full"
                     />
                     <div className="text-muted-foreground flex justify-between text-xs">
-                        <span>{pendingFilters.minDistance || 0}</span>
-                        <span>{pendingFilters.maxDistance || 200}</span>
+                        <span>{draftFilters.minDistance || 0}</span>
+                        <span>{draftFilters.maxDistance || 200}</span>
                     </div>
                 </div>
 
                 {/* Heart Rate */}
-                <div className="w-32 space-y-2">
+                <div className="space-y-2">
                     <Label className="text-xs font-medium">Tętno (bpm)</Label>
                     <DualRangeSlider
                         defaultValue={[80, 200]}
                         value={[
-                            pendingFilters.minHeartRate || 80,
-                            pendingFilters.maxHeartRate || 200,
+                            draftFilters.minHeartRate || 80,
+                            draftFilters.maxHeartRate || 200,
                         ]}
                         onValueChange={(values: number[]) =>
                             updateRangeFilter("minHeartRate", "maxHeartRate", values, 80, 200)
@@ -161,17 +313,17 @@ export function TrainingFiltersComponent({ filters, onFiltersChange }: TrainingF
                         className="w-full"
                     />
                     <div className="text-muted-foreground flex justify-between text-xs">
-                        <span>{pendingFilters.minHeartRate || 80}</span>
-                        <span>{pendingFilters.maxHeartRate || 200}</span>
+                        <span>{draftFilters.minHeartRate || 80}</span>
+                        <span>{draftFilters.maxHeartRate || 200}</span>
                     </div>
                 </div>
 
                 {/* Speed */}
-                <div className="w-32 space-y-2">
+                <div className="space-y-2">
                     <Label className="text-xs font-medium">Prędkość (km/h)</Label>
                     <DualRangeSlider
                         defaultValue={[10, 50]}
-                        value={[pendingFilters.minSpeed || 10, pendingFilters.maxSpeed || 50]}
+                        value={[draftFilters.minSpeed || 10, draftFilters.maxSpeed || 50]}
                         onValueChange={(values: number[]) =>
                             updateRangeFilter("minSpeed", "maxSpeed", values, 10, 50)
                         }
@@ -181,19 +333,19 @@ export function TrainingFiltersComponent({ filters, onFiltersChange }: TrainingF
                         className="w-full"
                     />
                     <div className="text-muted-foreground flex justify-between text-xs">
-                        <span>{pendingFilters.minSpeed || 10}</span>
-                        <span>{pendingFilters.maxSpeed || 50}</span>
+                        <span>{draftFilters.minSpeed || 10}</span>
+                        <span>{draftFilters.maxSpeed || 50}</span>
                     </div>
                 </div>
 
                 {/* Elevation */}
-                <div className="w-32 space-y-2">
+                <div className="space-y-2">
                     <Label className="text-xs font-medium">Przewyższenie (m)</Label>
                     <DualRangeSlider
                         defaultValue={[0, 2000]}
                         value={[
-                            pendingFilters.minElevation || 0,
-                            pendingFilters.maxElevation || 2000,
+                            draftFilters.minElevation || 0,
+                            draftFilters.maxElevation || 2000,
                         ]}
                         onValueChange={(values: number[]) =>
                             updateRangeFilter("minElevation", "maxElevation", values, 0, 2000)
@@ -203,17 +355,17 @@ export function TrainingFiltersComponent({ filters, onFiltersChange }: TrainingF
                         className="w-full"
                     />
                     <div className="text-muted-foreground flex justify-between text-xs">
-                        <span>{pendingFilters.minElevation || 0}</span>
-                        <span>{pendingFilters.maxElevation || 2000}</span>
+                        <span>{draftFilters.minElevation || 0}</span>
+                        <span>{draftFilters.maxElevation || 2000}</span>
                     </div>
                 </div>
 
                 {/* Time - full width */}
-                <div className="w-32 space-y-2">
+                <div className="space-y-2">
                     <Label className="text-xs font-medium">Czas jazdy (minuty)</Label>
                     <DualRangeSlider
                         defaultValue={[0, 300]}
-                        value={[pendingFilters.minTime || 0, pendingFilters.maxTime || 300]}
+                        value={[draftFilters.minTime || 0, draftFilters.maxTime || 300]}
                         onValueChange={(values: number[]) =>
                             updateRangeFilter("minTime", "maxTime", values, 0, 300)
                         }
@@ -222,15 +374,15 @@ export function TrainingFiltersComponent({ filters, onFiltersChange }: TrainingF
                         className="w-full"
                     />
                     <div className="text-muted-foreground flex justify-between text-xs">
-                        <span>{pendingFilters.minTime || 0} min</span>
-                        <span>{pendingFilters.maxTime || 300} min</span>
+                        <span>{draftFilters.minTime || 0} min</span>
+                        <span>{draftFilters.maxTime || 300} min</span>
                     </div>
                 </div>
 
                 <div className="flex w-64 items-center space-x-2">
                     <Checkbox
                         id="hasFitData"
-                        checked={localFilters.hasFitData === true}
+                        checked={draftFilters.hasFitData === true}
                         onCheckedChange={checked =>
                             updateFilterImmediate("hasFitData", checked ? true : undefined)
                         }

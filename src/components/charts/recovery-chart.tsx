@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import {
     Card,
     CardContent,
@@ -8,6 +9,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
+import { ChartExportActions } from "@/components/charts/chart-export-actions";
 import {
     ChartContainer,
     ChartLegend,
@@ -37,6 +39,7 @@ const chartConfig = {
 };
 
 export function RecoveryChart({ trainings }: { trainings: Training[] }) {
+    const chartRef = React.useRef<HTMLDivElement>(null);
     // Sort trainings by date
     const sortedTrainings = [...trainings].sort(
         (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
@@ -144,49 +147,56 @@ export function RecoveryChart({ trainings }: { trainings: Training[] }) {
 
     return (
         <Card>
-            <CardHeader>
-                <div className="flex items-center gap-2">
-                    <CardTitle>Recovery i regularność</CardTitle>
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger>
-                                <InfoIcon className="text-muted-foreground h-4 w-4" />
-                            </TooltipTrigger>
-                            <TooltipContent className="w-[400px]">
-                                <p className="mb-2 font-semibold">Analiza recovery i formy:</p>
-                                <ul className="space-y-1 text-sm">
-                                    <li>
-                                        <strong>Krótki recovery</strong> - 1 dzień: Dobry dla
-                                        lekkich treningów
-                                    </li>
-                                    <li>
-                                        <strong>Optymalny recovery</strong> - 2-3 dni: Idealny dla
-                                        większości treningów
-                                    </li>
-                                    <li>
-                                        <strong>Długi recovery</strong> - 4+ dni: Może wskazywać na
-                                        przerwę
-                                    </li>
-                                </ul>
-                                <p className="mt-2 text-sm">
-                                    <strong>Forma (TSB):</strong> Różnica między długoterminową
-                                    adaptacją a krótkoterminowym zmęczeniem
-                                </p>
-                                <ul className="mt-1 space-y-1 text-sm">
-                                    <li>Forma &gt; 5: Świetna forma, gotowość</li>
-                                    <li>Forma -10 do 5: Produktywne zmęczenie</li>
-                                    <li>Forma &lt; -30: Ryzyko przetrenowania</li>
-                                </ul>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
+            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                        <CardTitle>Recovery i regularność</CardTitle>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger>
+                                    <InfoIcon className="text-muted-foreground h-4 w-4" />
+                                </TooltipTrigger>
+                                <TooltipContent className="w-[400px]">
+                                    <p className="mb-2 font-semibold">Analiza recovery i formy:</p>
+                                    <ul className="space-y-1 text-sm">
+                                        <li>
+                                            <strong>Krótki recovery</strong> - 1 dzień: Dobry dla
+                                            lekkich treningów
+                                        </li>
+                                        <li>
+                                            <strong>Optymalny recovery</strong> - 2-3 dni: Idealny
+                                            dla większości treningów
+                                        </li>
+                                        <li>
+                                            <strong>Długi recovery</strong> - 4+ dni: Może wskazywać
+                                            na przerwę
+                                        </li>
+                                    </ul>
+                                    <p className="mt-2 text-sm">
+                                        <strong>Forma (TSB):</strong> Różnica między długoterminową
+                                        adaptacją a krótkoterminowym zmęczeniem
+                                    </p>
+                                    <ul className="mt-1 space-y-1 text-sm">
+                                        <li>Forma &gt; 5: Świetna forma, gotowość</li>
+                                        <li>Forma -10 do 5: Produktywne zmęczenie</li>
+                                        <li>Forma &lt; -30: Ryzyko przetrenowania</li>
+                                    </ul>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
+                    <CardDescription>
+                        Analiza czasu regeneracji między treningami i wzorców treningu
+                    </CardDescription>
                 </div>
-                <CardDescription>
-                    Analiza czasu regeneracji między treningami i wzorców treningu
-                </CardDescription>
+                <ChartExportActions
+                    targetRef={chartRef}
+                    fileName="recovery-i-regularnosc"
+                />
             </CardHeader>
             <CardContent>
-                <ChartContainer config={chartConfig} className="aspect-auto h-80">
+                <div ref={chartRef} className="w-full">
+                    <ChartContainer config={chartConfig} className="aspect-[4/3] w-full">
                     <ComposedChart
                         data={dataWithForm}
                         margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
@@ -292,7 +302,8 @@ export function RecoveryChart({ trainings }: { trainings: Training[] }) {
                             }}
                         />
                     </ComposedChart>
-                </ChartContainer>
+                    </ChartContainer>
+                </div>
             </CardContent>
             <CardFooter className="flex-col items-start gap-2 text-sm">
                 <div className="flex gap-2 leading-none font-medium">

@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import {
     Card,
     CardContent,
@@ -8,6 +9,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
+import { ChartExportActions } from "@/components/charts/chart-export-actions";
 import {
     ChartContainer,
     ChartLegend,
@@ -70,6 +72,7 @@ function calculateTSS(training: Training): number {
 }
 
 export function TrainingLoadChart({ trainings }: { trainings: Training[] }) {
+    const chartRef = React.useRef<HTMLDivElement>(null);
     // 1. Zakres dat: od najstarszego treningu do dziś
     const sortedTrainings = [...trainings].sort(
         (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
@@ -141,46 +144,50 @@ export function TrainingLoadChart({ trainings }: { trainings: Training[] }) {
 
     return (
         <Card>
-            <CardHeader>
-                <div className="flex items-center gap-2">
-                    <CardTitle>Obciążenie treningowe</CardTitle>
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger>
-                                <InfoIcon className="text-muted-foreground h-4 w-4" />
-                            </TooltipTrigger>
-                            <TooltipContent className="w-[350px]">
-                                <p className="mb-2 font-semibold">
-                                    Metryki obciążenia treningowego:
-                                </p>
-                                <ul className="space-y-1 text-sm">
-                                    <li>
-                                        <strong>CTL</strong> - Chroniczne obciążenie (42 dni): Twoja
-                                        forma i wytrzymałość
-                                    </li>
-                                    <li>
-                                        <strong>ATL</strong> - Akutne obciążenie (7 dni): Twoje
-                                        obecne zmęczenie
-                                    </li>
-                                    <li>
-                                        <strong>TSB</strong> - Balans treningowy (CTL - ATL):
-                                        Gotowość do treningu
-                                    </li>
-                                </ul>
-                                <p className="mt-2 text-sm">
-                                    <strong>TSB:</strong> &gt;5 = świeży, -10 do 5 = optymalny,
-                                    &lt;-10 = zmęczony
-                                </p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
+            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                        <CardTitle>Obciążenie treningowe</CardTitle>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger>
+                                    <InfoIcon className="text-muted-foreground h-4 w-4" />
+                                </TooltipTrigger>
+                                <TooltipContent className="w-[350px]">
+                                    <p className="mb-2 font-semibold">
+                                        Metryki obciążenia treningowego:
+                                    </p>
+                                    <ul className="space-y-1 text-sm">
+                                        <li>
+                                            <strong>CTL</strong> - Chroniczne obciążenie (42 dni):
+                                            Twoja forma i wytrzymałość
+                                        </li>
+                                        <li>
+                                            <strong>ATL</strong> - Akutne obciążenie (7 dni): Twoje
+                                            obecne zmęczenie
+                                        </li>
+                                        <li>
+                                            <strong>TSB</strong> - Balans treningowy (CTL - ATL):
+                                            Gotowość do treningu
+                                        </li>
+                                    </ul>
+                                    <p className="mt-2 text-sm">
+                                        <strong>TSB:</strong> &gt;5 = świeży, -10 do 5 = optymalny,
+                                        &lt;-10 = zmęczony
+                                    </p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
+                    <CardDescription>
+                        CTL, ATL i TSB - zarządzanie formą i obciążeniem treningowym
+                    </CardDescription>
                 </div>
-                <CardDescription>
-                    CTL, ATL i TSB - zarządzanie formą i obciążeniem treningowym
-                </CardDescription>
+                <ChartExportActions targetRef={chartRef} fileName="obciazenie-treningowe" />
             </CardHeader>
             <CardContent>
-                <ChartContainer config={chartConfig} className="aspect-auto h-80">
+                <div ref={chartRef} className="w-full">
+                    <ChartContainer config={chartConfig} className="aspect-[4/3] w-full">
                     <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="formattedDate" tickLine={false} axisLine={false} />
@@ -270,7 +277,8 @@ export function TrainingLoadChart({ trainings }: { trainings: Training[] }) {
                             }}
                         />
                     </LineChart>
-                </ChartContainer>
+                    </ChartContainer>
+                </div>
             </CardContent>
             <CardFooter className="flex-col items-start gap-2 text-sm">
                 <div className="flex gap-2 leading-none font-medium">

@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import {
     Card,
     CardContent,
@@ -8,6 +9,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
+import { ChartExportActions } from "@/components/charts/chart-export-actions";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import date from "@/lib/date";
 import { Training } from "@/types/training";
@@ -26,6 +28,7 @@ interface AverageSpeedPerKilometrChartProps {
 }
 
 export function AverageSpeedPerKilometrChart({ trainings }: AverageSpeedPerKilometrChartProps) {
+    const chartRef = React.useRef<HTMLDivElement>(null);
     // Sort trainings by date
     const sortedTrainings = [...trainings].sort(
         (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
@@ -57,14 +60,21 @@ export function AverageSpeedPerKilometrChart({ trainings }: AverageSpeedPerKilom
 
     return (
         <Card>
-            <CardHeader>
-                <CardTitle>Średnia prędkość w czasie</CardTitle>
-                <CardDescription>
-                    Średnia krocząca prędkości dla wszystkich treningów
-                </CardDescription>
+            <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div className="space-y-1">
+                    <CardTitle>Średnia prędkość w czasie</CardTitle>
+                    <CardDescription>
+                        Średnia krocząca prędkości dla wszystkich treningów
+                    </CardDescription>
+                </div>
+                <ChartExportActions
+                    targetRef={chartRef}
+                    fileName="srednia-predkosc-w-czasie"
+                />
             </CardHeader>
             <CardContent>
-                <ChartContainer config={chartConfig} className="aspect-auto h-80">
+                <div ref={chartRef} className="w-full">
+                    <ChartContainer config={chartConfig} className="aspect-[4/3] w-full">
                     <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
                         <XAxis dataKey="formattedDate" tickLine={true} axisLine={false} />
@@ -99,7 +109,8 @@ export function AverageSpeedPerKilometrChart({ trainings }: AverageSpeedPerKilom
                             }}
                         />
                     </AreaChart>
-                </ChartContainer>
+                    </ChartContainer>
+                </div>
             </CardContent>
             <CardFooter className="flex-col items-start gap-2 text-sm">
                 <div className="flex gap-2 leading-none font-medium">

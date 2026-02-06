@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import {
     Card,
     CardContent,
@@ -8,6 +9,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
+import { ChartExportActions } from "@/components/charts/chart-export-actions";
 import {
     ChartContainer,
     ChartLegend,
@@ -50,6 +52,7 @@ function calculateEfficiencyFactor(speed: number, avgHR: number | null | undefin
 }
 
 export function EfficiencyChart({ trainings }: { trainings: Training[] }) {
+    const chartRef = React.useRef<HTMLDivElement>(null);
     // Sort trainings by date
     const sortedTrainings = [...trainings].sort(
         (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
@@ -123,50 +126,53 @@ export function EfficiencyChart({ trainings }: { trainings: Training[] }) {
 
     return (
         <Card>
-            <CardHeader>
-                <div className="flex items-center gap-2">
-                    <CardTitle>Efektywność treningu</CardTitle>
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger>
-                                <InfoIcon className="text-muted-foreground h-4 w-4" />
-                            </TooltipTrigger>
-                            <TooltipContent className="w-[350px]">
-                                <p className="mb-2 font-semibold">Metryki efektywności:</p>
-                                <ul className="space-y-1 text-sm">
-                                    <li>
-                                        <strong>Efficiency Factor</strong> - Stosunek prędkości do
-                                        tętna (wyższa = lepiej)
-                                    </li>
-                                    <li>
-                                        <strong>VAM</strong> - Vertical Ascent Meters: metry w
-                                        pionie na godzinę
-                                    </li>
-                                    <li>
-                                        <strong>Speed/HR</strong> - Jak szybko jedziesz przy danym
-                                        tętnie
-                                    </li>
-                                </ul>
-                                <p className="mt-2 text-sm">
-                                    <strong>VAM benchmark:</strong> &lt;700=rekreacyjny,
-                                    700-900=dobry, 900-1200=b.dobry, &gt;1200=pro
-                                </p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
+            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                        <CardTitle>Efektywność treningu</CardTitle>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger>
+                                    <InfoIcon className="text-muted-foreground h-4 w-4" />
+                                </TooltipTrigger>
+                                <TooltipContent className="w-[350px]">
+                                    <p className="mb-2 font-semibold">Metryki efektywności:</p>
+                                    <ul className="space-y-1 text-sm">
+                                        <li>
+                                            <strong>Efficiency Factor</strong> - Stosunek prędkości
+                                            do tętna (wyższa = lepiej)
+                                        </li>
+                                        <li>
+                                            <strong>VAM</strong> - Vertical Ascent Meters: metry w
+                                            pionie na godzinę
+                                        </li>
+                                        <li>
+                                            <strong>Speed/HR</strong> - Jak szybko jedziesz przy
+                                            danym tętnie
+                                        </li>
+                                    </ul>
+                                    <p className="mt-2 text-sm">
+                                        <strong>VAM benchmark:</strong> &lt;700=rekreacyjny,
+                                        700-900=dobry, 900-1200=b.dobry, &gt;1200=pro
+                                    </p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
+                    <CardDescription>
+                        Efficiency Factor, VAM i stosunek prędkości do tętna
+                    </CardDescription>
                 </div>
-                <CardDescription>
-                    Efficiency Factor, VAM i stosunek prędkości do tętna
-                </CardDescription>
+                <ChartExportActions targetRef={chartRef} fileName="efektywnosc-treningu" />
             </CardHeader>
             <CardContent>
-                <div className="space-y-8">
+                <div ref={chartRef} className="space-y-8">
                     {/* Efficiency Factor chart */}
                     <div>
                         <h4 className="mb-4 text-sm font-medium">
                             Efficiency Factor (średnia krocząca)
                         </h4>
-                        <ChartContainer config={chartConfig} className="aspect-auto h-60">
+                        <ChartContainer config={chartConfig} className="aspect-[4/3] w-full">
                             <LineChart
                                 data={efficiencyMA}
                                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
@@ -225,7 +231,7 @@ export function EfficiencyChart({ trainings }: { trainings: Training[] }) {
                         <h4 className="mb-4 text-sm font-medium">
                             VAM - Vertical Ascent Meters (m/h)
                         </h4>
-                        <ChartContainer config={chartConfig} className="aspect-auto h-60">
+                        <ChartContainer config={chartConfig} className="aspect-[4/3] w-full">
                             <AreaChart
                                 data={validEfficiencyData}
                                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }}

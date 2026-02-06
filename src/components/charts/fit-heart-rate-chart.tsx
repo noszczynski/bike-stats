@@ -1,5 +1,7 @@
 "use client";
 
+import * as React from "react";
+import { ChartExportActions } from "@/components/charts/chart-export-actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     ChartConfig,
@@ -27,19 +29,25 @@ const chartConfig = {
 
 export function FitHeartRateChart({ trainingId }: FitHeartRateChartProps) {
     const { data, isLoading, error } = useTrackpoints(trainingId);
+    const chartRef = React.useRef<HTMLDivElement>(null);
 
     if (isLoading) {
         return (
-            <Card className="w-full">
-                <CardHeader>
+            <Card className="w-full aspect-[4/3] flex flex-col overflow-hidden">
+                <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <CardTitle className="flex items-center gap-2">
                         <Activity className="h-5 w-5" />
                         Tętno w czasie (FIT)
                     </CardTitle>
-                    <CardDescription>Szczegółowy wykres tętna z danych .FIT</CardDescription>
+                    <div className="flex flex-col gap-2 sm:items-end">
+                        <CardDescription>Szczegółowy wykres tętna z danych .FIT</CardDescription>
+                        <ChartExportActions targetRef={chartRef} fileName="tetno-w-czasie" />
+                    </div>
                 </CardHeader>
-                <CardContent>
-                    <Skeleton className="h-[300px] w-full" />
+                <CardContent className="flex-1 min-h-0">
+                    <div ref={chartRef} className="h-full w-full">
+                        <Skeleton className="h-full w-full" />
+                    </div>
                 </CardContent>
             </Card>
         );
@@ -47,16 +55,19 @@ export function FitHeartRateChart({ trainingId }: FitHeartRateChartProps) {
 
     if (error) {
         return (
-            <Card className="w-full">
-                <CardHeader>
+            <Card className="w-full aspect-[4/3] flex flex-col overflow-hidden">
+                <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <CardTitle className="flex items-center gap-2">
                         <Activity className="h-5 w-5" />
                         Tętno w czasie (FIT)
                     </CardTitle>
-                    <CardDescription>Szczegółowy wykres tętna z danych .FIT</CardDescription>
+                    <div className="flex flex-col gap-2 sm:items-end">
+                        <CardDescription>Szczegółowy wykres tętna z danych .FIT</CardDescription>
+                        <ChartExportActions targetRef={chartRef} fileName="tetno-w-czasie" />
+                    </div>
                 </CardHeader>
-                <CardContent>
-                    <div className="text-muted-foreground py-8 text-center">
+                <CardContent className="flex-1 min-h-0">
+                    <div className="text-muted-foreground flex h-full items-center justify-center text-center">
                         Błąd: {error.message}
                     </div>
                 </CardContent>
@@ -78,16 +89,19 @@ export function FitHeartRateChart({ trainingId }: FitHeartRateChartProps) {
 
     if (heartRateData.length === 0) {
         return (
-            <Card className="w-full">
-                <CardHeader>
+            <Card className="w-full aspect-[4/3] flex flex-col overflow-hidden">
+                <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <CardTitle className="flex items-center gap-2">
                         <Activity className="h-5 w-5" />
                         Tętno w czasie (FIT)
                     </CardTitle>
-                    <CardDescription>Szczegółowy wykres tętna z danych .FIT</CardDescription>
+                    <div className="flex flex-col gap-2 sm:items-end">
+                        <CardDescription>Szczegółowy wykres tętna z danych .FIT</CardDescription>
+                        <ChartExportActions targetRef={chartRef} fileName="tetno-w-czasie" />
+                    </div>
                 </CardHeader>
-                <CardContent>
-                    <div className="text-muted-foreground py-8 text-center">
+                <CardContent className="flex-1 min-h-0">
+                    <div className="text-muted-foreground flex h-full items-center justify-center text-center">
                         Brak danych tętna w pliku .FIT
                     </div>
                 </CardContent>
@@ -101,19 +115,22 @@ export function FitHeartRateChart({ trainingId }: FitHeartRateChartProps) {
     const minHeartRate = Math.min(...heartRateData.map(data => data.heart_rate || 0));
 
     return (
-        <Card className="w-full">
-            <CardHeader>
+        <Card className="w-full aspect-[4/3] flex flex-col overflow-hidden">
+            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <CardTitle className="flex items-center gap-2">
                     <Activity className="h-5 w-5" />
                     Tętno w czasie (FIT)
                 </CardTitle>
-                <CardDescription>
-                    Szczegółowy wykres tętna z danych .FIT • Punkty danych:{" "}
-                    {heartRateData.length.toLocaleString()}
-                </CardDescription>
+                <div className="flex flex-col gap-2 sm:items-end">
+                    <CardDescription>
+                        Szczegółowy wykres tętna z danych .FIT • Punkty danych:{" "}
+                        {heartRateData.length.toLocaleString()}
+                    </CardDescription>
+                    <ChartExportActions targetRef={chartRef} fileName="tetno-w-czasie" />
+                </div>
             </CardHeader>
-            <CardContent>
-                <div className="mb-6 grid grid-cols-3 gap-4 text-sm">
+            <CardContent className="flex flex-1 flex-col gap-4 min-h-0">
+                <div className="grid grid-cols-3 gap-4 text-sm shrink-0">
                     <div className="text-center">
                         <div className="text-2xl font-bold text-red-600">
                             {avgHeartRate.toFixed(0)}
@@ -130,36 +147,42 @@ export function FitHeartRateChart({ trainingId }: FitHeartRateChartProps) {
                     </div>
                 </div>
 
-                <ChartContainer config={chartConfig} className="h-32 w-full">
-                    <ResponsiveContainer width="100%" height={100}>
-                        <LineChart data={heartRateData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="timeFormatted" tick={{ fontSize: 12 }} />
-                            <YAxis
-                                domain={["dataMin - 10", "dataMax + 10"]}
-                                tick={{ fontSize: 12 }}
-                                label={{ value: "Tętno (bpm)", angle: -90, position: "insideLeft" }}
-                                ticks={[80, 100, 120, 140, 160, 180, 200]}
-                            />
-                            <ChartTooltip
-                                content={<ChartTooltipContent />}
-                                labelFormatter={value => `Czas: ${value}`}
-                                formatter={(value: number, name: string) => [
-                                    `${value} bpm`,
-                                    name === "heart_rate" ? "Tętno" : name,
-                                ]}
-                            />
-                            <Line
-                                type="monotone"
-                                dataKey="heart_rate"
-                                stroke="var(--color-heart_rate)"
-                                strokeWidth={2}
-                                dot={false}
-                                name="Tętno"
-                            />
-                        </LineChart>
-                    </ResponsiveContainer>
-                </ChartContainer>
+                <div ref={chartRef} className="flex-1 min-h-0 w-full">
+                    <ChartContainer config={chartConfig} className="h-full w-full aspect-auto">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={heartRateData}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="timeFormatted" tick={{ fontSize: 12 }} />
+                                <YAxis
+                                    domain={["dataMin - 10", "dataMax + 10"]}
+                                    tick={{ fontSize: 12 }}
+                                    label={{
+                                        value: "Tętno (bpm)",
+                                        angle: -90,
+                                        position: "insideLeft",
+                                    }}
+                                    ticks={[80, 100, 120, 140, 160, 180, 200]}
+                                />
+                                <ChartTooltip
+                                    content={<ChartTooltipContent />}
+                                    labelFormatter={value => `Czas: ${value}`}
+                                    formatter={(value: number, name: string) => [
+                                        `${value} bpm`,
+                                        name === "heart_rate" ? "Tętno" : name,
+                                    ]}
+                                />
+                                <Line
+                                    type="monotone"
+                                    dataKey="heart_rate"
+                                    stroke="var(--color-heart_rate)"
+                                    strokeWidth={2}
+                                    dot={false}
+                                    name="Tętno"
+                                />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </ChartContainer>
+                </div>
             </CardContent>
         </Card>
     );

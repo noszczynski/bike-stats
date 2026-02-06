@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import {
     Card,
     CardContent,
@@ -8,6 +9,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
+import { ChartExportActions } from "@/components/charts/chart-export-actions";
 import {
     ChartContainer,
     ChartLegend,
@@ -54,6 +56,7 @@ function parseTimeToMinutes(time: string): number {
 }
 
 export function HeartRateChart({ trainings }: { trainings: Training[] }) {
+    const chartRef = React.useRef<HTMLDivElement>(null);
     const sortedTrainings = [...trainings]
         .filter(t => t.heart_rate_zones && t.avg_heart_rate_bpm)
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -181,14 +184,18 @@ export function HeartRateChart({ trainings }: { trainings: Training[] }) {
 
     return (
         <Card>
-            <CardHeader>
-                <CardTitle>Tętno w czasie</CardTitle>
-                <CardDescription>
-                    Średni rozkład czasu w strefach tętna (w procentach)
-                </CardDescription>
+            <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div className="space-y-1">
+                    <CardTitle>Tętno w czasie</CardTitle>
+                    <CardDescription>
+                        Średni rozkład czasu w strefach tętna (w procentach)
+                    </CardDescription>
+                </div>
+                <ChartExportActions targetRef={chartRef} fileName="tetno-w-czasie-strefy" />
             </CardHeader>
             <CardContent>
-                <ChartContainer config={chartConfig} className="aspect-auto h-80">
+                <div ref={chartRef} className="w-full">
+                    <ChartContainer config={chartConfig} className="aspect-[4/3] w-full">
                     <AreaChart
                         data={data}
                         margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
@@ -271,7 +278,8 @@ export function HeartRateChart({ trainings }: { trainings: Training[] }) {
                             }}
                         />
                     </AreaChart>
-                </ChartContainer>
+                    </ChartContainer>
+                </div>
             </CardContent>
             <CardFooter className="flex-col items-start gap-2 text-sm">
                 <div className="flex gap-2 leading-none font-medium">

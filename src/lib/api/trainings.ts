@@ -31,11 +31,41 @@ function mapStravaSportTypeToActivityType(sportType: string): ActivityType {
 }
 
 function formatActivityToTraining(
-    activity: Activity & { strava_activity: StravaActivity | null },
+    activity: Activity & {
+        strava_activity: StravaActivity | null;
+        laps: {
+            avg_power_watts: number | null;
+            avg_cadence_rpm: number | null;
+            moving_time_s: number;
+        }[];
+    },
 ): Training {
     if (!activity.strava_activity) {
         throw new Error("Activity must have strava_activity to be formatted as Training");
     }
+
+    const powerLaps = activity.laps.filter(
+        lap => lap.avg_power_watts && lap.avg_power_watts > 0 && lap.moving_time_s > 0,
+    );
+    const powerTimeSum = powerLaps.reduce((sum, lap) => sum + lap.moving_time_s, 0);
+    const avgPower =
+        powerLaps.length > 0 && powerTimeSum > 0
+            ? powerLaps.reduce(
+                  (sum, lap) => sum + (lap.avg_power_watts || 0) * lap.moving_time_s,
+                  0,
+              ) / powerTimeSum
+            : null;
+    const cadenceLaps = activity.laps.filter(
+        lap => lap.avg_cadence_rpm && lap.avg_cadence_rpm > 0 && lap.moving_time_s > 0,
+    );
+    const cadenceTimeSum = cadenceLaps.reduce((sum, lap) => sum + lap.moving_time_s, 0);
+    const avgCadence =
+        cadenceLaps.length > 0 && cadenceTimeSum > 0
+            ? cadenceLaps.reduce(
+                  (sum, lap) => sum + (lap.avg_cadence_rpm || 0) * lap.moving_time_s,
+                  0,
+              ) / cadenceTimeSum
+            : null;
 
     return {
         id: activity.id,
@@ -50,6 +80,8 @@ function formatActivityToTraining(
         max_speed_kmh: new Decimal(activity.strava_activity.max_speed_kmh).toNumber(),
         avg_heart_rate_bpm: activity.strava_activity.avg_heart_rate_bpm,
         max_heart_rate_bpm: activity.strava_activity.max_heart_rate_bpm,
+        avg_power_watts: avgPower,
+        avg_cadence_rpm: avgCadence,
         heart_rate_zones:
             activity &&
             activity.heart_rate_zone_1 &&
@@ -280,6 +312,13 @@ export async function getAllTrainings(
         where,
         include: {
             strava_activity: true,
+            laps: {
+                select: {
+                    avg_power_watts: true,
+                    avg_cadence_rpm: true,
+                    moving_time_s: true,
+                },
+            },
             activity_tags: {
                 include: {
                     tag: true,
