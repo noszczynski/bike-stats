@@ -46,9 +46,9 @@ export function CompareToSelect({ trainingDate }: CompareToSelectProps) {
                     <SelectValue placeholder="Wybierz porównanie" />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="other">Inne treningi</SelectItem>
-                    <SelectItem value="earlier">Wcześniejsze treningi</SelectItem>
-                    <SelectItem value="all">Wszystkie treningi</SelectItem>
+                    <SelectItem value="other">Inne jazdy</SelectItem>
+                    <SelectItem value="earlier">Wcześniejsze jazdy</SelectItem>
+                    <SelectItem value="all">Wszystkie jazdy</SelectItem>
                     <SelectItem value="lastTwoMonths">Ostatnie dwa miesiące</SelectItem>
                     <SelectItem value="thisQuarter">Ten kwartał</SelectItem>
                 </SelectContent>

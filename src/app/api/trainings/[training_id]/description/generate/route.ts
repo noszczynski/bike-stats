@@ -207,7 +207,7 @@ export async function POST(request: Request, { params }: { params: { training_id
             zone_5: training.heart_rate_zone_5,
         };
 
-        const prompt = `Generate a concise, insightful training summary in Polish based on the following data. Focus on interesting findings and unique aspects of this specific ride.
+        const prompt = `Napisz krótkie podsumowanie tego treningu jak najlepszy trener kolarski. Pisz po polsku, prostym i naturalnym językiem. Skup się wyłącznie na najważniejszych informacjach i 1-2 najcenniejszych wnioskach. Pomiń oczywistości, techniczny żargon i zbędne liczby. Jeśli jakiejś danej brakuje, po prostu ją pomiń.
 
 Training Data:
 
@@ -308,52 +308,13 @@ ${lastTwoMonthsTrainings
     .join("; \n\n")}
 \`\`\`
 
-CRITICAL GUIDELINES:
-- **Keep it SHORT**: Aim for 250-400 words maximum
-- **Find the story**: Look for interesting patterns, unusual data points, or notable achievements in the laps and trackpoints
-- **Vary your language**: Each summary should feel fresh and unique - avoid repetitive phrases
-- **Be specific**: Reference actual lap numbers, specific moments, or unusual heart rate/speed/power/cadence patterns
-- **Skip the obvious**: Don't just restate numbers - provide insights and context
-- **Conversational tone**: Write like a knowledgeable training buddy, not a robot
-
-Example Response Structure (adapt creatively, don't copy):
-
-\`\`\`example_response_markdown
-## "${stravaActivity.name}" - September 9, 2025
-
-Your **79.9 km** ride in **3h 14min** averaged **24.8 km/h** - noticeably faster than your recent 2-month average of 23.2 km/h. What's interesting is you managed this despite **606m elevation** (7.6 m/km), well above your usual 5.5 m/km profile. The subjective effort of 6/10 suggests your climbing fitness is improving.
-
-### What Stands Out
-
-**The good stuff:**
-- Laps 8-9 were exceptionally strong at **32.4 km/h** and **30.3 km/h** - you actually got faster mid-ride
-- Heart rate stayed remarkably consistent in zones 3-4 (nearly 3 hours total) without erratic spikes
-- Your max speed of **59.8 km/h** shows confident descending technique
-
-**Worth noting:**
-- Laps 7, 11, 12 had the toughest climbs (62-89m each) - speed naturally dropped but you maintained 21+ km/h
-- Zone 5 barely activated - if you're targeting VO2max gains, consider adding short intervals
-- Final kilometers showed slight fatigue (about 1.5 km/h slower) - pacing strategy could extend that strong mid-ride performance
-
-The standout detail: you sustained zone 3-4 intensity for over 2.5 hours on challenging terrain while maintaining speed above your historical average. That's solid endurance development. Keep this consistency and your PRs are within reach.
-\`\`\`
-
-STRUCTURE:
-1. **Main heading (##)**: Training name and date
-2. **Opening paragraph**: 2-3 sentences with key stats and one interesting observation
-3. **Section "What Stands Out" (###)**: Split into "The good stuff" and "Worth noting" with 2-4 concise bullet points each
-4. **Closing**: 1-2 sentences with a unique insight or encouragement
-
-OUTPUT REQUIREMENTS:
-- Use Markdown: ## for title, ### for section
-- Bold key numbers and interesting findings
-- Keep bullet points to one line
-- Total: 250-400 words
-- Language: Polish
-- Tone: Analytical yet encouraging
-- Translate lap as "odcinek" in Polish
-
-IMPORTANT: Analyze the lap-by-lap data for interesting patterns - fastest/slowest laps, heart rate variations, power output, cadence consistency, elevation challenges, pacing strategy. Pay special attention to power-to-speed ratios, cadence efficiency, and how power/cadence correlate with heart rate zones. Make each summary feel personalized and insightful, not templated.`;
+WYMAGANIA WYJŚCIA:
+- Długość: 80-200 słów.
+- Forma: maksymalnie 2 krótkie akapity + do 3 krótkich punktów.
+- Zawartość: tylko kluczowe fakty (tempo/intensywność/teren) i 1 praktyczny wniosek.
+- Styl: prosty, ludzki, bez nadęcia.
+- Język: polski.
+- Używaj słowa "odcinek" zamiast "lap".`;
 
         const summary = await completion(prompt);
 

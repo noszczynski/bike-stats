@@ -13,3 +13,25 @@ export async function completion(prompt: string): Promise<string> {
 
     return response.output_text;
 }
+
+export async function completionJsonObject(
+    systemPrompt: string,
+    userPrompt: string,
+): Promise<string> {
+    const response = await client.chat.completions.create({
+        model: "gpt-5.4",
+        response_format: { type: "json_object" },
+        messages: [
+            {
+                role: "system",
+                content: systemPrompt,
+            },
+            {
+                role: "user",
+                content: userPrompt,
+            },
+        ],
+    });
+
+    return response.choices[0]?.message?.content || "{}";
+}

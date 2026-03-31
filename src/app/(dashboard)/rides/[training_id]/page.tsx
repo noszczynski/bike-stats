@@ -7,21 +7,22 @@ import { notFound } from "next/navigation";
 
 type CompareToType = "all" | "earlier" | "other";
 
-interface TrainingPageProps {
-    params: {
+interface RidePageProps {
+    params: Promise<{
         training_id: string;
-    };
-    searchParams: {
+    }>;
+    searchParams: Promise<{
         compareTo?: string;
-    };
+    }>;
 }
 
-export async function generateMetadata({ params }: TrainingPageProps): Promise<Metadata> {
-    const training = await getTrainingById(params.training_id);
+export async function generateMetadata({ params }: RidePageProps): Promise<Metadata> {
+    const { training_id } = await params;
+    const training = await getTrainingById(training_id);
 
     if (!training) {
         return {
-            title: "Trening nie znaleziony | Bike Stats",
+            title: "Jazda nie znaleziona | Bike Stats",
         };
     }
 
@@ -32,7 +33,9 @@ export async function generateMetadata({ params }: TrainingPageProps): Promise<M
     };
 }
 
-export default async function TrainingPage({ params, searchParams }: TrainingPageProps) {
+export default async function RidePage({ params, searchParams }: RidePageProps) {
+    const { training_id } = await params;
+    const resolvedSearchParams = await searchParams;
     const cookieStore = await cookies();
     const accessToken = cookieStore.get("strava_access_token")?.value;
     const refreshToken = cookieStore.get("strava_refresh_token")?.value;
@@ -42,21 +45,16 @@ export default async function TrainingPage({ params, searchParams }: TrainingPag
     }
 
     const allTrainings = await getAllTrainings();
+    const training = await getTrainingById(training_id);
 
-    // Find the training with the given ID
-    const training = await getTrainingById(params.training_id);
-
-    // If no training found, return 404
     if (!training) {
         notFound();
     }
 
-    // Get compareTo from searchParams or default to 'other'
-    // Ensure it's one of the valid values
     const validCompareToValues: CompareToType[] = ["all", "earlier", "other"];
 
-    const compareTo = validCompareToValues.includes(searchParams.compareTo as CompareToType)
-        ? (searchParams.compareTo as CompareToType)
+    const compareTo = validCompareToValues.includes(resolvedSearchParams.compareTo as CompareToType)
+        ? (resolvedSearchParams.compareTo as CompareToType)
         : "other";
 
     if (!validCompareToValues.includes(compareTo)) {

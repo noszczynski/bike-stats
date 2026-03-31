@@ -9,6 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
     Select,
     SelectContent,
     SelectItem,
@@ -164,14 +170,18 @@ export function TrainingFiltersComponent({ filters, onFiltersChange }: TrainingF
 
     return (
         <Card className="w-full">
-            <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base">
-                    <Filter className="h-4 w-4" />
-                    Filtry treningów
-                </CardTitle>
-            </CardHeader>
-
-            <CardContent className="grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="filters" className="border-b-0">
+                    <CardHeader className="pb-3">
+                        <AccordionTrigger className="py-0 hover:no-underline">
+                            <CardTitle className="flex items-center gap-2 text-base">
+                                <Filter className="h-4 w-4" />
+                                Filtry jazd
+                            </CardTitle>
+                        </AccordionTrigger>
+                    </CardHeader>
+                    <AccordionContent>
+                        <CardContent className="grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {/* Activity Type */}
                 <div className="space-y-2">
                     <Label className="text-xs font-medium">Typ aktywności</Label>
@@ -379,19 +389,22 @@ export function TrainingFiltersComponent({ filters, onFiltersChange }: TrainingF
                     </div>
                 </div>
 
-                <div className="flex w-64 items-center space-x-2">
-                    <Checkbox
-                        id="hasFitData"
-                        checked={draftFilters.hasFitData === true}
-                        onCheckedChange={checked =>
-                            updateFilterImmediate("hasFitData", checked ? true : undefined)
-                        }
-                    />
-                    <Label htmlFor="hasFitData" className="text-sm">
-                        Tylko z przetworzonym plikiem FIT
-                    </Label>
-                </div>
-            </CardContent>
+                            <div className="flex w-64 items-center space-x-2">
+                                <Checkbox
+                                    id="hasFitData"
+                                    checked={draftFilters.hasFitData === true}
+                                    onCheckedChange={checked =>
+                                        updateFilterImmediate("hasFitData", checked ? true : undefined)
+                                    }
+                                />
+                                <Label htmlFor="hasFitData" className="text-sm">
+                                    Tylko z przetworzonym plikiem FIT
+                                </Label>
+                            </div>
+                        </CardContent>
+                    </AccordionContent>
+                </AccordionItem>
+            </Accordion>
         </Card>
     );
 }

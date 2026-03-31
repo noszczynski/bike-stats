@@ -17,7 +17,16 @@ import {
     SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { ThemeSwitch } from "@/components/ui/theme-switch";
-import { Activity, Bike, Calendar, LayoutDashboard, Map, MessageSquare, User } from "lucide-react";
+import {
+    Activity,
+    Bike,
+    Calendar,
+    FileDown,
+    LayoutDashboard,
+    Map,
+    MessageSquare,
+    User,
+} from "lucide-react";
 import Link from "next/link";
 
 const data = {
@@ -34,7 +43,12 @@ const data = {
         },
         {
             title: "Treningi",
-            url: "/trainings",
+            url: "/workouts",
+            icon: FileDown,
+        },
+        {
+            title: "Jazdy",
+            url: "/rides",
             icon: Activity,
         },
         {

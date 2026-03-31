@@ -44,7 +44,9 @@ function formatActivityToTraining(
         throw new Error("Activity must have strava_activity to be formatted as Training");
     }
 
-    const powerLaps = activity.laps.filter(
+    const laps = activity.laps ?? [];
+
+    const powerLaps = laps.filter(
         lap => lap.avg_power_watts && lap.avg_power_watts > 0 && lap.moving_time_s > 0,
     );
     const powerTimeSum = powerLaps.reduce((sum, lap) => sum + lap.moving_time_s, 0);
@@ -55,7 +57,7 @@ function formatActivityToTraining(
                   0,
               ) / powerTimeSum
             : null;
-    const cadenceLaps = activity.laps.filter(
+    const cadenceLaps = laps.filter(
         lap => lap.avg_cadence_rpm && lap.avg_cadence_rpm > 0 && lap.moving_time_s > 0,
     );
     const cadenceTimeSum = cadenceLaps.reduce((sum, lap) => sum + lap.moving_time_s, 0);

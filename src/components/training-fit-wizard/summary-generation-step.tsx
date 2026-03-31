@@ -26,7 +26,7 @@ export function SummaryGenerationStep({
             
             // Wait a bit before redirecting to allow user to see success message
             setTimeout(() => {
-                router.push(`/trainings/${trainingId}`);
+                router.push(`/rides/${trainingId}`);
                 router.refresh();
             }, 1500);
         },
@@ -52,7 +52,7 @@ export function SummaryGenerationStep({
             <div className="space-y-2">
                 <h3 className="text-lg font-semibold">Generowanie podsumowania AI</h3>
                 <p className="text-sm text-muted-foreground">
-                    Trwa generowanie podsumowania treningu na podstawie zebranych danych. To może
+                    Trwa generowanie podsumowania jazdy na podstawie zebranych danych. To może
                     zająć chwilę...
                 </p>
             </div>
@@ -73,8 +73,8 @@ export function SummaryGenerationStep({
 
             {!isPending && (
                 <div className="flex justify-end">
-                    <Button onClick={() => router.push(`/trainings/${trainingId}`)}>
-                        Przejdź do treningu
+                    <Button onClick={() => router.push(`/rides/${trainingId}`)}>
+                        Przejdź do jazdy
                     </Button>
                 </div>
             )}

@@ -21,6 +21,13 @@ export async function getActivityById(id: string) {
         },
         include: {
             strava_activity: true,
+            laps: {
+                select: {
+                    avg_power_watts: true,
+                    avg_cadence_rpm: true,
+                    moving_time_s: true,
+                },
+            },
         },
     });
 }

@@ -42,7 +42,7 @@ interface TrainingCardProps {
 function TrainingCard({ training }: TrainingCardProps) {
     return (
         <div>
-            <Link href={`/trainings/${training.id}`}>
+            <Link href={`/rides/${training.id}`}>
                 <Card className="hover:bg-muted/50 relative h-full overflow-hidden transition-all">
                     {training.map?.summary_polyline && (
                         <RouteBackground summaryPolyline={training.map.summary_polyline} />

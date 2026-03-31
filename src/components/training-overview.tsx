@@ -151,7 +151,7 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
             const data = await response.json();
 
             toast("Podsumowanie wygenerowane pomyślnie", {
-                description: "Podsumowanie treningu zostało zaktualizowane.",
+                description: "Podsumowanie jazdy zostało zaktualizowane.",
             });
 
             router.refresh();
@@ -171,7 +171,7 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
 
         if (missingFields.length > 0) {
             // Build message based on missing fields
-            let message = "Ten trening nie ma wypełnionych następujących pól: ";
+            let message = "Ta jazda nie ma wypełnionych następujących pól: ";
             message += missingFields.join(", ");
             message += ". Czy na pewno chcesz wygenerować podsumowanie?";
 
@@ -362,7 +362,7 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                 <div className="flex flex-col gap-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                            <h1 className="text-2xl font-bold">Szczegóły treningu</h1>
+                            <h1 className="text-2xl font-bold">Szczegóły jazdy</h1>
                             <div className="flex items-center gap-2">
                                 <TooltipProvider>
                                     <Tooltip>
@@ -431,7 +431,7 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                         <div className="flex items-center gap-2">
                             {prevTraining ? (
                                 <Link
-                                    href={`/trainings/${prevTraining.id}?compareTo=${compareTo}&tab=${activeTab}`}
+                                    href={`/rides/${prevTraining.id}?compareTo=${compareTo}&tab=${activeTab}`}
                                     className="ring-offset-background focus-visible:ring-ring border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
                                 >
                                     <ChevronLeft className="h-4 w-4" />
@@ -446,7 +446,7 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                             )}
                             {nextTraining ? (
                                 <Link
-                                    href={`/trainings/${nextTraining.id}?compareTo=${compareTo}&tab=${activeTab}`}
+                                    href={`/rides/${nextTraining.id}?compareTo=${compareTo}&tab=${activeTab}`}
                                     className="ring-offset-background focus-visible:ring-ring border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
                                 >
                                     <ChevronRight className="h-4 w-4" />
@@ -487,7 +487,7 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                         <StatsCard
                             title="Data"
                             value={date(training.date).format("LL")}
-                            infoText="Data treningu"
+                            infoText="Data jazdy"
                         />
                         <StatsCard
                             title="Obciążenie treningowe"
@@ -505,7 +505,7 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                                 title="Średnia moc"
                                 value={avgPower ?? 0}
                                 unit="W"
-                                infoText="Średnia moc wyliczona z okrążeń treningu."
+                                infoText="Średnia moc wyliczona z okrążeń jazdy."
                                 formatValue={val => val.toFixed(0)}
                             />
                         ) : (
@@ -647,7 +647,7 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                                                     </div>
                                                 ) : (
                                                     <p className="text-muted-foreground">
-                                                        Brak podsumowania treningu.
+                                                        Brak podsumowania jazdy.
                                                     </p>
                                                 )}
 
@@ -691,7 +691,7 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                                                     <Textarea
                                                         value={notes}
                                                         onChange={e => setNotes(e.target.value)}
-                                                        placeholder="Dodaj swoje notatki o tym treningu..."
+                                                        placeholder="Dodaj swoje notatki o tej jeździe..."
                                                         className="min-h-32 w-full"
                                                         maxLength={2048}
                                                     />
@@ -904,7 +904,7 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                                                     title="Średnia moc"
                                                     value={avgPower}
                                                     unit="W"
-                                                    infoText={`Moc średnia z treningu. Maksymalna moc: ${maxPower.toFixed(0)} W`}
+                                                    infoText={`Moc średnia z jazdy. Maksymalna moc: ${maxPower.toFixed(0)} W`}
                                                     formatValue={val => val.toFixed(0)}
                                                 />
                                             )}
@@ -914,7 +914,7 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                                                     title="Średnia kadencja"
                                                     value={avgCadence}
                                                     unit="RPM"
-                                                    infoText={`Kadencja średnia z treningu. Maksymalna kadencja: ${maxCadence.toFixed(0)} RPM`}
+                                                    infoText={`Kadencja średnia z jazdy. Maksymalna kadencja: ${maxCadence.toFixed(0)} RPM`}
                                                     formatValue={val => val.toFixed(0)}
                                                 />
                                             )}
@@ -930,7 +930,7 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                     <div className="space-y-8">
                         {/* Edit Section */}
                         <div>
-                            <h3 className="mb-4 text-lg font-semibold">Edycja treningu</h3>
+                            <h3 className="mb-4 text-lg font-semibold">Edycja jazdy</h3>
                             <TrainingEditTab training={training} />
                         </div>
                     </div>
@@ -940,7 +940,7 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
             <AlertDialog open={showAlertDialog} onOpenChange={setShowAlertDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Brakujące dane treningu</AlertDialogTitle>
+                        <AlertDialogTitle>Brakujące dane jazdy</AlertDialogTitle>
                         <AlertDialogDescription>{missingFieldsMessage}</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

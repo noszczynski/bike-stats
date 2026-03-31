@@ -113,12 +113,12 @@ export default function CalendarPage() {
 
                 {isLoading ? (
                     <div className="flex items-center justify-center py-12">
-                        <p>Ładowanie treningów...</p>
+                        <p>Ładowanie jazd...</p>
                     </div>
                 ) : error ? (
                     <div className="flex items-center justify-center py-12">
                         <p className="text-red-500">
-                            Błąd ładowania treningów:{" "}
+                            Błąd ładowania jazd:{" "}
                             {error instanceof Error ? error.message : "Unknown error"}
                         </p>
                     </div>
@@ -127,9 +127,9 @@ export default function CalendarPage() {
                         {/* Display total trainings count */}
                         <div className="text-muted-foreground mb-4 text-sm">
                             {data?.totalCount === 0 ? (
-                                <p>Brak treningów w tym miesiącu</p>
+                                <p>Brak jazd w tym miesiącu</p>
                             ) : (
-                                <p>Znaleziono {data?.totalCount} treningów</p>
+                                <p>Znaleziono {data?.totalCount} jazd</p>
                             )}
                         </div>
 
@@ -173,7 +173,7 @@ export default function CalendarPage() {
                                         <div className="mt-1 space-y-1">
                                             {dayTrainings.map((training: Training) => (
                                                 <Link
-                                                    href={`/trainings/${training.id}`}
+                                                    href={`/rides/${training.id}`}
                                                     key={training.id}
                                                     className="bg-primary text-primary-foreground hover:bg-primary/80 block truncate rounded p-1 text-xs transition-colors"
                                                 >

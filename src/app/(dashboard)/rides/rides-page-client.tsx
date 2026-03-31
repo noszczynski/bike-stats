@@ -5,7 +5,7 @@ import { TrainingFiltersComponent } from "@/components/training-filters";
 import { TrainingFilters } from "@/lib/api/trainings";
 import { useState } from "react";
 
-export function TrainingsPageClient() {
+export function RidesPageClient() {
     const [filters, setFilters] = useState<TrainingFilters>({});
 
     const handleFiltersChange = (newFilters: TrainingFilters) => {
@@ -19,4 +19,3 @@ export function TrainingsPageClient() {
         </div>
     );
 }
-

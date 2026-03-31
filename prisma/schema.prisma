@@ -139,6 +139,7 @@ model User {
 
   settings   UserSettings?
   activities Activity[]
+  workouts   Workout[]
 
   @@map("users")
 }
@@ -189,4 +190,60 @@ model ActivityTag {
   @@index([activity_id])
   @@index([tag_id])
   @@map("activity_tags")
+}
+
+enum WorkoutSportType {
+  bike
+}
+
+enum WorkoutStepType {
+  Warmup
+  Cooldown
+  SteadyState
+  Ramp
+  IntervalsT
+  TextEvent
+}
+
+model Workout {
+  id          String           @id @default(uuid())
+  user_id     String
+  name        String           @db.VarChar(120)
+  description String           @db.VarChar(2000)
+  author      String           @db.VarChar(120)
+  sport_type  WorkoutSportType @default(bike)
+  tags        String[]         @default([])
+  created_at  DateTime         @default(now())
+  updated_at  DateTime         @updatedAt
+
+  user  User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  steps WorkoutStep[]
+
+  @@index([user_id, updated_at])
+  @@map("workouts")
+}
+
+model WorkoutStep {
+  id           String          @id @default(uuid())
+  workout_id   String
+  position     Int
+  type         WorkoutStepType
+  duration     Int?
+  power        Float?
+  power_low    Float?
+  power_high   Float?
+  repeat       Int?
+  on_duration  Int?
+  off_duration Int?
+  on_power     Float?
+  off_power    Float?
+  timeoffset   Int?
+  message      String?         @db.VarChar(160)
+  created_at   DateTime        @default(now())
+
+  workout Workout @relation(fields: [workout_id], references: [id], onDelete: Cascade)
+
+  @@unique([workout_id, position])
+  @@index([workout_id, position])
+  @@map("workout_steps")
 }

@@ -8,7 +8,7 @@ export function middleware(request: NextRequest) {
     // Define protected routes
     const protectedRoutes = [
         '/profile',
-        '/trainings',
+        '/rides',
         '/chat',
         '/'
     ];

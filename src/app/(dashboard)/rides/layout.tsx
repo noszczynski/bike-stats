@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "Treningi | Bike Stats",
-    description: "Szczegółowe informacje o treningach rowerowych",
+    title: "Jazdy | Bike Stats",
+    description: "Szczegółowe informacje o jazdach rowerowych",
 };
 
-export default function TrainingsLayout({
+export default function RidesLayout({
     children,
 }: Readonly<{
     children: React.ReactNode;
