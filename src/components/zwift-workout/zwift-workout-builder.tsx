@@ -3,6 +3,7 @@
 import { KeyboardEvent, useMemo, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { SubmitButton } from "@/components/submit-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -30,7 +31,6 @@ import {
     ArrowDown,
     ArrowUp,
     Download,
-    Loader2,
     Plus,
     RefreshCcw,
     Save,
@@ -325,31 +325,26 @@ export function ZwiftWorkoutBuilder() {
                     <CardContent>
                         <div className="space-y-4">
                             <div className="flex flex-wrap gap-2">
-                                <Button
+                                <SubmitButton
                                     type="button"
                                     onClick={handleSaveWorkout}
-                                    disabled={createWorkoutMutation.isPending}
+                                    isLoading={createWorkoutMutation.isPending}
+                                    loadingText="Zapisywanie…"
                                 >
-                                    {createWorkoutMutation.isPending ? (
-                                        <Loader2 className="animate-spin" />
-                                    ) : (
-                                        <Save />
-                                    )}
+                                    <Save />
                                     Zapisz konfigurację
-                                </Button>
-                                <Button
+                                </SubmitButton>
+                                <SubmitButton
                                     type="button"
                                     variant="outline"
                                     onClick={handleOverwriteWorkout}
-                                    disabled={!selectedWorkoutId || updateWorkoutMutation.isPending}
+                                    disabled={!selectedWorkoutId}
+                                    isLoading={updateWorkoutMutation.isPending}
+                                    loadingText="Nadpisywanie…"
                                 >
-                                    {updateWorkoutMutation.isPending ? (
-                                        <Loader2 className="animate-spin" />
-                                    ) : (
-                                        <RefreshCcw />
-                                    )}
+                                    <RefreshCcw />
                                     Nadpisz
-                                </Button>
+                                </SubmitButton>
                             </div>
 
                             <div className="space-y-2">
@@ -386,7 +381,7 @@ export function ZwiftWorkoutBuilder() {
                                                 </p>
                                             </div>
                                             <div className="flex flex-wrap gap-2">
-                                                <Button
+                                                <SubmitButton
                                                     type="button"
                                                     variant={
                                                         selectedWorkoutId === savedWorkout.id
@@ -396,21 +391,31 @@ export function ZwiftWorkoutBuilder() {
                                                     onClick={() =>
                                                         handleLoadWorkout(savedWorkout.id)
                                                     }
-                                                    disabled={loadWorkoutMutation.isPending}
+                                                    isLoading={
+                                                        loadWorkoutMutation.isPending &&
+                                                        loadWorkoutMutation.variables ===
+                                                            savedWorkout.id
+                                                    }
+                                                    loadingText="Wczytywanie…"
                                                 >
                                                     Wczytaj do edytora
-                                                </Button>
-                                                <Button
+                                                </SubmitButton>
+                                                <SubmitButton
                                                     type="button"
                                                     variant="destructive"
                                                     onClick={() =>
                                                         handleDeleteWorkout(savedWorkout.id)
                                                     }
-                                                    disabled={deleteWorkoutMutation.isPending}
+                                                    isLoading={
+                                                        deleteWorkoutMutation.isPending &&
+                                                        deleteWorkoutMutation.variables ===
+                                                            savedWorkout.id
+                                                    }
+                                                    loadingText="Usuwanie…"
                                                 >
                                                     <Trash2 />
                                                     Usuń
-                                                </Button>
+                                                </SubmitButton>
                                             </div>
                                         </div>
                                     ))}
@@ -517,18 +522,16 @@ export function ZwiftWorkoutBuilder() {
                                     placeholder="Np. Trening 60 min: rozgrzewka, 5x 3 min VO2max i schłodzenie."
                                 />
                             </div>
-                            <Button
+                            <SubmitButton
                                 type="button"
                                 onClick={handleGenerate}
-                                disabled={!canGenerate || generateMutation.isPending}
+                                disabled={!canGenerate}
+                                isLoading={generateMutation.isPending}
+                                loadingText="Generowanie…"
                             >
-                                {generateMutation.isPending ? (
-                                    <Loader2 className="animate-spin" />
-                                ) : (
-                                    <Sparkles />
-                                )}
+                                <Sparkles />
                                 Generuj z AI
-                            </Button>
+                            </SubmitButton>
                         </div>
                     </CardContent>
                 </Card>

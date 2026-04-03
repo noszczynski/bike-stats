@@ -46,10 +46,15 @@ async function fetchStravaRoutes(perPage: number = 100): Promise<StravaRoute[]> 
     return response.json();
 }
 
-export function useStravaAthlete() {
+type UseStravaAthleteOptions = {
+    enabled?: boolean;
+};
+
+export function useStravaAthlete(options?: UseStravaAthleteOptions) {
     return useQuery<StravaAthlete>({
         queryKey: ["strava-athlete"],
         queryFn: fetchStravaAthlete,
+        enabled: options?.enabled ?? true,
         staleTime: 5 * 60 * 1000, // 5 minutes
         gcTime: 10 * 60 * 1000, // 10 minutes
         retry: (failureCount, error) => {

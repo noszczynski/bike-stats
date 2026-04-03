@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/submit-button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Form,
@@ -110,15 +110,14 @@ export function RegisterForm({ className, ...props }: React.ComponentPropsWithou
                                     </FormItem>
                                 )}
                             />
-                            <Button
+                            <SubmitButton
                                 type="submit"
                                 className="w-full"
-                                disabled={registerMutation.isPending}
+                                isLoading={registerMutation.isPending}
+                                loadingText="Rejestrowanie…"
                             >
-                                {registerMutation.isPending
-                                    ? "Rejestrowanie..."
-                                    : "Zarejestruj się"}
-                            </Button>
+                                Zarejestruj się
+                            </SubmitButton>
                             <div className="mt-4 text-center text-sm">
                                 Masz już konto?{" "}
                                 <Link href="/login" className="underline underline-offset-4">

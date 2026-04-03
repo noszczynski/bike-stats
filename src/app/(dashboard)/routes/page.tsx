@@ -1,7 +1,7 @@
 "use client";
 
 import { RouteCards } from "@/components/route-card";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/submit-button";
 import { useStravaRoutes } from "@/hooks/use-strava-queries";
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, RefreshCw } from "lucide-react";
@@ -21,14 +21,15 @@ export default function RoutesPage() {
                     <h1 className="text-3xl font-bold">Moje trasy publiczne</h1>
                     <p className="text-muted-foreground">Znaleziono {routes.length} tras</p>
                 </div>
-                <Button onClick={handleRefresh} disabled={isFetching} variant="outline">
-                    {isFetching ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                        <RefreshCw className="h-4 w-4" />
-                    )}
+                <SubmitButton
+                    onClick={() => void handleRefresh()}
+                    isLoading={isFetching}
+                    loadingText="Odświeżanie…"
+                    variant="outline"
+                >
+                    <RefreshCw className="h-4 w-4" />
                     Odśwież
-                </Button>
+                </SubmitButton>
             </div>
 
             {isLoading ? (

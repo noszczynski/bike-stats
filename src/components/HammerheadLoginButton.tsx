@@ -1,15 +1,20 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { SubmitButton } from "@/components/submit-button";
 
 export function HammerheadLoginButton() {
+    const [isNavigating, setIsNavigating] = useState(false);
+
     return (
-        <Button
+        <SubmitButton
+            isLoading={isNavigating}
             onClick={() => {
+                setIsNavigating(true);
                 window.location.href = "/api/auth/hammerhead";
             }}
         >
             Połącz z Hammerhead
-        </Button>
+        </SubmitButton>
     );
 }

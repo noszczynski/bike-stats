@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/submit-button";
 import { useLogout } from "@/hooks/use-auth-mutations";
 import { LogOut } from "lucide-react";
 
@@ -16,15 +16,16 @@ export function LogoutButton() {
     };
 
     return (
-        <Button
+        <SubmitButton
             variant="ghost"
             size="icon"
             onClick={handleLogout}
             title="Logout"
-            disabled={logoutMutation.isPending}
+            isLoading={logoutMutation.isPending}
+            loadingText=""
             className="text-muted-foreground hover:text-foreground"
         >
             <LogOut className="h-4 w-4" />
-        </Button>
+        </SubmitButton>
     );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { HammerheadLoginButton } from "@/components/HammerheadLoginButton";
+import { SubmitButton } from "@/components/submit-button";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -214,24 +215,19 @@ export function HammerheadMatchDialog({
                     <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
                         Anuluj
                     </Button>
-                    <Button
+                    <SubmitButton
                         type="button"
                         disabled={
                             !auth?.isAuthenticated ||
                             !selectedId ||
-                            importMutation.isPending ||
                             activitiesQuery.isLoading
                         }
+                        isLoading={importMutation.isPending}
+                        loadingText={isLinkMode ? "Zapisywanie…" : "Import…"}
                         onClick={() => importMutation.mutate(selectedId)}
                     >
-                        {importMutation.isPending
-                            ? isLinkMode
-                                ? "Zapisywanie…"
-                                : "Import…"
-                            : isLinkMode
-                              ? "Zapisz powiązanie"
-                              : "Importuj wybrany .fit"}
-                    </Button>
+                        {isLinkMode ? "Zapisz powiązanie" : "Importuj wybrany .fit"}
+                    </SubmitButton>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

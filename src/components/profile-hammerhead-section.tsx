@@ -1,6 +1,7 @@
 "use client";
 
 import { HammerheadLoginButton } from "@/components/HammerheadLoginButton";
+import { SubmitButton } from "@/components/submit-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -43,10 +44,11 @@ export function ProfileHammerheadSection() {
                             {!data?.isAuthenticated ? (
                                 <HammerheadLoginButton />
                             ) : (
-                                <Button
+                                <SubmitButton
                                     type="button"
                                     variant="outline"
-                                    disabled={disconnectMutation.isPending}
+                                    isLoading={disconnectMutation.isPending}
+                                    loadingText="Odłączanie…"
                                     onClick={() =>
                                         disconnectMutation.mutate(undefined, {
                                             onSuccess: () =>
@@ -59,10 +61,8 @@ export function ProfileHammerheadSection() {
                                     }
                                 >
                                     <LogOut />
-                                    {disconnectMutation.isPending
-                                        ? "Odłączanie…"
-                                        : "Odłącz konto Hammerhead"}
-                                </Button>
+                                    Odłącz konto Hammerhead
+                                </SubmitButton>
                             )}
                             {!isLoading && (
                                 <Button

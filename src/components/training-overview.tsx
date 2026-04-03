@@ -11,6 +11,7 @@ import {
     AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
+import { SubmitButton } from "@/components/submit-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -34,7 +35,6 @@ import {
     Clipboard,
     FileIcon,
     HeartPulseIcon,
-    Loader2,
     Save,
     SparklesIcon,
     ZapIcon,
@@ -684,17 +684,13 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                                                 )}
 
                                                 <div className="mt-4 flex justify-end">
-                                                    <Button
+                                                    <SubmitButton
                                                         onClick={handleGenerateClick}
-                                                        disabled={isGenerating}
+                                                        isLoading={isGenerating}
+                                                        loadingText="Generowanie…"
                                                         className="gap-2"
                                                     >
-                                                        {isGenerating ? (
-                                                            <>
-                                                                <Loader2 className="h-4 w-4 animate-spin" />
-                                                                Generowanie...
-                                                            </>
-                                                        ) : training.summary ? (
+                                                        {training.summary ? (
                                                             <>
                                                                 <SparklesIcon size={16} />
                                                                 Wygeneruj ponownie
@@ -705,7 +701,7 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                                                                 Generuj podsumowanie
                                                             </>
                                                         )}
-                                                    </Button>
+                                                    </SubmitButton>
                                                 </div>
                                             </div>
                                         </AccordionContent>
@@ -731,31 +727,21 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                                                         <p className="text-muted-foreground text-sm">
                                                             {notes.length}/2048 znaków
                                                         </p>
-                                                        <Button
+                                                        <SubmitButton
                                                             onClick={async () => {
                                                                 updateNotesMutation.mutate({
                                                                     trainingId: training.id,
                                                                     notes,
                                                                 });
                                                             }}
-                                                            disabled={
-                                                                updateNotesMutation.isPending ||
-                                                                notes === training.notes
-                                                            }
+                                                            disabled={notes === training.notes}
+                                                            isLoading={updateNotesMutation.isPending}
+                                                            loadingText="Zapisywanie…"
                                                             className="gap-2"
                                                         >
-                                                            {updateNotesMutation.isPending ? (
-                                                                <>
-                                                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                                                    Zapisywanie...
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <Save className="h-4 w-4" />
-                                                                    Zapisz
-                                                                </>
-                                                            )}
-                                                        </Button>
+                                                            <Save className="h-4 w-4" />
+                                                            Zapisz
+                                                        </SubmitButton>
                                                     </div>
                                                 </div>
                                             </div>

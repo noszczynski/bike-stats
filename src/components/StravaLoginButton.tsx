@@ -1,16 +1,21 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { SubmitButton } from "@/components/submit-button";
 
 export function StravaLoginButton() {
+    const [isNavigating, setIsNavigating] = useState(false);
+
     return (
-        <Button
+        <SubmitButton
+            isLoading={isNavigating}
             onClick={() => {
+                setIsNavigating(true);
                 window.location.href = "/api/auth/strava";
             }}
             className="bg-[#FC4C02] text-white hover:bg-[#FC4C02]/90"
         >
             Connect with Strava
-        </Button>
+        </SubmitButton>
     );
 }
