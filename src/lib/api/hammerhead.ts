@@ -8,11 +8,11 @@ import {
     type HammerheadTokens,
 } from "@/types/hammerhead";
 
-const HAMMERHEAD_API_BASE = "https://api.hammerhead.io/v1";
+export const HAMMERHEAD_AUTH_API_BASE = "https://api.hammerhead.io/v1/auth/oauth";
+export const HAMMERHEAD_API_BASE = "https://api.hammerhead.io/v1/api";
 
-/** Ścieżki OAuth zgodne z oficjalnym SDK: v1/auth/oauth/… (nie v1/oauth/…). */
-const HAMMERHEAD_OAUTH_AUTHORIZE_URL = `${HAMMERHEAD_API_BASE}/auth/oauth/authorize`;
-const HAMMERHEAD_OAUTH_TOKEN_URL = `${HAMMERHEAD_API_BASE}/auth/oauth/token`;
+const HAMMERHEAD_OAUTH_AUTHORIZE_URL = `${HAMMERHEAD_AUTH_API_BASE}/authorize`;
+const HAMMERHEAD_OAUTH_TOKEN_URL = `${HAMMERHEAD_AUTH_API_BASE}/token`;
 
 function callbackUri(): string {
     const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3100";
@@ -132,7 +132,13 @@ export function normalizeHammerheadActivitiesPayload(
             if (id === undefined || id === null) return null;
             const name = o.name ?? o.title ?? "Aktywność";
             const started =
-                o.started_at ?? o.start_time ?? o.startedAt ?? o.date ?? o.created_at ?? null;
+                o.started_at ??
+                o.start_time ??
+                o.startedAt ??
+                o.date ??
+                o.created_at ??
+                o.createdAt ??
+                null;
             const dist =
                 o.distance_meters ??
                 o.distance_m ??
@@ -192,17 +198,22 @@ export async function hammerheadAuthorizedJson<T>(
     }
 
     let response = await fetchHammerheadJson(path, accessToken, init);
+
     if (response.status === 401 && refreshToken) {
         const newTokens = await refreshHammerheadToken(refreshToken);
         const nextRefresh = newTokens.refresh_token ?? refreshToken;
+
         response = await fetchHammerheadJson(path, newTokens.access_token, init);
+
         if (!response.ok) {
             const text = await response.text().catch(() => "");
             throw new Error(
                 `Hammerhead request failed after refresh: ${response.status} ${text.slice(0, 200)}`,
             );
         }
+
         const data = (await response.json()) as T;
+
         return {
             data,
             refreshedTokens: {
@@ -247,18 +258,21 @@ export async function hammerheadAuthorizedBinary(
     if (response.status === 401 && refreshToken) {
         const newTokens = await refreshHammerheadToken(refreshToken);
         const nextRefresh = newTokens.refresh_token ?? refreshToken;
+
         response = await fetch(url, {
             headers: {
                 Authorization: `Bearer ${newTokens.access_token}`,
                 Accept: "*/*",
             },
         });
+
         if (!response.ok) {
             const text = await response.text().catch(() => "");
             throw new Error(
                 `Hammerhead binary request failed after refresh: ${response.status} ${text.slice(0, 200)}`,
             );
         }
+
         return {
             buffer: await response.arrayBuffer(),
             refreshedTokens: {
@@ -278,15 +292,25 @@ export async function hammerheadAuthorizedBinary(
     return { buffer: await response.arrayBuffer() };
 }
 
-/** Lista aktywności — ścieżka zgodna z dokumentacją v1 `/activities`. */
+/** Lista aktywności — zgodnie z dokumentacją v1: query `page`, `perPage`, opcjonalnie `startDate`. */
 export async function fetchHammerheadActivities(
     accessToken: string | undefined,
     refreshToken: string | undefined,
     searchParams?: Record<string, string>,
 ): Promise<HammerheadFetchResult<unknown>> {
-    const qs = new URLSearchParams(searchParams ?? {});
-    if (!qs.has("per_page")) qs.set("per_page", "50");
+    const qs = new URLSearchParams();
+    const raw = searchParams ?? {};
+
+    if (raw.page) qs.set("page", raw.page);
+
+    const per = raw.perPage ?? raw.per_page;
+
+    qs.set("perPage", per ?? "50");
+
+    if (raw.startDate) qs.set("startDate", raw.startDate);
+
     const path = `/activities?${qs.toString()}`;
+
     return hammerheadAuthorizedJson<unknown>(accessToken, refreshToken, path);
 }
 
@@ -298,6 +322,6 @@ export async function downloadHammerheadFitFile(
     buffer: ArrayBuffer;
     refreshedTokens?: { access_token: string; refresh_token: string };
 }> {
-    const path = `/activities/${encodeURIComponent(hammerheadActivityId)}/fit`;
+    const path = `/activities/${encodeURIComponent(hammerheadActivityId)}/file`;
     return hammerheadAuthorizedBinary(accessToken, refreshToken, path);
 }

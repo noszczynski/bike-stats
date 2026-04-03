@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { HammerheadLoginButton } from "@/components/HammerheadLoginButton";
 import { SubmitButton } from "@/components/submit-button";
 import { Button } from "@/components/ui/button";
@@ -17,13 +18,15 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useHammerheadAuth } from "@/hooks/use-hammerhead-auth";
-import { suggestHammerheadActivity } from "@/lib/hammerhead-match";
+import {
+    isWithinHammerheadMatchWindow,
+    suggestHammerheadActivity,
+} from "@/lib/hammerhead-match";
 import type { HammerheadActivityListItem } from "@/types/hammerhead";
 import type { Training } from "@/types/training";
+import date from "@/lib/date";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import dayjs from "dayjs";
 import { Download, Link2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 type HammerheadMatchDialogProps = {
@@ -36,14 +39,35 @@ type HammerheadMatchDialogProps = {
     disabled?: boolean;
 };
 
-async function fetchHammerheadActivitiesList(): Promise<HammerheadActivityListItem[]> {
-    const res = await fetch("/api/hammerhead/activities?per_page=50");
+async function fetchHammerheadActivitiesList({
+    perPage = 24,
+}: {
+    perPage?: number;
+}): Promise<HammerheadActivityListItem[]> {
+    const res = await fetch(`/api/hammerhead/activities?perPage=${perPage}`);
+
     if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(body.error ?? "Nie udało się pobrać listy aktywności");
     }
+
     const json = (await res.json()) as { activities: HammerheadActivityListItem[] };
+
     return json.activities ?? [];
+}
+
+function formatActivityStart(iso: string | null): string {
+    if (!iso) return "—";
+    const d = date(iso).tz("Europe/Warsaw");
+    if (!d.isValid()) return "—";
+    return `${d.format("DD-MM-YYYY")} (${d.fromNow()}), ${d.format("HH:mm")}`;
+}
+
+/** Data treningu `YYYY-MM-DD` → `DD-MM-YYYY (relatywnie)`. */
+function formatTrainingDateLabel(ymd: string): string {
+    const d = date.tz(`${ymd} 00:00:00`, "YYYY-MM-DD HH:mm:ss", "Europe/Warsaw");
+    if (!d.isValid()) return ymd;
+    return `${d.format("DD-MM-YYYY")} (${d.fromNow()})`;
 }
 
 export function HammerheadMatchDialog({
@@ -61,15 +85,24 @@ export function HammerheadMatchDialog({
 
     const activitiesQuery = useQuery({
         queryKey: ["hammerhead-activities"],
-        queryFn: fetchHammerheadActivitiesList,
+        queryFn: () => fetchHammerheadActivitiesList({ perPage: 24 }),
         enabled: open && !!auth?.isAuthenticated,
     });
 
     const referenceMeters = training.distance_km * 1000;
-    const suggestion = useMemo(() => {
+
+    const activitiesInMatchWindow = useMemo(() => {
         const list = activitiesQuery.data ?? [];
-        return suggestHammerheadActivity(list, training.date, referenceMeters);
-    }, [activitiesQuery.data, training.date, referenceMeters]);
+        return list.filter(i => isWithinHammerheadMatchWindow(i.startedAt, training.date));
+    }, [activitiesQuery.data, training.date]);
+
+    const suggestion = useMemo(() => {
+        return suggestHammerheadActivity(
+            activitiesInMatchWindow,
+            training.date,
+            referenceMeters,
+        );
+    }, [activitiesInMatchWindow, training.date, referenceMeters]);
 
     useEffect(() => {
         if (!open) return;
@@ -95,7 +128,10 @@ export function HammerheadMatchDialog({
             );
             const body = (await res.json().catch(() => ({}))) as { error?: string };
             if (!res.ok) {
-                throw new Error(body.error ?? (isLinkMode ? "Powiązanie nie powiodło się" : "Import nie powiódł się"));
+                throw new Error(
+                    body.error ??
+                        (isLinkMode ? "Powiązanie nie powiodło się" : "Import nie powiódł się"),
+                );
             }
             return body;
         },
@@ -112,12 +148,6 @@ export function HammerheadMatchDialog({
             toast.error(err.message);
         },
     });
-
-    const formatWhen = (iso: string | null) => {
-        if (!iso) return "—";
-        const d = dayjs(iso);
-        return d.isValid() ? d.format("YYYY-MM-DD HH:mm") : "—";
-    };
 
     const formatDist = (m: number) => {
         if (m >= 1000) return `${(m / 1000).toFixed(2)} km`;
@@ -145,8 +175,8 @@ export function HammerheadMatchDialog({
                     </DialogTitle>
                     <DialogDescription>
                         {isLinkMode
-                            ? `Trening ma już przetworzony plik FIT. Wybierz odpowiadającą aktywność w Hammerhead (${training.date}, ok. ${formatDist(referenceMeters)}) — zapiszemy tylko powiązanie, bez ponownego importu.`
-                            : `Wybierz aktywność z konta Hammerhead, która odpowiada temu treningowi (${training.date}, ok. ${formatDist(referenceMeters)}).`}
+                            ? `Trening ma już przetworzony plik FIT. Wybierz odpowiadającą aktywność w Hammerhead (${formatTrainingDateLabel(training.date)}, ok. ${formatDist(referenceMeters)}) — zapiszemy tylko powiązanie, bez ponownego importu.`
+                            : `Wybierz aktywność z konta Hammerhead, która odpowiada temu treningowi (${formatTrainingDateLabel(training.date)}, ok. ${formatDist(referenceMeters)}).`}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -176,15 +206,23 @@ export function HammerheadMatchDialog({
                                 Brak aktywności na koncie Hammerhead.
                             </p>
                         )}
-                        {activitiesQuery.data && activitiesQuery.data.length > 0 && (
+                        {activitiesQuery.data &&
+                            activitiesQuery.data.length > 0 &&
+                            activitiesInMatchWindow.length === 0 && (
+                                <p className="text-muted-foreground text-sm">
+                                    Brak aktywności Hammerhead w oknie {formatTrainingDateLabel(training.date)} ± 1 dzień —
+                                    zsynchronizuj urządzenie lub sprawdź, czy jazda jest na koncie.
+                                </p>
+                            )}
+                        {activitiesInMatchWindow.length > 0 && (
                             <div className="space-y-2">
                                 {suggestion.suggestedId && (
                                     <p className="text-sm font-medium">
-                                        Sugerowane dopasowanie (data / dystans): wybrano automatycznie
-                                        — możesz zmienić wybór poniżej.
+                                        Sugerowane dopasowanie (data / dystans): wybrano
+                                        automatycznie — możesz zmienić wybór poniżej.
                                     </p>
                                 )}
-                                <ScrollArea className="max-h-72 pr-3">
+                                <ScrollArea className="max-h-72 overflow-y-auto pr-3">
                                     <RadioGroup value={selectedId} onValueChange={setSelectedId}>
                                         {suggestion.ranked.map(({ item, score, sameDay }) => (
                                             <div
@@ -193,11 +231,14 @@ export function HammerheadMatchDialog({
                                             >
                                                 <RadioGroupItem value={item.id} id={item.id} />
                                                 <div className="grid flex-1 gap-1">
-                                                    <Label htmlFor={item.id} className="cursor-pointer">
+                                                    <Label
+                                                        htmlFor={item.id}
+                                                        className="cursor-pointer"
+                                                    >
                                                         {item.name}
                                                     </Label>
                                                     <p className="text-muted-foreground text-xs">
-                                                        {formatWhen(item.startedAt)} ·{" "}
+                                                        {formatActivityStart(item.startedAt)} ·{" "}
                                                         {formatDist(item.distanceMeters)}
                                                         {sameDay ? ` · dopasowanie ${score}%` : ""}
                                                     </p>
@@ -218,9 +259,7 @@ export function HammerheadMatchDialog({
                     <SubmitButton
                         type="button"
                         disabled={
-                            !auth?.isAuthenticated ||
-                            !selectedId ||
-                            activitiesQuery.isLoading
+                            !auth?.isAuthenticated || !selectedId || activitiesQuery.isLoading
                         }
                         isLoading={importMutation.isPending}
                         loadingText={isLinkMode ? "Zapisywanie…" : "Import…"}

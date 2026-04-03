@@ -26,19 +26,29 @@ export async function GET(request: Request) {
     const perPage = searchParams.get("per_page") ?? "50";
 
     try {
-        const { data, refreshedTokens } = await fetchHammerheadActivities(accessToken, refreshToken, {
-            page,
-            per_page: perPage,
-        });
+        const { data, refreshedTokens } = await fetchHammerheadActivities(
+            accessToken,
+            refreshToken,
+            {
+                page,
+                perPage,
+            },
+        );
+
         const activities = normalizeHammerheadActivitiesPayload(data);
         const res = NextResponse.json({ activities });
+
         if (refreshedTokens) {
             setHammerheadTokenCookies(res, refreshedTokens);
         }
+
         return res;
     } catch (error) {
         console.error("Hammerhead activities list error:", error);
 
-        return NextResponse.json({ error: "Nie udało się pobrać aktywności Hammerhead" }, { status: 502 });
+        return NextResponse.json(
+            { error: "Nie udało się pobrać aktywności Hammerhead" },
+            { status: 502 },
+        );
     }
 }

@@ -8,6 +8,21 @@ export function sameCalendarDay(isoStartedAt: string | null, trainingYmd: string
     return d.format("YYYY-MM-DD") === trainingYmd;
 }
 
+/** Dzień treningu ± 1 pełny dzień kalendarzowy (wg lokalnej strefy) — do listy dopasowań Hammerhead. */
+export function isWithinHammerheadMatchWindow(
+    isoStartedAt: string | null,
+    trainingYmd: string,
+): boolean {
+    if (!isoStartedAt) return false;
+    const started = dayjs(isoStartedAt);
+    const trainingDay = dayjs(trainingYmd, "YYYY-MM-DD");
+    if (!started.isValid() || !trainingDay.isValid()) return false;
+    const ymd = started.format("YYYY-MM-DD");
+    const min = trainingDay.subtract(1, "day").format("YYYY-MM-DD");
+    const max = trainingDay.add(1, "day").format("YYYY-MM-DD");
+    return ymd >= min && ymd <= max;
+}
+
 /** 0–100, wyżej = lepsze dopasowanie dystansu (po metrach). */
 export function distanceMatchPercent(activityMeters: number, referenceMeters: number): number {
     if (referenceMeters <= 0 && activityMeters <= 0) return 100;
