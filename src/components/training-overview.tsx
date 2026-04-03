@@ -52,6 +52,7 @@ import { FitPowerChart } from "./charts/fit-power-chart";
 import { FitSpeedChart } from "./charts/fit-speed-chart";
 import { CompareToSelect } from "./compare-to-select";
 import { EffortLevelChart } from "./effort-level-chart";
+import { HammerheadMatchDialog } from "./HammerheadMatchDialog";
 import { FitUpload } from "./fit-upload";
 import { TrainingEditTab } from "./training-edit-tab";
 import {
@@ -468,12 +469,43 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                             </h2>
                             <Badge variant="secondary">{formatActivityType(training.type)}</Badge>
                         </div>
-                        <div className="mt-2 sm:mt-0">
+                        <div className="mt-2 flex flex-wrap items-center gap-2 sm:mt-0">
                             <CompareToSelect trainingDate={training.date} />
+                            {training.fit_processed && (
+                                <HammerheadMatchDialog
+                                    trainingId={training.id}
+                                    training={training}
+                                    mode="link"
+                                    onImportSuccess={() => router.refresh()}
+                                />
+                            )}
                         </div>
                     </div>
                 </div>
             </div>
+
+            {!training.fit_processed && (
+                <Card className="mb-6">
+                    <CardHeader>
+                        <CardTitle>Plik FIT</CardTitle>
+                        <CardDescription>
+                            Prześlij plik .fit lub pobierz go z konta Hammerhead.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start">
+                        <HammerheadMatchDialog
+                            trainingId={training.id}
+                            training={training}
+                            mode="import"
+                            onImportSuccess={() => router.refresh()}
+                        />
+                        <FitUpload
+                            trainingId={training.id}
+                            onUploadSuccess={() => router.refresh()}
+                        />
+                    </CardContent>
+                </Card>
+            )}
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList>

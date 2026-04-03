@@ -45,6 +45,7 @@ model Activity {
   created_at            DateTime     @default(now())
   updated_at            DateTime     @updatedAt
   strava_activity_id    BigInt?      @unique
+  hammerhead_activity_id String?     @unique
 
   user            User            @relation(fields: [user_id], references: [id], onDelete: Cascade)
   strava_activity StravaActivity? @relation(fields: [strava_activity_id], references: [id])

@@ -139,6 +139,7 @@ export function TrainingFitWizard({ trainingId, training, onSkip }: TrainingFitW
                     {currentStep === 1 && (
                         <FitUploadStep
                             trainingId={trainingId}
+                            training={training}
                             onComplete={() => handleStepComplete(1)}
                         />
                     )}

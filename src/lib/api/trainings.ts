@@ -111,6 +111,7 @@ function formatActivityToTraining(
               }
             : null,
         fit_processed: activity.fit_processed,
+        hammerhead_activity_id: activity.hammerhead_activity_id ?? null,
     } satisfies Training;
 }
 

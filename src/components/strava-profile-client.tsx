@@ -1,5 +1,6 @@
 "use client";
 
+import { ProfileHammerheadSection } from "@/components/profile-hammerhead-section";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -36,6 +37,7 @@ export default function StravaProfileClient({ searchParams }: StravaProfileClien
                         <Skeleton className="h-10 w-48" />
                         <Skeleton className="h-10 w-32" />
                     </div>
+                    <ProfileHammerheadSection />
                     <div className="grid gap-8 md:grid-cols-2">
                         <div className="space-y-4">
                             <Skeleton className="h-8 w-40" />
@@ -77,6 +79,7 @@ export default function StravaProfileClient({ searchParams }: StravaProfileClien
                             Strava account.
                         </AlertDescription>
                     </Alert>
+                    <ProfileHammerheadSection />
                     <div className="flex items-center justify-center">
                         <Link href="/">
                             <Button variant="outline">Back to Home</Button>
@@ -105,6 +108,7 @@ export default function StravaProfileClient({ searchParams }: StravaProfileClien
                         <Button variant="outline">Back to Home</Button>
                     </Link>
                 </div>
+                <ProfileHammerheadSection />
                 <div className="grid gap-8 md:grid-cols-2">
                     <div className="space-y-4">
                         <h2 className="text-xl font-semibold">Profile Information</h2>
