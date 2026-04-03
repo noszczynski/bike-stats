@@ -1,13 +1,19 @@
 import { serverEnv } from "@/env/env-server";
+import { createOpenAI } from "@ai-sdk/openai";
 import { OpenAI } from "openai";
 
 export const client = new OpenAI({
     apiKey: serverEnv.OPENAI_API_KEY,
 });
 
+/** Dostawca modeli dla Vercel AI SDK (`streamText`, narzędzia itd.). */
+export const openai = createOpenAI({
+    apiKey: serverEnv.OPENAI_API_KEY ?? "",
+});
+
 export async function completion(prompt: string): Promise<string> {
     const response = await client.responses.create({
-        model: "gpt-4.1",
+        model: "gpt-5.4-mini",
         input: prompt,
     });
 
@@ -19,7 +25,7 @@ export async function completionJsonObject(
     userPrompt: string,
 ): Promise<string> {
     const response = await client.chat.completions.create({
-        model: "gpt-5.4",
+        model: "gpt-5.4-mini",
         response_format: { type: "json_object" },
         messages: [
             {

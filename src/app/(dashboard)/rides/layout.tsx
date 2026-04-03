@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "Jazdy | Bike Stats",
+    title: "Aktywności | Bike Stats",
     description: "Szczegółowe informacje o jazdach rowerowych",
 };
 
