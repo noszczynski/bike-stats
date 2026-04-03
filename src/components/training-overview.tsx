@@ -11,6 +11,7 @@ import {
     AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
+import { SubmitButton } from "@/components/submit-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -34,7 +35,6 @@ import {
     Clipboard,
     FileIcon,
     HeartPulseIcon,
-    Loader2,
     Save,
     SparklesIcon,
     ZapIcon,
@@ -52,6 +52,7 @@ import { FitPowerChart } from "./charts/fit-power-chart";
 import { FitSpeedChart } from "./charts/fit-speed-chart";
 import { CompareToSelect } from "./compare-to-select";
 import { EffortLevelChart } from "./effort-level-chart";
+import { HammerheadMatchDialog } from "./HammerheadMatchDialog";
 import { FitUpload } from "./fit-upload";
 import { TrainingEditTab } from "./training-edit-tab";
 import {
@@ -468,12 +469,43 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                             </h2>
                             <Badge variant="secondary">{formatActivityType(training.type)}</Badge>
                         </div>
-                        <div className="mt-2 sm:mt-0">
+                        <div className="mt-2 flex flex-wrap items-center gap-2 sm:mt-0">
                             <CompareToSelect trainingDate={training.date} />
+                            {training.fit_processed && (
+                                <HammerheadMatchDialog
+                                    trainingId={training.id}
+                                    training={training}
+                                    mode="link"
+                                    onImportSuccess={() => router.refresh()}
+                                />
+                            )}
                         </div>
                     </div>
                 </div>
             </div>
+
+            {!training.fit_processed && (
+                <Card className="mb-6">
+                    <CardHeader>
+                        <CardTitle>Plik FIT</CardTitle>
+                        <CardDescription>
+                            Prześlij plik .fit lub pobierz go z konta Hammerhead.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start">
+                        <HammerheadMatchDialog
+                            trainingId={training.id}
+                            training={training}
+                            mode="import"
+                            onImportSuccess={() => router.refresh()}
+                        />
+                        <FitUpload
+                            trainingId={training.id}
+                            onUploadSuccess={() => router.refresh()}
+                        />
+                    </CardContent>
+                </Card>
+            )}
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList>
@@ -652,17 +684,13 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                                                 )}
 
                                                 <div className="mt-4 flex justify-end">
-                                                    <Button
+                                                    <SubmitButton
                                                         onClick={handleGenerateClick}
-                                                        disabled={isGenerating}
+                                                        isLoading={isGenerating}
+                                                        loadingText="Generowanie…"
                                                         className="gap-2"
                                                     >
-                                                        {isGenerating ? (
-                                                            <>
-                                                                <Loader2 className="h-4 w-4 animate-spin" />
-                                                                Generowanie...
-                                                            </>
-                                                        ) : training.summary ? (
+                                                        {training.summary ? (
                                                             <>
                                                                 <SparklesIcon size={16} />
                                                                 Wygeneruj ponownie
@@ -673,7 +701,7 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                                                                 Generuj podsumowanie
                                                             </>
                                                         )}
-                                                    </Button>
+                                                    </SubmitButton>
                                                 </div>
                                             </div>
                                         </AccordionContent>
@@ -699,31 +727,21 @@ export function TrainingOverview({ training, compareTo, allTrainings }: Training
                                                         <p className="text-muted-foreground text-sm">
                                                             {notes.length}/2048 znaków
                                                         </p>
-                                                        <Button
+                                                        <SubmitButton
                                                             onClick={async () => {
                                                                 updateNotesMutation.mutate({
                                                                     trainingId: training.id,
                                                                     notes,
                                                                 });
                                                             }}
-                                                            disabled={
-                                                                updateNotesMutation.isPending ||
-                                                                notes === training.notes
-                                                            }
+                                                            disabled={notes === training.notes}
+                                                            isLoading={updateNotesMutation.isPending}
+                                                            loadingText="Zapisywanie…"
                                                             className="gap-2"
                                                         >
-                                                            {updateNotesMutation.isPending ? (
-                                                                <>
-                                                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                                                    Zapisywanie...
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <Save className="h-4 w-4" />
-                                                                    Zapisz
-                                                                </>
-                                                            )}
-                                                        </Button>
+                                                            <Save className="h-4 w-4" />
+                                                            Zapisz
+                                                        </SubmitButton>
                                                     </div>
                                                 </div>
                                             </div>

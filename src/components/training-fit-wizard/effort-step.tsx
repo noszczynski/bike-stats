@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/submit-button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useUpdateTraining } from "@/hooks/use-training-mutations";
@@ -82,9 +82,9 @@ export function EffortStep({ trainingId, training, onComplete }: EffortStepProps
                 )}
             </div>
             <div className="flex justify-end">
-                <Button onClick={onComplete} disabled={isSaving}>
+                <SubmitButton onClick={onComplete} isLoading={isSaving}>
                     Dalej
-                </Button>
+                </SubmitButton>
             </div>
         </div>
     );

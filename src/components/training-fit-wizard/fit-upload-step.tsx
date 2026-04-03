@@ -1,16 +1,19 @@
 "use client";
 
 import { FitUpload } from "@/components/fit-upload";
+import { HammerheadMatchDialog } from "@/components/HammerheadMatchDialog";
 import { useFitStatus } from "@/hooks/use-laps-queries";
+import type { Training } from "@/types/training";
 import { CheckCircle2 } from "lucide-react";
 import { useEffect } from "react";
 
 interface FitUploadStepProps {
     trainingId: string;
+    training: Training;
     onComplete: () => void;
 }
 
-export function FitUploadStep({ trainingId, onComplete }: FitUploadStepProps) {
+export function FitUploadStep({ trainingId, training, onComplete }: FitUploadStepProps) {
     const { data: fitStatus, refetch } = useFitStatus(trainingId);
 
     useEffect(() => {
@@ -22,6 +25,16 @@ export function FitUploadStep({ trainingId, onComplete }: FitUploadStepProps) {
 
     return (
         <div className="space-y-4">
+            {!fitStatus?.fit_processed && (
+                <div className="flex flex-wrap items-center gap-3">
+                    <HammerheadMatchDialog
+                        trainingId={trainingId}
+                        training={training}
+                        mode="import"
+                        onImportSuccess={() => void refetch()}
+                    />
+                </div>
+            )}
             <FitUpload
                 trainingId={trainingId}
                 onUploadSuccess={async () => {

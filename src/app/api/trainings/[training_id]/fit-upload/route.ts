@@ -1,14 +1,9 @@
-import {
-    convertLapsForDB,
-    convertTrackpointsForDB,
-    parseFitFile,
-    validateFitFile,
-} from "@/lib/fit-parser";
+import { validateFitFile } from "@/lib/fit-parser";
+import { processFitForActivity } from "@/lib/process-fit-for-activity";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
 import { getAuthenticatedUser } from "../../../../../lib/auth";
-import { calculateHeartRateZonesByTrackpoints } from "../heart-rate-zones-suggestion/route";
 
 export async function POST(
     request: NextRequest,
@@ -56,16 +51,6 @@ export async function POST(
             return NextResponse.json({ error: "Invalid FIT file format" }, { status: 400 });
         }
 
-        // Parse FIT file
-        let parsedFit;
-        try {
-            parsedFit = await parseFitFile(buffer);
-        } catch (error) {
-            console.error("Error parsing FIT file:", error);
-
-            return NextResponse.json({ error: "Failed to parse FIT file" }, { status: 422 });
-        }
-
         const user = await getAuthenticatedUser({
             id: true,
             email: true,
@@ -84,89 +69,16 @@ export async function POST(
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        // Start database transaction to save trackpoints and laps
-        await prisma.$transaction(async tx => {
-            const rawTrackpoints = parsedFit.activity.trackpoints;
-
-            if (!user || !user.settings) {
-                throw new Error("Unauthorized");
-            }
-
-            // Convert and insert trackpoints
-            const trackpoints = convertTrackpointsForDB(rawTrackpoints, training_id);
-
-            if (trackpoints.length > 0) {
-                // Insert trackpoints in batches (1000 at a time to avoid memory issues)
-                const batchSize = 1000;
-                for (let i = 0; i < trackpoints.length; i += batchSize) {
-                    const batch = trackpoints.slice(i, i + batchSize);
-                    await tx.trackpoint.createMany({
-                        data: batch,
-                        skipDuplicates: true,
-                    });
-                }
-            }
-
-            // Convert and insert laps
-            const laps = convertLapsForDB(parsedFit.activity.laps, training_id);
-
-            if (laps.length > 0) {
-                await tx.lap.createMany({
-                    data: laps,
-                    skipDuplicates: true,
-                });
-            }
-
-            const zones = calculateHeartRateZonesByTrackpoints(
-                trackpoints.map(tp => ({
-                    heart_rate_bpm: tp.heart_rate_bpm ?? null,
-                    timestamp: tp.timestamp,
-                    speed_ms: tp.speed_ms ?? null,
-                    distance_m: tp.distance_m ?? null,
-                    latitude: tp.latitude ?? null,
-                    longitude: tp.longitude ?? null,
-                })),
-                {
-                    heart_rate_zone_1_min: 0,
-                    heart_rate_zone_1_max: user.settings.heart_rate_zone_1_max ?? 0,
-
-                    heart_rate_zone_2_min: (user.settings.heart_rate_zone_1_max ?? 0) + 1,
-                    heart_rate_zone_2_max: user.settings.heart_rate_zone_2_max ?? 0,
-
-                    heart_rate_zone_3_min: (user.settings.heart_rate_zone_2_max ?? 0) + 1,
-                    heart_rate_zone_3_max: user.settings.heart_rate_zone_3_max ?? 0,
-
-                    heart_rate_zone_4_min: (user.settings.heart_rate_zone_3_max ?? 0) + 1,
-                    heart_rate_zone_4_max: user.settings.heart_rate_zone_4_max ?? 0,
-
-                    heart_rate_zone_5_min: (user.settings.heart_rate_zone_4_max ?? 0) + 1,
-                    heart_rate_zone_5_max: 300,
-                },
-            );
-
-            console.log("zones:", zones);
-
-            // Mark activity as FIT processed
-            await tx.activity.update({
-                where: { id: training_id },
-                data: {
-                    fit_processed: true,
-                    heart_rate_zone_1: zones.zone_1.time,
-                    heart_rate_zone_2: zones.zone_2.time,
-                    heart_rate_zone_3: zones.zone_3.time,
-                    heart_rate_zone_4: zones.zone_4.time,
-                    heart_rate_zone_5: zones.zone_5.time,
-                },
-            });
-        });
-
-        // Apply auto-tagging after FIT processing (now we have detailed data)
+        let summary;
         try {
-            const { reapplyAutoTagging } = await import("@/features/training/auto-tagging-rules");
-            await reapplyAutoTagging(training_id);
+            summary = await processFitForActivity(user.settings, {
+                trainingId: training_id,
+                buffer,
+            });
         } catch (error) {
-            console.error("Error applying auto-tagging after FIT processing:", error);
-            // Don't fail the FIT processing if auto-tagging fails
+            console.error("Error parsing FIT file:", error);
+
+            return NextResponse.json({ error: "Failed to parse FIT file" }, { status: 422 });
         }
 
         // Return success response with summary
@@ -174,12 +86,12 @@ export async function POST(
             success: true,
             message: "FIT file processed successfully",
             data: {
-                trackpoints_count: parsedFit.activity.trackpoints.length,
-                laps_count: parsedFit.activity.laps.length,
-                activity_duration: parsedFit.activity.total_time,
-                activity_distance: parsedFit.activity.distance,
-                sport: parsedFit.sport,
-                device: parsedFit.device,
+                trackpoints_count: summary.trackpoints_count,
+                laps_count: summary.laps_count,
+                activity_duration: summary.activity_duration,
+                activity_distance: summary.activity_distance,
+                sport: summary.sport,
+                device: summary.device,
             },
         });
     } catch (error) {
@@ -280,7 +192,7 @@ export async function DELETE(
             // Set fit_processed to false
             await tx.activity.update({
                 where: { id: training_id },
-                data: { fit_processed: false },
+                data: { fit_processed: false, hammerhead_activity_id: null },
             });
 
             return {

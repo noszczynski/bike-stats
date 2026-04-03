@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { SubmitButton } from "@/components/submit-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -395,9 +396,9 @@ export function TrainingEditTab({ training }: TrainingEditTabProps) {
                         </Card>
 
                         <div className="flex justify-end">
-                            <Button type="submit" disabled={isSubmitting}>
-                                {isSubmitting ? "Zapisywanie..." : "Zapisz zmiany"}
-                            </Button>
+                            <SubmitButton type="submit" isLoading={isSubmitting} loadingText="Zapisywanie…">
+                                Zapisz zmiany
+                            </SubmitButton>
                         </div>
                     </form>
 
@@ -417,17 +418,15 @@ export function TrainingEditTab({ training }: TrainingEditTabProps) {
                                 {/* Generate Laps Button */}
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-4">
-                                        <Button
+                                        <SubmitButton
                                             onClick={handleGenerateLaps}
-                                            disabled={
-                                                !hasTrackpoints || generateLapsMutation.isPending
-                                            }
+                                            disabled={!hasTrackpoints}
+                                            isLoading={generateLapsMutation.isPending}
+                                            loadingText="Generowanie…"
                                             variant="outline"
                                         >
-                                            {generateLapsMutation.isPending
-                                                ? "Generowanie..."
-                                                : "Generuj odcinki"}
-                                        </Button>
+                                            Generuj odcinki
+                                        </SubmitButton>
                                         {!hasTrackpoints && (
                                             <Alert>
                                                 <AlertDescription>
@@ -567,7 +566,7 @@ export function TrainingEditTab({ training }: TrainingEditTabProps) {
                                     </div>
                                     <Separator />
                                     <div>
-                                        <Button
+                                        <SubmitButton
                                             onClick={async () => {
                                                 if (
                                                     confirm(
@@ -591,22 +590,14 @@ export function TrainingEditTab({ training }: TrainingEditTabProps) {
                                                     }
                                                 }
                                             }}
-                                            disabled={removeFitDataMutation.isPending}
+                                            isLoading={removeFitDataMutation.isPending}
+                                            loadingText="Usuwanie…"
                                             variant="destructive"
                                             className="gap-2"
                                         >
-                                            {removeFitDataMutation.isPending ? (
-                                                <>
-                                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                                                    Usuwanie...
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Trash2 className="h-4 w-4" />
-                                                    Usuń dane .FIT
-                                                </>
-                                            )}
-                                        </Button>
+                                            <Trash2 className="h-4 w-4" />
+                                            Usuń dane .FIT
+                                        </SubmitButton>
                                     </div>
                                 </div>
                             ) : (

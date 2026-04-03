@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { SubmitButton } from "@/components/submit-button";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -236,9 +237,13 @@ export function ImportTrainingDialog({ trainingId, onImportSuccess }: ImportTrai
                             </div>
                         </div>
                         <DialogFooter>
-                            <Button type="submit" disabled={importTrainingMutation.isPending}>
-                                {importTrainingMutation.isPending ? "Importing..." : "Import"}
-                            </Button>
+                            <SubmitButton
+                                type="submit"
+                                isLoading={importTrainingMutation.isPending}
+                                loadingText="Importowanie…"
+                            >
+                                Import
+                            </SubmitButton>
                         </DialogFooter>
                     </form>
                 </Form>

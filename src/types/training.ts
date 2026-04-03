@@ -48,6 +48,8 @@ export const TrainingSchema = z.object({
     battery_percent_usage: z.number().nullish(),
     /** Fit file processed */
     fit_processed: z.boolean().nullish(),
+    /** Id aktywności Hammerhead po imporcie .fit */
+    hammerhead_activity_id: z.string().nullable().optional(),
     /** Average power of the training in watts (from laps, if available) */
     avg_power_watts: z.number().nullish(),
     /** Average cadence of the training in rpm (from laps, if available) */

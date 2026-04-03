@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface StravaAuthStatus {
     isAuthenticated: boolean;
@@ -16,6 +16,28 @@ async function checkStravaAuthStatus(): Promise<StravaAuthStatus> {
     }
 
     return response.json();
+}
+
+async function disconnectStrava(): Promise<void> {
+    const response = await fetch("/api/auth/strava/logout", { method: "POST" });
+
+    if (!response.ok) {
+        throw new Error("Nie udało się odłączyć konta Strava");
+    }
+}
+
+export function useDisconnectStrava() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: disconnectStrava,
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: ["strava-auth-status"] });
+            void queryClient.invalidateQueries({ queryKey: ["strava-athlete"] });
+            void queryClient.invalidateQueries({ queryKey: ["strava-activities"] });
+            void queryClient.invalidateQueries({ queryKey: ["strava-routes"] });
+        },
+    });
 }
 
 export function useStravaAuth() {

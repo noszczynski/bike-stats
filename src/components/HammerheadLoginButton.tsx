@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { SubmitButton } from "@/components/submit-button";
 
-export function StravaLoginButton() {
+export function HammerheadLoginButton() {
     const [isNavigating, setIsNavigating] = useState(false);
 
     return (
@@ -11,11 +11,10 @@ export function StravaLoginButton() {
             isLoading={isNavigating}
             onClick={() => {
                 setIsNavigating(true);
-                window.location.href = "/api/auth/strava";
+                window.location.href = "/api/auth/hammerhead";
             }}
-            className="bg-[#FC4C02] text-white hover:bg-[#FC4C02]/90"
         >
-            Connect with Strava
+            Połącz z Hammerhead
         </SubmitButton>
     );
 }

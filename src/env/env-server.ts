@@ -14,6 +14,9 @@ export const serverEnvSchema = z.object({
     STRAVA_AUTH_CALLBACK_URI: z.string().url(),
     JWT_SECRET: z.string().min(1),
     OPENAI_API_KEY: z.string(),
+    /** Optional — wymagane tylko dla integracji Hammerhead */
+    HAMMERHEAD_CLIENT_ID: z.string().min(1).optional(),
+    HAMMERHEAD_CLIENT_SECRET: z.string().min(1).optional(),
 });
 
 // For development debugging
@@ -38,12 +41,35 @@ export const serverEnv = {
     STRAVA_AUTH_CALLBACK_URI: process.env.STRAVA_AUTH_CALLBACK_URI,
     JWT_SECRET: process.env.JWT_SECRET,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    HAMMERHEAD_CLIENT_ID: process.env.HAMMERHEAD_CLIENT_ID,
+    HAMMERHEAD_CLIENT_SECRET: process.env.HAMMERHEAD_CLIENT_SECRET,
 };
 
 /**
  * Type-safe server environment variables
  */
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
+
+/** Zwraca konfigurację Hammerhead lub `null`, jeśli zmienne nie są ustawione. */
+export function getHammerheadConfigFromEnv(): {
+    clientId: string;
+    clientSecret: string;
+} | null {
+    const parsed = serverEnvSchema.safeParse(serverEnv);
+
+    if (!parsed.success) return null;
+
+    const d = parsed.data;
+
+    if (!d.HAMMERHEAD_CLIENT_ID || !d.HAMMERHEAD_CLIENT_SECRET) {
+        return null;
+    }
+
+    return {
+        clientId: d.HAMMERHEAD_CLIENT_ID,
+        clientSecret: d.HAMMERHEAD_CLIENT_SECRET,
+    };
+}
 
 /**
  * Validate that server-side environment variables are set

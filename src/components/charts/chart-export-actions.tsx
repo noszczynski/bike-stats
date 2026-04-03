@@ -4,7 +4,7 @@ import * as React from "react";
 import { toast } from "sonner";
 import { Copy, Download } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/submit-button";
 import { cn } from "@/lib/utils";
 
 type ChartExportActionsProps = {
@@ -217,28 +217,28 @@ export function ChartExportActions({ targetRef, fileName, className }: ChartExpo
 
     return (
         <div className={cn("flex items-center gap-2", className)}>
-            <Button
+            <SubmitButton
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={handleCopy}
-                disabled={isExporting}
+                isLoading={isExporting}
                 className="gap-1.5"
             >
                 <Copy className="h-4 w-4" />
                 Kopiuj
-            </Button>
-            <Button
+            </SubmitButton>
+            <SubmitButton
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={handleDownload}
-                disabled={isExporting}
+                isLoading={isExporting}
                 className="gap-1.5"
             >
                 <Download className="h-4 w-4" />
                 Zapisz
-            </Button>
+            </SubmitButton>
         </div>
     );
 }

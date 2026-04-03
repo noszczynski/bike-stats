@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/submit-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -95,20 +95,14 @@ export function LapsValidationStep({ trainingId, onComplete }: LapsValidationSte
                             Odcinki będą generowane na podstawie tego dystansu
                         </p>
                     </div>
-                    <Button
-                        onClick={handleGenerate}
-                        disabled={isGenerating}
+                    <SubmitButton
+                        onClick={() => void handleGenerate()}
+                        isLoading={isGenerating}
+                        loadingText="Generowanie…"
                         className="w-full"
                     >
-                        {isGenerating ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Generowanie...
-                            </>
-                        ) : (
-                            "Generuj odcinki"
-                        )}
-                    </Button>
+                        Generuj odcinki
+                    </SubmitButton>
                 </div>
             ) : (
                 <div className="space-y-4">
@@ -164,23 +158,17 @@ export function LapsValidationStep({ trainingId, onComplete }: LapsValidationSte
                             />
                         </div>
                         <div className="flex gap-2">
-                            <Button
-                                onClick={handleGenerate}
-                                disabled={isGenerating}
+                            <SubmitButton
+                                onClick={() => void handleGenerate()}
+                                isLoading={isGenerating}
+                                loadingText="Generowanie…"
                                 variant="outline"
                             >
-                                {isGenerating ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Generowanie...
-                                    </>
-                                ) : (
-                                    "Generuj ponownie"
-                                )}
-                            </Button>
-                            <Button onClick={handleAccept} disabled={hasAccepted}>
+                                Generuj ponownie
+                            </SubmitButton>
+                            <SubmitButton onClick={handleAccept} disabled={hasAccepted}>
                                 OK
-                            </Button>
+                            </SubmitButton>
                         </div>
                     </div>
                 </div>

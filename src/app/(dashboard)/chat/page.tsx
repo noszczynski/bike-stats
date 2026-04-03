@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { SubmitButton } from "@/components/submit-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -287,9 +288,14 @@ export default function ChatPage() {
                                 disabled={isLoading}
                                 className="flex-1"
                             />
-                            <Button type="submit" disabled={isLoading || !message.trim()}>
+                            <SubmitButton
+                                type="submit"
+                                disabled={!message.trim()}
+                                isLoading={isLoading}
+                                loadingText=""
+                            >
                                 <Send className="h-4 w-4" />
-                            </Button>
+                            </SubmitButton>
                         </form>
                     </div>
                 </CardContent>
