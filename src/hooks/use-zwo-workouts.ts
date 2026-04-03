@@ -1,20 +1,24 @@
 "use client";
 
+import { WorkoutPreviewBlock } from "@/lib/zwo/workout-summary";
 import { ZwoWorkout } from "@/lib/zwo/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-type ZwoWorkoutListItem = {
+export type ZwoWorkoutListItem = {
     id: string;
     name: string;
     description: string;
     author: string;
     tags: string[];
     stepsCount: number;
+    estimatedDurationSeconds: number;
+    difficulty: number;
+    previewBlocks: WorkoutPreviewBlock[];
     createdAt: string;
     updatedAt: string;
 };
 
-type WorkoutDetailsResponse = {
+export type WorkoutDetailsResponse = {
     workout: ZwoWorkout;
     meta: {
         id: string;

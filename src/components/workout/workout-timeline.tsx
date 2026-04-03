@@ -19,7 +19,7 @@ type ChartBlock = {
     isRamp: boolean;
 };
 
-type ZwiftWorkoutTimelineProps = {
+type WorkoutTimelineProps = {
     steps: ZwoStep[];
     ftpWatts?: number;
 };
@@ -136,10 +136,7 @@ type TooltipState = {
     block: ChartBlock;
 } | null;
 
-export function ZwiftWorkoutTimeline({
-    steps,
-    ftpWatts = DEFAULT_FTP_WATTS,
-}: ZwiftWorkoutTimelineProps) {
+export function WorkoutTimeline({ steps, ftpWatts = DEFAULT_FTP_WATTS }: WorkoutTimelineProps) {
     const blocks = expandBlocks(steps, ftpWatts);
     const totalDuration = blocks.reduce((sum, b) => sum + b.durationSec, 0);
     const [tooltip, setTooltip] = useState<TooltipState>(null);
