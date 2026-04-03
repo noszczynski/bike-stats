@@ -22,6 +22,7 @@ import {
     useCreateZwoWorkout,
     useDeleteZwoWorkout,
     useLoadZwoWorkout,
+    useUploadZwoWorkoutToHammerhead,
     useUpdateZwoWorkout,
     useZwoWorkouts,
 } from "@/hooks/use-zwo-workouts";
@@ -35,6 +36,7 @@ import {
     RefreshCcw,
     Save,
     Sparkles,
+    Upload,
     Trash2,
     X,
 } from "lucide-react";
@@ -101,6 +103,7 @@ export function ZwiftWorkoutBuilder() {
     const updateWorkoutMutation = useUpdateZwoWorkout();
     const deleteWorkoutMutation = useDeleteZwoWorkout();
     const loadWorkoutMutation = useLoadZwoWorkout();
+    const uploadWorkoutToHammerheadMutation = useUploadZwoWorkoutToHammerhead();
 
     const canGenerate = instruction.trim().length >= 10;
     const validationResult = useMemo(() => zwoWorkoutSchema.safeParse(workout), [workout]);
@@ -224,6 +227,31 @@ export function ZwiftWorkoutBuilder() {
 
         const fileLabel = `${safeName || "training"}.zwo`;
         toast.success("Plik został pobrany", { description: fileLabel });
+    };
+
+    const handleUploadToHammerhead = async () => {
+        const parsed = zwoWorkoutSchema.safeParse(workout);
+        if (!parsed.success) {
+            setErrorMessage("Trening zawiera błędy. Popraw konfigurację przed wysyłką.");
+            return;
+        }
+
+        setErrorMessage(null);
+        setStatusMessage(null);
+
+        try {
+            const result = await uploadWorkoutToHammerheadMutation.mutateAsync(parsed.data);
+            setStatusMessage("Trening został wysłany do Hammerhead.");
+            toast.success("Wysłano do Hammerhead", {
+                description: result.name,
+            });
+        } catch (error) {
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : "Nie udało się wysłać treningu do Hammerhead.";
+            setErrorMessage(message);
+        }
     };
 
     const handleSaveWorkout = async () => {
@@ -541,10 +569,21 @@ export function ZwiftWorkoutBuilder() {
                         <CardTitle>Pobieranie pliku</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <Button type="button" onClick={handleDownload}>
-                            <Download />
-                            Pobierz .zwo
-                        </Button>
+                        <div className="flex flex-col gap-3 sm:flex-row">
+                            <Button type="button" onClick={handleDownload}>
+                                <Download />
+                                Pobierz .zwo
+                            </Button>
+                            <SubmitButton
+                                type="button"
+                                onClick={handleUploadToHammerhead}
+                                isLoading={uploadWorkoutToHammerheadMutation.isPending}
+                                loadingText="Wysyłanie…"
+                            >
+                                <Upload />
+                                Wyślij do Hammerhead
+                            </SubmitButton>
+                        </div>
                     </CardContent>
                 </Card>
             </div>

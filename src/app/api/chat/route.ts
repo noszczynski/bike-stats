@@ -1,19 +1,71 @@
-import { openai } from "@/lib/api/openai";
+import { client, openai } from "@/lib/api/openai";
 import { createTrainerTools } from "@/lib/ai/tools";
 import { getAuthenticatedUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { type OpenAILanguageModelResponsesOptions } from "@ai-sdk/openai";
 import { stepCountIs, streamText } from "ai";
 import { NextRequest } from "next/server";
-import date from "../../../lib/date";
 import dayjs from "../../../lib/date";
+
+const MAX_AGENT_STEPS = 3;
+const TITLE_MODEL = "gpt-5.4-nano";
+const MAX_TITLE_LENGTH = 48;
+
+type ChatMessage = {
+    role: "user" | "assistant";
+    content: string;
+};
+
+function sanitizeTitle(value: string) {
+    return value
+        .replace(/\s+/g, " ")
+        .replace(/^["'“”‘’]+|["'“”‘’]+$/g, "")
+        .trim();
+}
+
+function normalizeTitle(value: string) {
+    return sanitizeTitle(value).slice(0, MAX_TITLE_LENGTH).trim();
+}
+
+function fallbackTitle(message: string) {
+    const normalized = sanitizeTitle(message);
+
+    if (normalized.length <= MAX_TITLE_LENGTH) {
+        return normalized;
+    }
+
+    return `${normalized.slice(0, MAX_TITLE_LENGTH - 1).trim()}…`;
+}
+
+async function generateConversationTitle(messages: ChatMessage[]) {
+    const preview = messages
+        .slice(-6)
+        .map(({ role, content }) => {
+            const speaker = role === "user" ? "Użytkownik" : "Asystent";
+            const normalizedContent = content.replace(/\s+/g, " ").trim().slice(0, 240);
+
+            return `${speaker}: ${normalizedContent}`;
+        })
+        .join("\n");
+
+    const response = await client.responses.create({
+        model: TITLE_MODEL,
+        instructions: `Tworzysz tytuły konwersacji po polsku.
+Zwróć wyłącznie sam tytuł, bez cudzysłowów i bez kropki.
+Tytuł ma być maksymalnie zwięzły, najlepiej 2-5 słów, maksymalnie ${MAX_TITLE_LENGTH} znaków.
+Skup się na głównym celu lub temacie rozmowy treningowej.`,
+        input: preview,
+    });
+
+    return normalizeTitle(response.output_text);
+}
 
 const TRAINER_SYSTEM = `Jesteś AI trenerem rowerowym i endurance. Pomagasz analizować zapisy treningów użytkownika. Analizujesz tylko trening rowerowy (rower szosowy lub trenażer).
 
 ZASADY:
 1. Odpowiadaj wyłącznie po polsku.
 2. Nie uczestnicz w diagnozie medycznej — tylko trening, regeneracja ogólna, planowanie obciążeń (bez „leczenia”).
-3. Formatuj odpowiedzi w Markdown (nagłówki ##/###, listy, **pogrubienia**, \`metryki\`).
+3. Formatuj odpowiedzi w Markdown (nagłówki ##/###, listy, **pogrubienia**, \`metryki\`) ale nie przesadzaj z formatowaniem. Preferuj zwięzłość i czytelność oraz tekst ciągły podzielony na sekcje.
 4. Nie zmyślaj danych. Jeśli potrzebujesz faktów z bazy, wywołaj narzędzie (tool).
 5. Preferuj małe, wyspecjalizowane narzędzia zamiast jednego szerokiego, jeśli pytanie da się rozbić na kilka niezależnych fragmentów.
 6. Jeśli potrzebujesz kilku niezależnych danych, możesz wywołać kilka narzędzi równolegle.
@@ -36,6 +88,11 @@ NARZĘDZIA (TOOLS):
 - get_period_summary — statystyki za okres, opcjonalnie dla typu aktywności.
 - compare_period_summaries — porównanie dwóch okresów.
 - get_performance_trends — alias dla statystyk okresowych.
+- list_workouts — lista zapisanych treningów użytkownika do przeglądu lub wyboru.
+- get_workout — szczegóły jednego zapisanego treningu wraz z krokami.
+- create_workout — zapisanie nowego treningu użytkownika.
+- update_workout — aktualizacja istniejącego treningu użytkownika.
+- delete_workout — usunięcie zapisanego treningu użytkownika.
 
 STAŁE:
 - Używane jednostki miary: km, h, km/h, W, bpm;
@@ -48,7 +105,16 @@ Wartości domyślne:
 - Filtr po tagu: brak;
 - Czy ma przetworzony plik FIT: true;
 
-Gdy pytanie jest ogólne lub bezkontekstowe, możesz odpowiedzieć bez narzędzi. Gdy chodzi o konkretne liczby lub trendy — zawsze pobierz je narzędziami.`;
+Gdy pytanie jest ogólne lub bezkontekstowe, możesz odpowiedzieć bez narzędzi. Gdy chodzi o konkretne liczby lub trendy — zawsze pobierz je narzędziami.
+
+TRYB PRACY AGENTA:
+- Działasz iteracyjnie jak agent i masz maksymalnie ${MAX_AGENT_STEPS} iteracje.
+- Na początku przeanalizuj prośbę użytkownika i zdecyduj, czy potrzebujesz narzędzi.
+- Po każdej iteracji oceń, czy zebrane informacje naprawdę rozwiązują pytanie użytkownika.
+- Jeśli brakuje danych, wykonaj tylko kolejne niezbędne wywołania narzędzi.
+- Gdy masz już wystarczający kontekst, zakończ pracę odpowiedzią do użytkownika zamiast wykonywać kolejne kroki.
+- W ostatniej iteracji nie planuj dalszych działań: zwróć najlepszą możliwą odpowiedź na bazie zebranych danych i jasno wskaż ewentualne braki.
+- Nie pokazuj użytkownikowi swojego wewnętrznego toku rozumowania ani numerów iteracji.`;
 
 export async function POST(request: NextRequest) {
     try {
@@ -92,11 +158,16 @@ export async function POST(request: NextRequest) {
             },
         });
 
-        const rowsDesc = await prisma.conversationMessage.findMany({
-            where: { conversation_id: conversationId! },
-            orderBy: { created_at: "desc" },
-            take: 20,
-        });
+        const [rowsDesc, messageCountBeforeAssistant] = await Promise.all([
+            prisma.conversationMessage.findMany({
+                where: { conversation_id: conversationId! },
+                orderBy: { created_at: "desc" },
+                take: 20,
+            }),
+            prisma.conversationMessage.count({
+                where: { conversation_id: conversationId! },
+            }),
+        ]);
         const ordered = [...rowsDesc].reverse();
 
         const lm = ordered
@@ -106,19 +177,34 @@ export async function POST(request: NextRequest) {
                 content: m.content,
             }));
 
-        const needsTitle = !conversation.title;
+        const shouldRefreshTitle =
+            !conversation.title || (messageCountBeforeAssistant + 1) % 4 === 0;
 
         const result = streamText({
             model: openai("gpt-5.4"),
             system: TRAINER_SYSTEM,
             messages: lm,
             tools: createTrainerTools(userId),
+            prepareStep: async ({ steps }) => {
+                const currentStep = steps.length + 1;
+                const isLastStep = currentStep >= MAX_AGENT_STEPS;
+
+                return {
+                    activeTools: isLastStep ? [] : undefined,
+                    system: `${TRAINER_SYSTEM}
+
+AKTUALNA ITERACJA: ${currentStep}/${MAX_AGENT_STEPS}
+- Najpierw oceń, czy pytanie użytkownika jest już rozwiązane.
+- Jeśli nie, pobierz tylko brakujące dane.
+${isLastStep ? "- To ostatnia iteracja. Nie używaj już narzędzi i sformułuj finalną zwięzłą odpowiedź dla użytkownika na podstawie tego, co masz." : "- Jeśli narzędzia nie są potrzebne, odpowiedz od razu."}`,
+                };
+            },
             providerOptions: {
                 openai: {
                     parallelToolCalls: true,
                 } satisfies OpenAILanguageModelResponsesOptions,
             },
-            stopWhen: stepCountIs(8),
+            stopWhen: stepCountIs(MAX_AGENT_STEPS),
             onFinish: async ({ text }) => {
                 await prisma.conversationMessage.create({
                     data: {
@@ -128,8 +214,22 @@ export async function POST(request: NextRequest) {
                     },
                 });
 
-                if (needsTitle) {
-                    const title = message.length > 80 ? `${message.slice(0, 77)}…` : message;
+                if (shouldRefreshTitle) {
+                    let title = fallbackTitle(message);
+
+                    try {
+                        const generatedTitle = await generateConversationTitle([
+                            ...lm,
+                            { role: "assistant", content: text },
+                        ]);
+
+                        if (generatedTitle) {
+                            title = generatedTitle;
+                        }
+                    } catch (titleError) {
+                        console.error("Conversation title generation error:", titleError);
+                    }
+
                     await prisma.conversation.update({
                         where: { id: conversationId! },
                         data: { title },

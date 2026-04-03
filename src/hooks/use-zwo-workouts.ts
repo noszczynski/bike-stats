@@ -23,6 +23,15 @@ type WorkoutDetailsResponse = {
     };
 };
 
+type UploadWorkoutToHammerheadResponse = {
+    success: true;
+    workoutId: string;
+    name: string;
+    plannedDate: string | null;
+    createdAt: string;
+    updatedAt: string;
+};
+
 const zwoWorkoutQueryKeys = {
     all: ["zwo-workouts"] as const,
     details: (workoutId: string) => ["zwo-workouts", workoutId] as const,
@@ -165,6 +174,29 @@ export function useLoadZwoWorkout() {
             }
 
             return payload as WorkoutDetailsResponse;
+        },
+    });
+}
+
+export function useUploadZwoWorkoutToHammerhead() {
+    return useMutation({
+        mutationFn: async (workout: ZwoWorkout) => {
+            const response = await fetch("/api/zwo/workouts/hammerhead", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ workout }),
+            });
+            const payload = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    getApiErrorMessage(payload, "Nie udało się wysłać treningu do Hammerhead."),
+                );
+            }
+
+            return payload as UploadWorkoutToHammerheadResponse;
         },
     });
 }

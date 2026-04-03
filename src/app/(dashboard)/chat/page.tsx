@@ -1,6 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { SubmitButton } from "@/components/submit-button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -9,8 +19,9 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useChatAI } from "@/hooks/use-chat-ai";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bot, MessageSquarePlus, Send, User } from "lucide-react";
+import { Bot, MessageSquarePlus, Send, Trash2, User } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { toast } from "sonner";
 
 type Message = {
     id: string;
@@ -61,6 +72,8 @@ export default function ChatPage() {
     const [input, setInput] = useState("");
     const [messages, setMessages] = useState<Message[]>([]);
     const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+    const [conversationToDelete, setConversationToDelete] = useState<ConversationRow | null>(null);
+    const [isDeletingConversation, setIsDeletingConversation] = useState(false);
     /** Prawda tylko po wyborze rozmowy z listy — unika race z zapisem asystenta przy pierwszej wiadomości. */
     const [loadFromServer, setLoadFromServer] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -136,6 +149,16 @@ export default function ChatPage() {
     const formatTime = (date: Date) =>
         new Intl.DateTimeFormat("pl-PL", { hour: "2-digit", minute: "2-digit" }).format(date);
 
+    const getConversationLabel = useCallback((conversation: ConversationRow) => {
+        return (
+            conversation.title?.trim() ||
+            new Intl.DateTimeFormat("pl-PL", {
+                dateStyle: "short",
+                timeStyle: "short",
+            }).format(new Date(conversation.updatedAt))
+        );
+    }, []);
+
     const startNewChat = () => {
         setLoadFromServer(false);
         setActiveConversationId(null);
@@ -146,6 +169,42 @@ export default function ChatPage() {
         setLoadFromServer(true);
         setActiveConversationId(id);
     };
+
+    const handleDeleteConversation = useCallback(async () => {
+        if (!conversationToDelete || isDeletingConversation) {
+            return;
+        }
+
+        setIsDeletingConversation(true);
+
+        try {
+            const response = await fetch(`/api/conversations/${conversationToDelete.id}`, {
+                method: "DELETE",
+                credentials: "include",
+            });
+
+            const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+            if (!response.ok) {
+                throw new Error(payload?.error || "Nie udało się usunąć rozmowy.");
+            }
+
+            if (activeConversationId === conversationToDelete.id) {
+                setLoadFromServer(false);
+                setActiveConversationId(null);
+                setMessages([]);
+            }
+
+            await queryClient.invalidateQueries({ queryKey: ["conversations"] });
+            setConversationToDelete(null);
+            toast.success("Rozmowa została usunięta.");
+        } catch (error) {
+            toast.error(
+                error instanceof Error ? error.message : "Nie udało się usunąć rozmowy.",
+            );
+        } finally {
+            setIsDeletingConversation(false);
+        }
+    }, [activeConversationId, conversationToDelete, isDeletingConversation, queryClient]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -200,7 +259,7 @@ export default function ChatPage() {
 
     return (
         <div className="mx-auto flex h-[calc(100vh-8rem)] max-w-6xl flex-col gap-3 md:flex-row md:gap-4">
-            <Card className="flex max-h-44 flex-shrink-0 flex-col md:max-h-none md:w-64 md:shrink-0">
+            <Card className="flex max-h-44 shrink-0 flex-col md:max-h-none md:w-64 md:shrink-0">
                 <CardHeader className="pb-2">
                     <Button
                         type="button"
@@ -216,21 +275,29 @@ export default function ChatPage() {
                     <ScrollArea className="h-28 md:h-[calc(100vh-12rem)]">
                         <nav className="flex flex-row gap-2 overflow-x-auto pb-2 md:flex-col md:overflow-x-visible">
                             {conversations.map(c => (
-                                <Button
-                                    key={c.id}
-                                    type="button"
-                                    variant={activeConversationId === c.id ? "secondary" : "ghost"}
-                                    className="h-auto shrink-0 justify-start text-left whitespace-normal md:w-full"
-                                    onClick={() => selectConversation(c.id)}
-                                >
-                                    <span className="line-clamp-2 text-sm">
-                                        {c.title?.trim() ||
-                                            new Intl.DateTimeFormat("pl-PL", {
-                                                dateStyle: "short",
-                                                timeStyle: "short",
-                                            }).format(new Date(c.updatedAt))}
-                                    </span>
-                                </Button>
+                                <div key={c.id} className="flex shrink-0 items-start gap-1 md:w-full">
+                                    <Button
+                                        type="button"
+                                        variant={activeConversationId === c.id ? "secondary" : "ghost"}
+                                        className="h-auto min-w-0 flex-1 justify-start text-left whitespace-normal"
+                                        onClick={() => selectConversation(c.id)}
+                                    >
+                                        <span className="line-clamp-2 text-sm">
+                                            {getConversationLabel(c)}
+                                        </span>
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="shrink-0"
+                                        aria-label={`Usuń rozmowę ${getConversationLabel(c)}`}
+                                        onClick={() => setConversationToDelete(c)}
+                                        disabled={isDeletingConversation}
+                                    >
+                                        <Trash2 className="size-4" />
+                                    </Button>
+                                </div>
                             ))}
                         </nav>
                     </ScrollArea>
@@ -238,7 +305,7 @@ export default function ChatPage() {
             </Card>
 
             <Card className="flex min-h-0 min-w-0 flex-1 flex-col">
-                <CardHeader className="flex-shrink-0">
+                <CardHeader className="shrink-0">
                     <CardTitle className="flex items-center gap-2">
                         <Bot className="h-5 w-5" />
                         Chat z AI Trenerem
@@ -314,12 +381,6 @@ export default function ChatPage() {
                                         </AvatarFallback>
                                     </Avatar>
                                     <div className="bg-muted max-w-[min(100%,36rem)] rounded-lg p-3">
-                                        {!streamingText && (
-                                            <p className="text-muted-foreground text-sm">
-                                                Korzystam z danych treningowych (narzędzia) lub
-                                                generuję odpowiedź…
-                                            </p>
-                                        )}
                                         {streamingText ? (
                                             <div className="prose prose-sm max-w-none text-sm">
                                                 <ReactMarkdown components={markdownChatComponents}>
@@ -382,6 +443,39 @@ export default function ChatPage() {
                     </div>
                 </CardContent>
             </Card>
+
+            <AlertDialog
+                open={conversationToDelete !== null}
+                onOpenChange={open => {
+                    if (!open && !isDeletingConversation) {
+                        setConversationToDelete(null);
+                    }
+                }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Usunąć rozmowę?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Ta akcja bezpowrotnie usunie konwersację i wszystkie jej wiadomości z
+                            bazy danych.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeletingConversation}>
+                            Anuluj
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={e => {
+                                e.preventDefault();
+                                void handleDeleteConversation();
+                            }}
+                            disabled={isDeletingConversation}
+                        >
+                            {isDeletingConversation ? "Usuwanie..." : "Usuń"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

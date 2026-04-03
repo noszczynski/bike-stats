@@ -45,3 +45,32 @@ export async function GET(_request: NextRequest, context: RouteContext) {
         })),
     });
 }
+
+export async function DELETE(_request: NextRequest, context: RouteContext) {
+    try {
+        const userId = await getAuthenticatedUserId();
+        if (!userId) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const { id } = await context.params;
+        const deleted = await prisma.conversation.deleteMany({
+            where: {
+                id,
+                user_id: userId,
+            },
+        });
+
+        if (deleted.count === 0) {
+            return NextResponse.json({ error: "Not found" }, { status: 404 });
+        }
+
+        return NextResponse.json({ deleted: true });
+    } catch (error) {
+        console.error("Conversation delete error:", error);
+        return NextResponse.json(
+            { error: "Nie udało się usunąć rozmowy." },
+            { status: 500 },
+        );
+    }
+}
