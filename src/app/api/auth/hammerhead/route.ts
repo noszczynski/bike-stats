@@ -5,8 +5,12 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
     const config = getHammerheadConfigFromEnv();
+
     if (!config) {
-        return NextResponse.json({ error: "Hammerhead API is not configured on the server" }, { status: 503 });
+        return NextResponse.json(
+            { error: "Hammerhead API is not configured on the server" },
+            { status: 503 },
+        );
     }
 
     const state = createHammerheadOAuthState();

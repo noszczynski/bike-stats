@@ -4,32 +4,13 @@ import { HammerheadLoginButton } from "@/components/HammerheadLoginButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useHammerheadAuth } from "@/hooks/use-hammerhead-auth";
-import { useQueryClient } from "@tanstack/react-query";
+import { useDisconnectHammerhead, useHammerheadAuth } from "@/hooks/use-hammerhead-auth";
 import { LogOut } from "lucide-react";
-import { useState } from "react";
 import { toast } from "sonner";
 
 export function ProfileHammerheadSection() {
-    const queryClient = useQueryClient();
     const { data, isLoading, error, refetch } = useHammerheadAuth();
-    const [isDisconnecting, setIsDisconnecting] = useState(false);
-
-    async function handleDisconnect() {
-        setIsDisconnecting(true);
-        try {
-            const res = await fetch("/api/auth/hammerhead/logout", { method: "POST" });
-            if (!res.ok) {
-                throw new Error("Nie udało się odłączyć konta");
-            }
-            await queryClient.invalidateQueries({ queryKey: ["hammerhead-auth-status"] });
-            toast.success("Konto Hammerhead zostało odłączone.");
-        } catch (e) {
-            toast.error(e instanceof Error ? e.message : "Błąd odłączania");
-        } finally {
-            setIsDisconnecting(false);
-        }
-    }
+    const disconnectMutation = useDisconnectHammerhead();
 
     return (
         <Card>
@@ -65,11 +46,22 @@ export function ProfileHammerheadSection() {
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    disabled={isDisconnecting}
-                                    onClick={() => void handleDisconnect()}
+                                    disabled={disconnectMutation.isPending}
+                                    onClick={() =>
+                                        disconnectMutation.mutate(undefined, {
+                                            onSuccess: () =>
+                                                toast.success("Konto Hammerhead zostało odłączone."),
+                                            onError: e =>
+                                                toast.error(
+                                                    e instanceof Error ? e.message : "Błąd odłączania",
+                                                ),
+                                        })
+                                    }
                                 >
                                     <LogOut />
-                                    {isDisconnecting ? "Odłączanie…" : "Odłącz konto Hammerhead"}
+                                    {disconnectMutation.isPending
+                                        ? "Odłączanie…"
+                                        : "Odłącz konto Hammerhead"}
                                 </Button>
                             )}
                             {!isLoading && (

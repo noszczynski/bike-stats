@@ -21,9 +21,11 @@ function callbackUri(): string {
 
 function getClientCredentials() {
     const config = getHammerheadConfigFromEnv();
+
     if (!config) {
         throw new Error("Hammerhead API is not configured");
     }
+
     return config;
 }
 

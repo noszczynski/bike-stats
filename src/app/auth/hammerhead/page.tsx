@@ -1,12 +1,15 @@
 "use client";
 
+import { useEffect } from "react";
 import { HammerheadLoginButton } from "@/components/HammerheadLoginButton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeSwitch } from "@/components/ui/theme-switch";
 import { useHammerheadAuth } from "@/hooks/use-hammerhead-auth";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+
+import { Button } from "../../../components/ui/button";
 
 export default function HammerheadAuthPage() {
     const { data, isLoading, error } = useHammerheadAuth();
@@ -79,30 +82,20 @@ export default function HammerheadAuthPage() {
                     {connected === "1" && (
                         <Alert className="mb-4">
                             <AlertDescription>
-                                Konto Hammerhead zostało połączone. Możesz zamknąć tę stronę lub wrócić
-                                do aplikacji.
+                                Konto Hammerhead zostało połączone. Możesz zamknąć tę stronę lub
+                                wrócić do aplikacji.
                             </AlertDescription>
                         </Alert>
                     )}
 
-                    <div className="text-center">
-                        <h1 className="mb-2 text-4xl font-bold">Bike Stats</h1>
-                        <h2 className="mb-4 text-2xl font-semibold">Hammerhead</h2>
-                        <p className="text-muted-foreground">
-                            Połącz konto Hammerhead, aby pobierać pliki .fit z urządzenia i przypisywać
-                            je do aktywności w aplikacji.
-                        </p>
+                    <div className="flex justify-center">
+                        <Button asChild>
+                            <Link href="/profile">Zobacz profil</Link>
+                        </Button>
                     </div>
 
                     <div className="flex justify-center">
                         <HammerheadLoginButton />
-                    </div>
-
-                    <div className="text-muted-foreground text-center text-sm">
-                        <p>
-                            W panelu Hammerhead Developer ustaw adres przekierowania zgodny ze
-                            zmienną HAMMERHEAD_AUTH_CALLBACK_URI (np.&nbsp;…/api/hammerhead/callback).
-                        </p>
                     </div>
                 </div>
             </div>

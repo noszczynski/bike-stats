@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface HammerheadAuthStatus {
     isAuthenticated: boolean;
@@ -16,6 +16,25 @@ async function checkHammerheadAuthStatus(): Promise<HammerheadAuthStatus> {
     }
 
     return response.json();
+}
+
+async function disconnectHammerhead(): Promise<void> {
+    const response = await fetch("/api/auth/hammerhead/logout", { method: "POST" });
+
+    if (!response.ok) {
+        throw new Error("Nie udało się odłączyć konta");
+    }
+}
+
+export function useDisconnectHammerhead() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: disconnectHammerhead,
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: ["hammerhead-auth-status"] });
+        },
+    });
 }
 
 export function useHammerheadAuth() {

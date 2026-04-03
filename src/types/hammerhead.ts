@@ -1,7 +1,5 @@
 /**
- * Dozwolone scope’y OAuth 2.0 Hammerhead (`components.securitySchemes.hammerhead_oauth`
- * w https://api.hammerhead.io/v1/docs/openapi.yml). W parametrze `scope` żądania authorize
- * łączy się je spacją (RFC 6749 §3.3).
+ * Dokumentacja API: https://api.hammerhead.io/v1/docs/openapi.yml
  */
 export const HAMMERHEAD_OAUTH_SCOPES = {
     activity: {
@@ -33,6 +31,7 @@ export const HAMMERHEAD_DEFAULT_AUTHORIZE_SCOPES = [
 
 export const HAMMERHEAD_DEFAULT_AUTHORIZE_SCOPE = joinHammerheadOAuthScopes([
     HAMMERHEAD_OAUTH_SCOPES.activity.read,
+    HAMMERHEAD_OAUTH_SCOPES.workout.write,
 ]);
 
 export type HammerheadAuthResponse = {

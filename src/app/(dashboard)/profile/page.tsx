@@ -1,18 +1,18 @@
-import StravaProfileClient from "@/components/strava-profile-client";
+import ProfileClient from "@/components/profile-client";
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
 
-interface StravaProfilePageProps {
+interface ProfilePageProps {
     searchParams: {
         error?: string;
     };
 }
 
-export default async function StravaProfilePage({ searchParams }: StravaProfilePageProps) {
+export default async function ProfilePage({ searchParams }: ProfilePageProps) {
     const queryClient = new QueryClient();
 
     return (
         <HydrationBoundary state={dehydrate(queryClient)}>
-            <StravaProfileClient searchParams={searchParams} />
+            <ProfileClient searchParams={searchParams} />
         </HydrationBoundary>
     );
 }
