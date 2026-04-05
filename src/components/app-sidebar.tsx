@@ -22,6 +22,7 @@ import {
     Bike,
     Calendar,
     FileDown,
+    FileUp,
     LayoutDashboard,
     Map,
     MessageSquare,
@@ -60,6 +61,11 @@ const data = {
             title: "Moje trasy",
             url: "/routes",
             icon: Map,
+        },
+        {
+            title: "GPX",
+            url: "/gpx",
+            icon: FileUp,
         },
         {
             title: "Chat",
