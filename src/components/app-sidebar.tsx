@@ -42,7 +42,7 @@ const data = {
             icon: User,
         },
         {
-            title: "Workouty",
+            title: "Treningi",
             url: "/workouts",
             icon: FileDown,
         },

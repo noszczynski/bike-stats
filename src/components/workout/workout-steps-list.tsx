@@ -28,7 +28,7 @@ export function WorkoutStepsList({ steps }: WorkoutStepsListProps) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Struktura workoutu</CardTitle>
+                <CardTitle>Struktura treningu</CardTitle>
             </CardHeader>
             <CardContent>
                 <div className="space-y-3">

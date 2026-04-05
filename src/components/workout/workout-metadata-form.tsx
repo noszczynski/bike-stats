@@ -32,7 +32,7 @@ export function WorkoutMetadataForm({
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Metadane workoutu</CardTitle>
+                <CardTitle>Metadane treningu</CardTitle>
             </CardHeader>
             <CardContent>
                 <div className="space-y-4">

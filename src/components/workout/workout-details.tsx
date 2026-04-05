@@ -97,11 +97,11 @@ export function WorkoutDetails({ workoutId }: WorkoutDetailsProps) {
                 ...workout,
                 name: duplicateWorkoutName(workout.name),
             });
-            toast.success("Utworzono kopię workoutu.");
+            toast.success("Utworzono kopię treningu.");
             router.push(`/workouts/${result.workoutId}`);
         } catch (error) {
             toast.error(
-                error instanceof Error ? error.message : "Nie udało się skopiować workoutu.",
+                error instanceof Error ? error.message : "Nie udało się skopiować treningu.",
             );
         }
     };
@@ -126,7 +126,7 @@ export function WorkoutDetails({ workoutId }: WorkoutDetailsProps) {
             toast.error(
                 error instanceof Error
                     ? error.message
-                    : "Nie udało się wysłać workoutu do Hammerhead.",
+                    : "Nie udało się wysłać treningu do Hammerhead.",
             );
         }
     };
@@ -137,12 +137,12 @@ export function WorkoutDetails({ workoutId }: WorkoutDetailsProps) {
             toast.success("Usunięto workout.");
             router.push("/workouts");
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : "Nie udało się usunąć workoutu.");
+            toast.error(error instanceof Error ? error.message : "Nie udało się usunąć treningu.");
         }
     };
 
     if (workoutQuery.isLoading) {
-        return <p className="text-muted-foreground text-sm">Ładowanie workoutu...</p>;
+        return <p className="text-muted-foreground text-sm">Ładowanie treningu...</p>;
     }
 
     if (workoutQuery.isError || !workout || !meta) {
@@ -151,7 +151,7 @@ export function WorkoutDetails({ workoutId }: WorkoutDetailsProps) {
                 <AlertDescription>
                     {workoutQuery.error instanceof Error
                         ? workoutQuery.error.message
-                        : "Nie udało się pobrać workoutu."}
+                        : "Nie udało się pobrać treningu."}
                 </AlertDescription>
             </Alert>
         );
@@ -204,7 +204,7 @@ export function WorkoutDetails({ workoutId }: WorkoutDetailsProps) {
                         </>
                     }
                     breadcrumbs={[
-                        { href: "/workouts", label: "Workouty" },
+                        { href: "/workouts", label: "Treningi" },
                         { label: workout.name },
                     ]}
                 />

@@ -99,7 +99,7 @@ export function WorkoutEditor({ workoutId }: WorkoutEditorProps) {
                     workout: parsed.data,
                 });
                 setStatusMessage("Zmiany zostały zapisane.");
-                toast.success("Zapisano zmiany workoutu.");
+                toast.success("Zapisano zmiany treningu.");
                 return;
             }
 
@@ -108,13 +108,13 @@ export function WorkoutEditor({ workoutId }: WorkoutEditorProps) {
             router.push(`/workouts/${result.workoutId}`);
         } catch (error) {
             const message =
-                error instanceof Error ? error.message : "Nie udało się zapisać workoutu.";
+                error instanceof Error ? error.message : "Nie udało się zapisać treningu.";
             setErrorMessage(message);
         }
     };
 
     if (isEditing && workoutQuery.isLoading) {
-        return <p className="text-muted-foreground text-sm">Ładowanie workoutu do edycji...</p>;
+        return <p className="text-muted-foreground text-sm">Ładowanie treningu do edycji...</p>;
     }
 
     if (isEditing && (workoutQuery.isError || !workoutQuery.data)) {
@@ -123,7 +123,7 @@ export function WorkoutEditor({ workoutId }: WorkoutEditorProps) {
                 <AlertDescription>
                     {workoutQuery.error instanceof Error
                         ? workoutQuery.error.message
-                        : "Nie udało się pobrać workoutu do edycji."}
+                        : "Nie udało się pobrać treningu do edycji."}
                 </AlertDescription>
             </Alert>
         );
@@ -132,7 +132,7 @@ export function WorkoutEditor({ workoutId }: WorkoutEditorProps) {
     return (
         <div className="space-y-6">
             <WorkoutPageHeader
-                title={isEditing ? "Edycja workoutu" : "Nowy workout"}
+                title={isEditing ? "Edycja treningu" : "Nowy workout"}
                 description={
                     isEditing
                         ? "Zmieniaj metadane i układ modułów na osobnym ekranie edycji."
@@ -159,14 +159,14 @@ export function WorkoutEditor({ workoutId }: WorkoutEditorProps) {
                 }
                 breadcrumbs={
                     [
-                        { href: "/workouts", label: "Workouty" },
+                        { href: "/workouts", label: "Treningi" },
                         workoutId
                             ? {
                                   href: `/workouts/${workoutId}`,
                                   label: workout.name || "Szczegóły",
                               }
                             : null,
-                        { label: isEditing ? "Edycja" : "Nowy workout" },
+                        { label: isEditing ? "Edycja" : "Nowy trening" },
                     ].filter(Boolean) as Array<{ href?: string; label: string }>
                 }
             />
@@ -216,7 +216,7 @@ export function WorkoutEditor({ workoutId }: WorkoutEditorProps) {
                         <CardHeader>
                             <CardTitle>Podgląd</CardTitle>
                             <CardDescription>
-                                Szybki skrót aktualnie edytowanego workoutu.
+                                Szybki skrót aktualnie edytowanego treningu.
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-3 text-sm">

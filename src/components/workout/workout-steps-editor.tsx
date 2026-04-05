@@ -72,7 +72,7 @@ export function WorkoutStepsEditor({
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Moduły workoutu</CardTitle>
+                <CardTitle>Moduły treningu</CardTitle>
             </CardHeader>
             <CardContent>
                 <div className="space-y-4">

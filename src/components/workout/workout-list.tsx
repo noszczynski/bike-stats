@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useHammerheadAuth } from "@/hooks/use-hammerhead-auth";
 import { ZwoWorkoutListItem, useZwoWorkouts } from "@/hooks/use-zwo-workouts";
+import { getZoneForFactor } from "@/lib/zwo/power-zones";
 import { getWorkoutDifficultyLabel } from "@/lib/zwo/workout-summary";
 import { Bike, ChevronRight, FilePlus2, PencilLine } from "lucide-react";
 import Link from "next/link";
@@ -15,7 +16,18 @@ import Link from "next/link";
 const PROFILE_HEIGHT = 52;
 const PROFILE_MAX_FACTOR = 1.5;
 const PROFILE_WIDTH = 1000;
-const PROFILE_FILL = "#64748b";
+
+function zoneColorHex(colorClass: string): string {
+    const map: Record<string, string> = {
+        "bg-sky-500": "#0ea5e9",
+        "bg-emerald-500": "#10b981",
+        "bg-yellow-500": "#eab308",
+        "bg-orange-500": "#f97316",
+        "bg-rose-500": "#f43f5e",
+    };
+
+    return map[colorClass] ?? "#64748b";
+}
 
 function MiniWorkoutProfile({ workout }: { workout: ZwoWorkoutListItem }) {
     const totalDuration = workout.previewBlocks.reduce((sum, block) => sum + block.durationSec, 0);
@@ -45,6 +57,34 @@ function MiniWorkoutProfile({ workout }: { workout: ZwoWorkoutListItem }) {
                     className="block h-14 w-full"
                     aria-hidden="true"
                 >
+                    <defs>
+                        {workout.previewBlocks.map((block, index) => {
+                            if (block.startFactor === block.endFactor) {
+                                return null;
+                            }
+
+                            const startColor = zoneColorHex(
+                                getZoneForFactor(block.startFactor).colorClass,
+                            );
+                            const endColor = zoneColorHex(
+                                getZoneForFactor(block.endFactor).colorClass,
+                            );
+
+                            return (
+                                <linearGradient
+                                    key={`${workout.id}-profile-gradient-${index}`}
+                                    id={`${workout.id}-profile-gradient-${index}`}
+                                    x1="0"
+                                    y1="0"
+                                    x2="1"
+                                    y2="0"
+                                >
+                                    <stop offset="0%" stopColor={startColor} />
+                                    <stop offset="100%" stopColor={endColor} />
+                                </linearGradient>
+                            );
+                        })}
+                    </defs>
                     {workout.previewBlocks.map((block, index) => {
                         const startSec = currentOffset;
                         currentOffset += block.durationSec;
@@ -59,6 +99,10 @@ function MiniWorkoutProfile({ workout }: { workout: ZwoWorkoutListItem }) {
                             PROFILE_HEIGHT;
 
                         const isRamp = block.startFactor !== block.endFactor;
+                        const fill = isRamp
+                            ? `url(#${workout.id}-profile-gradient-${index})`
+                            : zoneColorHex(getZoneForFactor(block.startFactor).colorClass);
+
                         if (isRamp) {
                             const points = [
                                 `${x},${PROFILE_HEIGHT}`,
@@ -71,7 +115,7 @@ function MiniWorkoutProfile({ workout }: { workout: ZwoWorkoutListItem }) {
                                 <polygon
                                     key={`${workout.id}-profile-${index}`}
                                     points={points}
-                                    fill={PROFILE_FILL}
+                                    fill={fill}
                                     opacity="0.85"
                                 />
                             );
@@ -84,7 +128,7 @@ function MiniWorkoutProfile({ workout }: { workout: ZwoWorkoutListItem }) {
                                 y={PROFILE_HEIGHT - startHeight}
                                 width={width}
                                 height={startHeight}
-                                fill={PROFILE_FILL}
+                                fill={fill}
                                 opacity="0.85"
                             />
                         );
@@ -131,24 +175,24 @@ export function WorkoutList() {
     return (
         <div className="space-y-6">
             <WorkoutPageHeader
-                title="Workouty"
-                description="Zarządzaj biblioteką zapisanych workoutów — szczegóły i edycja na osobnych podstronach."
+                title="Treningi"
+                description="Zarządzaj biblioteką zapisanych treningów"
                 actions={
                     <Button asChild>
                         <Link href="/workouts/new">
                             <FilePlus2 />
-                            Nowy workout
+                            Nowy trening
                         </Link>
                     </Button>
                 }
-                breadcrumbs={[{ label: "Workouty" }]}
+                breadcrumbs={[{ label: "Treningi" }]}
             />
 
             <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
                 <div className="space-y-3">
                     {workoutsQuery.isLoading ? (
                         <p className="text-muted-foreground text-sm">
-                            Ładowanie zapisanych workoutów...
+                            Ładowanie zapisanych treningów...
                         </p>
                     ) : null}
 
@@ -156,7 +200,7 @@ export function WorkoutList() {
                         <p className="text-destructive text-sm">
                             {workoutsQuery.error instanceof Error
                                 ? workoutsQuery.error.message
-                                : "Nie udało się pobrać listy workoutów."}
+                                : "Nie udało się pobrać listy treningów."}
                         </p>
                     ) : null}
 
@@ -167,7 +211,7 @@ export function WorkoutList() {
                             <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full border">
                                 <Bike />
                             </div>
-                            <p className="font-medium">Nie masz jeszcze żadnych zapisanych workoutów.</p>
+                            <p className="font-medium">Nie masz jeszcze żadnych zapisanych treningów.</p>
                             <p className="mt-1 text-sm text-muted-foreground">
                                 Utwórz pierwszy workout, potem przejdź do szczegółów lub wysyłki.
                             </p>

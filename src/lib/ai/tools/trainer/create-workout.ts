@@ -8,7 +8,7 @@ export function createCreateWorkoutTool(userId: string) {
     return createLoggedTool({
         name: "create_workout",
         description:
-            "Tworzy nowy zapisany trening użytkownika wraz z krokami workoutu. Użyj, gdy użytkownik chce zapisać nowy trening.",
+            "Tworzy nowy zapisany trening użytkownika wraz z krokami treningu. Użyj, gdy użytkownik chce zapisać nowy trening.",
         inputSchema: zwoWorkoutSchema,
         execute: async input => {
             const dbWorkout = toDbWorkout(input);

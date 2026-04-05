@@ -18,7 +18,7 @@ export function createListWorkoutsTool(userId: string) {
     return createLoggedTool({
         name: "list_workouts",
         description:
-            "Lista zapisanych workoutów użytkownika w edytorze treningów. Przydatne do przeglądu, wyszukania i wyboru workoutu do dalszej edycji.",
+            "Lista zapisanych treningów użytkownika w edytorze treningów. Przydatne do przeglądu, wyszukania i wyboru treningu do dalszej edycji.",
         inputSchema,
         execute: async input => {
             const limit = input.limit ?? 10;
