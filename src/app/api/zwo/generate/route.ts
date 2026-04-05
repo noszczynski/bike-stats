@@ -4,7 +4,7 @@ import { DEFAULT_FTP_WATTS } from "@/lib/zwo/power-zones";
 import { zwoGenerateRequestSchema, zwoWorkoutSchema } from "@/lib/zwo/types";
 import { NextRequest, NextResponse } from "next/server";
 
-const SYSTEM_PROMPT = `Jesteś ekspertem od treningów kolarskich w formacie Zwift .ZWO.
+const SYSTEM_PROMPT = `Jesteś ekspertem od treningów kolarskich w formacie pliku .ZWO (XML).
 Zwracasz WYŁĄCZNIE poprawny obiekt JSON zgodny ze schematem:
 {
   "name": string,

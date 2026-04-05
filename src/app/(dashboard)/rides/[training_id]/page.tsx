@@ -62,7 +62,7 @@ export default async function RidePage({ params, searchParams }: RidePageProps) 
     }
 
     return (
-        <div className="container py-8">
+        <div className="container pb-8">
             <TrainingFitWizardWrapper
                 training={training}
                 compareTo={compareTo}

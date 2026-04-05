@@ -47,7 +47,7 @@ const data = {
             icon: FileDown,
         },
         {
-            title: "Jazdy",
+            title: "Aktywności",
             url: "/rides",
             icon: Activity,
         },

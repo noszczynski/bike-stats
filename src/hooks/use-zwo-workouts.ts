@@ -1,26 +1,39 @@
 "use client";
 
+import { WorkoutPreviewBlock } from "@/lib/zwo/workout-summary";
 import { ZwoWorkout } from "@/lib/zwo/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-type ZwoWorkoutListItem = {
+export type ZwoWorkoutListItem = {
     id: string;
     name: string;
     description: string;
     author: string;
     tags: string[];
     stepsCount: number;
+    estimatedDurationSeconds: number;
+    difficulty: number;
+    previewBlocks: WorkoutPreviewBlock[];
     createdAt: string;
     updatedAt: string;
 };
 
-type WorkoutDetailsResponse = {
+export type WorkoutDetailsResponse = {
     workout: ZwoWorkout;
     meta: {
         id: string;
         createdAt: string;
         updatedAt: string;
     };
+};
+
+type UploadWorkoutToHammerheadResponse = {
+    success: true;
+    workoutId: string;
+    name: string;
+    plannedDate: string | null;
+    createdAt: string;
+    updatedAt: string;
 };
 
 const zwoWorkoutQueryKeys = {
@@ -165,6 +178,29 @@ export function useLoadZwoWorkout() {
             }
 
             return payload as WorkoutDetailsResponse;
+        },
+    });
+}
+
+export function useUploadZwoWorkoutToHammerhead() {
+    return useMutation({
+        mutationFn: async (workout: ZwoWorkout) => {
+            const response = await fetch("/api/zwo/workouts/hammerhead", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ workout }),
+            });
+            const payload = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    getApiErrorMessage(payload, "Nie udało się wysłać treningu do Hammerhead."),
+                );
+            }
+
+            return payload as UploadWorkoutToHammerheadResponse;
         },
     });
 }

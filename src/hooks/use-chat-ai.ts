@@ -1,127 +1,74 @@
 "use client";
 
-import { useRef } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useCallback, useState } from "react";
 
-type Message = {
-    id: string;
-    content: string;
-    role: "user" | "assistant";
-    timestamp: Date;
-};
+export function useChatAI() {
+    const [isStreaming, setIsStreaming] = useState(false);
+    const [streamingText, setStreamingText] = useState("");
 
-type DataAccessRequest = {
-    id: string;
-    description: string;
-    dataTypes: string[];
-    pending: boolean;
-};
+    const sendMessage = useCallback(async (message: string, conversationId: string | null) => {
+        setIsStreaming(true);
+        setStreamingText("");
 
-type UseChatAIProps = {
-    onMessage: (message: Message) => void;
-    onDataAccessRequest: (request: DataAccessRequest) => void;
-};
+        const response = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+                message,
+                ...(conversationId ? { conversationId } : {}),
+            }),
+        });
 
-export function useChatAI({ onMessage, onDataAccessRequest }: UseChatAIProps) {
-    const conversationIdRef = useRef<string>(Date.now().toString());
+        const resolvedConversationId = response.headers.get("X-Conversation-Id");
 
-    const chatMutation = useMutation({
-        mutationFn: async (message: string) => {
-            const response = await fetch("/api/chat", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    message,
-                    conversationId: conversationIdRef.current,
-                }),
-            });
-
-            if (!response.ok) {
-                throw new Error("Failed to send message");
-            }
-
-            return response.json();
-        },
-        onSuccess: data => {
-            // Handle successful response
-            if (data.dataAccessRequested) {
-                // Simulate data access request (in real app this would come via socket)
-                setTimeout(() => {
-                    onDataAccessRequest({
-                        id: Date.now().toString(),
-                        description: "AI chce przeanalizować Twoje podstawowe dane treningowe",
-                        dataTypes: ["basic"],
-                        pending: true,
-                    });
-                }, 500);
-            }
-
-            // Add AI message
-            const aiMessage: Message = {
-                id: Date.now().toString(),
-                content: data.message,
-                role: "assistant",
-                timestamp: new Date(),
-            };
-            onMessage(aiMessage);
-        },
-        onError: error => {
-            console.error("Chat error:", error);
-            const errorMessage: Message = {
-                id: Date.now().toString(),
-                content: "Przepraszam, wystąpił błąd podczas przetwarzania Twojej wiadomości.",
-                role: "assistant",
-                timestamp: new Date(),
-            };
-            onMessage(errorMessage);
-        },
-    });
-
-    const sendMessage = async (message: string) => {
-        await chatMutation.mutateAsync(message);
-    };
-
-    const respondToDataAccessRequest = async (
-        requestId: string,
-        granted: boolean,
-        dataTypes?: string[],
-    ) => {
-        try {
-            await fetch("/api/chat", {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    conversationId: conversationIdRef.current,
-                    dataTypes: granted ? dataTypes : [],
-                    granted,
-                }),
-            });
-
-            // If access was granted, show success message
-            if (granted) {
-                const successMessage: Message = {
-                    id: Date.now().toString(),
-                    content:
-                        "Dziękuję! Dostęp do danych został przyznany. Teraz mogę przeanalizować Twoje treningi.",
-                    role: "assistant",
-                    timestamp: new Date(),
-                };
-                onMessage(successMessage);
-            }
-        } catch (error) {
-            console.error("Error responding to data access request:", error);
+        if (!response.ok) {
+            setIsStreaming(false);
+            setStreamingText("");
+            const errText =
+                response.status === 401
+                    ? "Sesja wygasła. Zaloguj się ponownie."
+                    : "Nie udało się uzyskać odpowiedzi. Spróbuj ponownie.";
+            throw new Error(errText);
         }
-    };
+
+        if (!resolvedConversationId) {
+            setIsStreaming(false);
+            setStreamingText("");
+            throw new Error("Brak identyfikatora konwersacji w odpowiedzi serwera.");
+        }
+
+        const reader = response.body?.getReader();
+        if (!reader) {
+            setIsStreaming(false);
+            setStreamingText("");
+            throw new Error("Brak treści odpowiedzi.");
+        }
+
+        const decoder = new TextDecoder();
+        let fullText = "";
+
+        try {
+            let streamDone = false;
+            while (!streamDone) {
+                const chunk = await reader.read();
+                streamDone = chunk.done;
+                if (chunk.value) {
+                    fullText += decoder.decode(chunk.value, { stream: true });
+                    setStreamingText(fullText);
+                }
+            }
+        } finally {
+            setIsStreaming(false);
+            setStreamingText("");
+        }
+
+        return { text: fullText, conversationId: resolvedConversationId };
+    }, []);
 
     return {
         sendMessage,
-        respondToDataAccessRequest,
-        isLoading: chatMutation.isPending,
-        error: chatMutation.error,
-        isConnected: true, // Simplified for now
+        isStreaming,
+        streamingText,
     };
 }

@@ -18,13 +18,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useHammerheadAuth } from "@/hooks/use-hammerhead-auth";
-import {
-    isWithinHammerheadMatchWindow,
-    suggestHammerheadActivity,
-} from "@/lib/hammerhead-match";
+import date from "@/lib/date";
+import { isWithinHammerheadMatchWindow, suggestHammerheadActivity } from "@/lib/hammerhead-match";
 import type { HammerheadActivityListItem } from "@/types/hammerhead";
 import type { Training } from "@/types/training";
-import date from "@/lib/date";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Download, Link2 } from "lucide-react";
 import { toast } from "sonner";
@@ -58,9 +55,12 @@ async function fetchHammerheadActivitiesList({
 
 function formatActivityStart(iso: string | null): string {
     if (!iso) return "—";
+
     const d = date(iso).tz("Europe/Warsaw");
+
     if (!d.isValid()) return "—";
-    return `${d.format("DD-MM-YYYY")} (${d.fromNow()}), ${d.format("HH:mm")}`;
+
+    return `${d.format("LLLL")} (${d.fromNow()})`;
 }
 
 /** Data treningu `YYYY-MM-DD` → `DD-MM-YYYY (relatywnie)`. */
@@ -97,11 +97,7 @@ export function HammerheadMatchDialog({
     }, [activitiesQuery.data, training.date]);
 
     const suggestion = useMemo(() => {
-        return suggestHammerheadActivity(
-            activitiesInMatchWindow,
-            training.date,
-            referenceMeters,
-        );
+        return suggestHammerheadActivity(activitiesInMatchWindow, training.date, referenceMeters);
     }, [activitiesInMatchWindow, training.date, referenceMeters]);
 
     useEffect(() => {
@@ -210,18 +206,13 @@ export function HammerheadMatchDialog({
                             activitiesQuery.data.length > 0 &&
                             activitiesInMatchWindow.length === 0 && (
                                 <p className="text-muted-foreground text-sm">
-                                    Brak aktywności Hammerhead w oknie {formatTrainingDateLabel(training.date)} ± 1 dzień —
+                                    Brak aktywności Hammerhead w oknie{" "}
+                                    {formatTrainingDateLabel(training.date)} ± 1 dzień —
                                     zsynchronizuj urządzenie lub sprawdź, czy jazda jest na koncie.
                                 </p>
                             )}
                         {activitiesInMatchWindow.length > 0 && (
                             <div className="space-y-2">
-                                {suggestion.suggestedId && (
-                                    <p className="text-sm font-medium">
-                                        Sugerowane dopasowanie (data / dystans): wybrano
-                                        automatycznie — możesz zmienić wybór poniżej.
-                                    </p>
-                                )}
                                 <ScrollArea className="max-h-72 overflow-y-auto pr-3">
                                     <RadioGroup value={selectedId} onValueChange={setSelectedId}>
                                         {suggestion.ranked.map(({ item, score, sameDay }) => (
@@ -240,7 +231,6 @@ export function HammerheadMatchDialog({
                                                     <p className="text-muted-foreground text-xs">
                                                         {formatActivityStart(item.startedAt)} ·{" "}
                                                         {formatDist(item.distanceMeters)}
-                                                        {sameDay ? ` · dopasowanie ${score}%` : ""}
                                                     </p>
                                                 </div>
                                             </div>

@@ -1,5 +1,6 @@
 import { getAuthenticatedUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { summarizeDbWorkoutSteps } from "@/lib/zwo/workout-summary";
 import { toDbWorkout } from "@/lib/zwo/persistence";
 import { zwoWorkoutSchema } from "@/lib/zwo/types";
 import { NextRequest, NextResponse } from "next/server";
@@ -21,22 +22,43 @@ export async function GET() {
                 tags: true,
                 created_at: true,
                 updated_at: true,
-                _count: { select: { steps: true } },
+                steps: {
+                    orderBy: { position: "asc" },
+                    select: {
+                        type: true,
+                        duration: true,
+                        power: true,
+                        power_low: true,
+                        power_high: true,
+                        repeat: true,
+                        on_duration: true,
+                        off_duration: true,
+                        on_power: true,
+                        off_power: true,
+                    },
+                },
             },
             orderBy: { updated_at: "desc" },
         });
 
         return NextResponse.json({
-            workouts: workouts.map(workout => ({
-                id: workout.id,
-                name: workout.name,
-                description: workout.description,
-                author: workout.author,
-                tags: workout.tags,
-                stepsCount: workout._count.steps,
-                createdAt: workout.created_at.toISOString(),
-                updatedAt: workout.updated_at.toISOString(),
-            })),
+            workouts: workouts.map(workout => {
+                const summary = summarizeDbWorkoutSteps(workout.steps);
+
+                return {
+                    id: workout.id,
+                    name: workout.name,
+                    description: workout.description,
+                    author: workout.author,
+                    tags: workout.tags,
+                    stepsCount: workout.steps.length,
+                    estimatedDurationSeconds: summary.estimatedDurationSeconds,
+                    difficulty: summary.difficulty,
+                    previewBlocks: summary.previewBlocks,
+                    createdAt: workout.created_at.toISOString(),
+                    updatedAt: workout.updated_at.toISOString(),
+                };
+            }),
         });
     } catch (error) {
         console.error("ZWO workouts list error:", error);

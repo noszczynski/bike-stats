@@ -178,6 +178,30 @@ async function fetchHammerheadJson(
     });
 }
 
+async function fetchHammerheadMultipart(
+    path: string,
+    accessToken: string,
+    formData: FormData,
+    init?: Omit<RequestInit, "body" | "headers" | "method"> & {
+        method?: "POST" | "PUT";
+        accept?: string;
+    },
+): Promise<Response> {
+    const url = path.startsWith("http")
+        ? path
+        : `${HAMMERHEAD_API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
+
+    return fetch(url, {
+        ...init,
+        method: init?.method ?? "POST",
+        body: formData,
+        headers: {
+            Accept: init?.accept ?? "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+    });
+}
+
 export type HammerheadFetchResult<T> = {
     data: T;
     /** Jeśli odświeżono token, ustaw te ciasteczka w odpowiedzi NextResponse */
@@ -292,6 +316,57 @@ export async function hammerheadAuthorizedBinary(
     return { buffer: await response.arrayBuffer() };
 }
 
+export async function hammerheadAuthorizedMultipartJson<T>(
+    accessToken: string | undefined,
+    refreshToken: string | undefined,
+    path: string,
+    formData: FormData,
+    init?: {
+        method?: "POST" | "PUT";
+        accept?: string;
+    },
+): Promise<HammerheadFetchResult<T>> {
+    if (!accessToken) {
+        throw new Error("Missing Hammerhead access token");
+    }
+
+    let response = await fetchHammerheadMultipart(path, accessToken, formData, init);
+
+    if (response.status === 401 && refreshToken) {
+        const newTokens = await refreshHammerheadToken(refreshToken);
+        const nextRefresh = newTokens.refresh_token ?? refreshToken;
+
+        response = await fetchHammerheadMultipart(path, newTokens.access_token, formData, init);
+
+        if (!response.ok) {
+            const text = await response.text().catch(() => "");
+            throw new Error(
+                `Hammerhead multipart request failed after refresh: ${response.status} ${text.slice(0, 200)}`,
+            );
+        }
+
+        const data = (await response.json()) as T;
+
+        return {
+            data,
+            refreshedTokens: {
+                access_token: newTokens.access_token,
+                refresh_token: nextRefresh,
+            },
+        };
+    }
+
+    if (!response.ok) {
+        const text = await response.text().catch(() => "");
+        throw new Error(
+            `Hammerhead multipart request failed: ${response.status} ${text.slice(0, 200)}`,
+        );
+    }
+
+    const data = (await response.json()) as T;
+    return { data };
+}
+
 /** Lista aktywności — zgodnie z dokumentacją v1: query `page`, `perPage`, opcjonalnie `startDate`. */
 export async function fetchHammerheadActivities(
     accessToken: string | undefined,
@@ -324,4 +399,40 @@ export async function downloadHammerheadFitFile(
 }> {
     const path = `/activities/${encodeURIComponent(hammerheadActivityId)}/file`;
     return hammerheadAuthorizedBinary(accessToken, refreshToken, path);
+}
+
+export type HammerheadWorkout = {
+    id: string;
+    name: string;
+    description: string;
+    plannedDate: string | null;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export async function uploadHammerheadWorkoutFile(
+    file: File,
+    accessToken: string | undefined,
+    refreshToken: string | undefined,
+    options?: {
+        plannedDate?: string;
+    },
+): Promise<HammerheadFetchResult<HammerheadWorkout>> {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const query = new URLSearchParams();
+    if (options?.plannedDate) {
+        query.set("plannedDate", options.plannedDate);
+    }
+
+    const path = `/workouts/file${query.size > 0 ? `?${query.toString()}` : ""}`;
+
+    return hammerheadAuthorizedMultipartJson<HammerheadWorkout>(
+        accessToken,
+        refreshToken,
+        path,
+        formData,
+        { method: "POST" },
+    );
 }

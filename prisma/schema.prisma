@@ -138,11 +138,41 @@ model User {
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
 
-  settings   UserSettings?
-  activities Activity[]
-  workouts   Workout[]
+  settings      UserSettings?
+  activities    Activity[]
+  workouts      Workout[]
+  conversations Conversation[]
 
   @@map("users")
+}
+
+model Conversation {
+  id         String   @id @default(uuid())
+  user_id    String
+  title      String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  user     User                  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  messages ConversationMessage[]
+
+  @@index([user_id, updated_at])
+  @@map("conversations")
+}
+
+model ConversationMessage {
+  id              String   @id @default(uuid())
+  conversation_id String
+  role            String
+  content         String   @db.Text
+  tool_call_id    String?
+  tool_name       String?
+  created_at      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+
+  @@index([conversation_id, created_at])
+  @@map("conversation_messages")
 }
 
 model UserSettings {

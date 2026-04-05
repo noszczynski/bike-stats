@@ -1,5 +1,5 @@
-import { ZwiftWorkoutBuilder } from "@/components/zwift-workout/zwift-workout-builder";
+import { WorkoutList } from "@/components/workout/workout-list";
 
-export default function ZwiftWorkoutPage() {
-    return <ZwiftWorkoutBuilder />;
+export default function WorkoutsPage() {
+    return <WorkoutList />;
 }
