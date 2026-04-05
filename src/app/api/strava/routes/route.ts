@@ -9,17 +9,24 @@ export async function GET(request: NextRequest) {
         const cookieStore = await cookies();
         const accessToken = cookieStore.get("strava_access_token")?.value;
         const refreshToken = cookieStore.get("strava_refresh_token")?.value;
-        const athleteId = "122643449";
 
         if (!accessToken) {
             return NextResponse.json({ error: "No access token found" }, { status: 401 });
         }
 
         const searchParams = request.nextUrl.searchParams;
+        const athleteId = searchParams.get("athlete_id")?.trim() || "122643449";
         const page = searchParams.get("page") ? parseInt(searchParams.get("page")!) : 1;
         const perPage = searchParams.get("per_page")
             ? parseInt(searchParams.get("per_page")!)
             : 100;
+
+        if (!/^\d+$/.test(athleteId)) {
+            return NextResponse.json(
+                { error: "Parameter athlete_id musi być liczbą." },
+                { status: 400 },
+            );
+        }
 
         const routes = await getAthleteRoutes(athleteId, accessToken, refreshToken, {
             page,
