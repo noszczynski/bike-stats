@@ -9,6 +9,7 @@ import { createGetActivitySensorSummaryTool } from "@/lib/ai/tools/trainer/get-a
 import { createGetActivityTagsTool } from "@/lib/ai/tools/trainer/get-activity-tags";
 import { createGetWorkoutTool } from "@/lib/ai/tools/trainer/get-workout";
 import { createGetActivityZoneBreakdownTool } from "@/lib/ai/tools/trainer/get-activity-zone-breakdown";
+import { createGetAppLinksTool } from "@/lib/ai/tools/trainer/get-app-links";
 import { createGetPerformanceTrendsTool } from "@/lib/ai/tools/trainer/get-performance-trends";
 import { createGetPeriodSummaryTool } from "@/lib/ai/tools/trainer/get-period-summary";
 import { createGetRecentActivitiesTool } from "@/lib/ai/tools/trainer/get-recent-activities";
@@ -18,6 +19,7 @@ import { createUpdateWorkoutTool } from "@/lib/ai/tools/trainer/update-workout";
 
 export function createTrainerTools(userId: string) {
     return {
+        get_app_links: createGetAppLinksTool(),
         get_recent_activities: createGetRecentActivitiesTool(userId),
         get_activity_overview: createGetActivityOverviewTool(userId),
         get_activity_fit_summary: createGetActivityFitSummaryTool(userId),
