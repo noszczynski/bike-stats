@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface StravaAuthStatus {
     isAuthenticated: boolean;
+    /** Zalogowany użytkownik aplikacji ma dane Stravy w bazie, ale brak ważnej sesji Stravy — można zaproponować OAuth. */
+    suggestStravaReconnect?: boolean;
 }
 
 async function checkStravaAuthStatus(): Promise<StravaAuthStatus> {

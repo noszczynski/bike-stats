@@ -5,6 +5,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeSwitch } from "@/components/ui/theme-switch";
+import { StravaAutoReconnect } from "@/components/strava-auto-reconnect";
 import { useAuth } from "@/hooks/use-auth";
 import Link from "next/link";
 
@@ -84,5 +85,10 @@ export function AuthGate({ children }: AuthGateProps) {
     }
 
     // User is authenticated, show the dashboard
-    return <>{children}</>;
+    return (
+        <>
+            <StravaAutoReconnect />
+            {children}
+        </>
+    );
 }
