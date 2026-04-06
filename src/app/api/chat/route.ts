@@ -1,4 +1,5 @@
 import { client, openai } from "@/lib/api/openai";
+import { storeTrainerMemoryFromExchange } from "@/lib/ai/trainer-memory";
 import { createTrainerTools } from "@/lib/ai/tools";
 import { getAuthenticatedUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -74,6 +75,9 @@ DANE I NARZĘDZIA:
 - Preferuj małe, wyspecjalizowane narzędzia zamiast jednego szerokiego, gdy pytanie da się rozłożyć na niezależne fragmenty.
 - Przy kilku niezależnych potrzebach możesz wywołać narzędzia równolegle; unikaj zbędnych wywołań — tylko to, co realnie zmienia odpowiedź.
 - W parametrach narzędzi nie podawaj pól, które nie są potrzebne — zwracaj undefined albo pomijaj je.
+- Pamięć użytkownika nie jest dołączana stale do promptu. Jeśli pytanie dotyczy preferencji, wcześniejszych ustaleń, celów albo ograniczeń zawodnika, wtedy dopiero sprawdź ją narzędziem \`search_trainer_memory\`.
+- Jeśli użytkownik jasno komunikuje trwałą preferencję, cel albo ograniczenie, możesz zapisać to narzędziem \`save_trainer_memory\`. Nie zapisuj jednorazowych próśb ani chwilowych planów "na dziś".
+- Edycja albo usunięcie pamięci wymaga wyraźnego potwierdzenia użytkownika. Najpierw przygotuj podgląd zmiany przez \`edit_trainer_memory\` albo \`delete_trainer_memory\` z \`confirm: false\`, poproś o potwierdzenie, a dopiero po wyraźnej zgodzie użytkownika wywołaj to samo narzędzie z \`confirm: true\`.
 
 AUTONOMIA I DOPRECYZOWANIA:
 - Jeśli intencję da się sensownie odczytać z kontekstu, działaj bez pytania o wyjaśnienia — użytkownik doprecyzuje, gdy będzie chciał.
@@ -90,6 +94,10 @@ NARZĘDZIA (TOOLS):
 - get_activity_sensor_summary — dostępność mocy, HR, kadencji, GPS i liczba próbek.
 - get_activity_details — szeroki snapshot aktywności, gdy jeden pełny widok jest wygodniejszy.
 - get_user_profile — profil użytkownika i strefy HR.
+- save_trainer_memory — zapis trwałej pamięci użytkownika, gdy pojawia się wyraźna preferencja, cel albo ograniczenie.
+- search_trainer_memory — trwała pamięć użytkownika: preferencje, cele i ograniczenia, tylko gdy to naprawdę pomaga.
+- edit_trainer_memory — edycja istniejącego wpisu pamięci; najpierw podgląd, potem wykonanie po potwierdzeniu użytkownika.
+- delete_trainer_memory — usunięcie wpisu pamięci; najpierw podgląd, potem wykonanie po potwierdzeniu użytkownika.
 - get_period_summary — statystyki za okres, opcjonalnie dla typu aktywności.
 - compare_period_summaries — porównanie dwóch okresów.
 - get_performance_trends — alias dla statystyk okresowych.
@@ -189,7 +197,7 @@ export async function POST(request: NextRequest) {
             model: openai("gpt-5.4"),
             system: TRAINER_SYSTEM,
             messages: lm,
-            tools: createTrainerTools(userId),
+            tools: createTrainerTools(userId, message),
             prepareStep: async ({ steps }) => {
                 const currentStep = steps.length + 1;
                 const isLastStep = currentStep >= MAX_AGENT_STEPS;
@@ -218,6 +226,16 @@ ${isLastStep ? "- To ostatnia iteracja. Nie używaj już narzędzi i sformułuj 
                         content: text,
                     },
                 });
+
+                try {
+                    await storeTrainerMemoryFromExchange({
+                        userId,
+                        userMessage: message,
+                        assistantReply: text,
+                    });
+                } catch (memoryError) {
+                    console.error("Trainer memory post-processing error:", memoryError);
+                }
 
                 if (shouldRefreshTitle) {
                     let title = fallbackTitle(message);

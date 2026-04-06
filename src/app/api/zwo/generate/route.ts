@@ -1,5 +1,6 @@
 import { completionJsonObject } from "@/lib/api/openai";
 import { getAuthenticatedUserId } from "@/lib/auth";
+import { normalizeCooldownStepsInWorkout } from "@/lib/zwo/persistence";
 import { DEFAULT_FTP_WATTS } from "@/lib/zwo/power-zones";
 import { zwoGenerateRequestSchema, zwoWorkoutSchema } from "@/lib/zwo/types";
 import { NextRequest, NextResponse } from "next/server";
@@ -18,6 +19,7 @@ Zwracasz WYŁĄCZNIE poprawny obiekt JSON zgodny ze schematem:
 Step to jeden z:
 1) {"type":"Warmup","Duration":number,"PowerLow":number,"PowerHigh":number}
 2) {"type":"Cooldown","Duration":number,"PowerLow":number,"PowerHigh":number}
+   — wyjątek ZWO: PowerLow = moc na POCZĄTKU schłodzenia (zwykle wyższa), PowerHigh = na KOŃCU (niższa). Np. 60%→45% FTP: PowerLow 0.6, PowerHigh 0.45 (PowerLow może być większe niż PowerHigh).
 3) {"type":"SteadyState","Duration":number,"Power":number}
 4) {"type":"Ramp","Duration":number,"PowerLow":number,"PowerHigh":number}
 5) {"type":"IntervalsT","Repeat":number,"OnDuration":number,"OffDuration":number,"OnPower":number,"OffPower":number}
@@ -92,8 +94,8 @@ ${instruction}
 
 FTP użytkownika: ${ftpWatts} W.
 Jeśli instrukcja zawiera moc podaną w W (np. 90W/320W), przelicz ją dokładnie na mnożnik FTP:
-- OffPower/PowerLow = W / FTP
-- OnPower/PowerHigh = W / FTP
+- Dla IntervalsT: OffPower = niższa moc / FTP, OnPower = wyższa moc / FTP.
+- Dla Cooldown: pierwsza wartość czasu/mocy w treści = początek schłodzenia (mapuj na PowerLow), końcowa łatwiejsza moc = PowerHigh (zgodnie z ZWO, niezależnie od słów „low/high”).
 i zachowaj intencję użytkownika.
 
 Aktualny szkic treningu (opcjonalny kontekst, możesz poprawić):
@@ -147,7 +149,9 @@ ${JSON.stringify(currentWorkout || {}, null, 2)}
             });
         }
 
-        return NextResponse.json({ workout: normalizedWorkout });
+        return NextResponse.json({
+            workout: normalizeCooldownStepsInWorkout(normalizedWorkout),
+        });
     } catch (error) {
         console.error("ZWO generation error:", error);
         return NextResponse.json(

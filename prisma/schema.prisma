@@ -12,6 +12,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  extensions = [vector]
 }
 
 enum ActivityType {
@@ -142,8 +143,27 @@ model User {
   activities    Activity[]
   workouts      Workout[]
   conversations Conversation[]
+  trainer_memories TrainerMemory[]
 
   @@map("users")
+}
+
+model TrainerMemory {
+  id           String              @id @default(uuid())
+  user_id      String
+  kind         TrainerMemoryKind
+  source       TrainerMemorySource @default(auto)
+  content      String              @db.VarChar(500)
+  is_active    Boolean             @default(true)
+  last_used_at DateTime?
+  created_at   DateTime            @default(now())
+  updated_at   DateTime            @updatedAt
+  embedding    Unsupported("vector(1536)")?
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, kind, is_active, updated_at])
+  @@map("trainer_memories")
 }
 
 model Conversation {
@@ -234,6 +254,15 @@ enum WorkoutStepType {
   Ramp
   IntervalsT
   TextEvent
+}
+
+enum TrainerMemoryKind {
+  preference
+  goal_constraint
+}
+
+enum TrainerMemorySource {
+  auto
 }
 
 model Workout {
