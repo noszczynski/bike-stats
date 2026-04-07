@@ -1,3 +1,4 @@
+import type { StravaTokens } from "@/types/strava";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {

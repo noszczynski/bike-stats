@@ -11,7 +11,6 @@ const inputSchema = z.object({
         .max(120)
         .optional()
         .describe("Szukaj po nazwie, opisie lub autorze treningu"),
-    tag: z.string().trim().min(1).max(40).optional().describe("Filtr po pojedynczym tagu"),
 });
 
 export function createListWorkoutsTool(userId: string) {
@@ -25,7 +24,6 @@ export function createListWorkoutsTool(userId: string) {
             const workouts = await prisma.workout.findMany({
                 where: {
                     user_id: userId,
-                    ...(input.tag ? { tags: { has: input.tag } } : {}),
                     ...(input.query
                         ? {
                               OR: [

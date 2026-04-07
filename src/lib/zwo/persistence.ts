@@ -32,6 +32,31 @@ function normalizeTags(tags: string[]): string[] {
     return Array.from(new Set(tags.map(tag => tag.trim()).filter(Boolean)));
 }
 
+/**
+ * ZWO Cooldown: segment starts at PowerLow (often higher FTP) and ramps to PowerHigh (lower).
+ * Models often put the numerically lower factor in PowerLow — swap so Zwift/editor semantics match.
+ */
+export function normalizeCooldownStepForZwo(step: ZwoStep): ZwoStep {
+    if (step.type !== "Cooldown") {
+        return step;
+    }
+    if (step.PowerLow >= step.PowerHigh) {
+        return step;
+    }
+    return {
+        ...step,
+        PowerLow: step.PowerHigh,
+        PowerHigh: step.PowerLow,
+    };
+}
+
+export function normalizeCooldownStepsInWorkout(workout: ZwoWorkout): ZwoWorkout {
+    return {
+        ...workout,
+        steps: workout.steps.map(normalizeCooldownStepForZwo),
+    };
+}
+
 function toDbStep(step: ZwoStep, position: number): DbWorkoutPayload["steps"][number] {
     const baseStep = {
         position,
@@ -147,7 +172,9 @@ export function toDbWorkout(zwoWorkout: unknown): DbWorkoutPayload {
         author: parsedWorkout.author,
         sport_type: WorkoutSportType.bike,
         tags: normalizeTags(parsedWorkout.tags),
-        steps: parsedWorkout.steps.map((step, position) => toDbStep(step, position)),
+        steps: parsedWorkout.steps
+            .map(normalizeCooldownStepForZwo)
+            .map((step, position) => toDbStep(step, position)),
     };
 }
 
